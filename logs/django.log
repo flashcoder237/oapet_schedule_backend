@@ -1,0 +1,124 @@
+INFO 2025-08-02 10:25:39,931 autoreload 4700 33260 Watching for file changes with StatReloader
+INFO 2025-08-02 20:23:13,087 basehttp 4700 32072 "OPTIONS /api/auth/token/ HTTP/1.1" 200 0
+INFO 2025-08-02 20:23:36,057 basehttp 4700 32072 "OPTIONS /api/auth/token/ HTTP/1.1" 200 0
+INFO 2025-08-02 20:24:59,986 basehttp 4700 32072 "OPTIONS /api/auth/token/ HTTP/1.1" 200 0
+INFO 2025-08-02 20:26:29,978 autoreload 4700 33260 C:\Users\tefba\Desktop\OverBrand\oapet_schedule_backend\oapet_schedule_backend\settings.py changed, reloading.
+INFO 2025-08-02 20:26:31,195 autoreload 32440 23744 Watching for file changes with StatReloader
+INFO 2025-08-02 20:26:37,113 basehttp 32440 26008 "OPTIONS /api/auth/token/ HTTP/1.1" 200 0
+ERROR 2025-08-02 20:26:37,604 log 32440 26008 Internal Server Error: /api/auth/token/
+Traceback (most recent call last):
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\authtoken\views.py", line 58, in post
+    token, created = Token.objects.get_or_create(user=user)
+                     ^^^^^^^^^^^^^
+AttributeError: type object 'Token' has no attribute 'objects'
+ERROR 2025-08-02 20:26:37,613 basehttp 32440 26008 "POST /api/auth/token/ HTTP/1.1" 500 108463
+ERROR 2025-08-02 20:27:00,460 log 32440 26008 Internal Server Error: /api/auth/token/
+Traceback (most recent call last):
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\authtoken\views.py", line 58, in post
+    token, created = Token.objects.get_or_create(user=user)
+                     ^^^^^^^^^^^^^
+AttributeError: type object 'Token' has no attribute 'objects'
+ERROR 2025-08-02 20:27:00,464 basehttp 32440 26008 "POST /api/auth/token/ HTTP/1.1" 500 108463
+ERROR 2025-08-02 20:29:41,335 log 32440 26008 Internal Server Error: /api/auth/token/
+Traceback (most recent call last):
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\authtoken\views.py", line 58, in post
+    token, created = Token.objects.get_or_create(user=user)
+                     ^^^^^^^^^^^^^
+AttributeError: type object 'Token' has no attribute 'objects'
+ERROR 2025-08-02 20:29:41,336 basehttp 32440 26008 "POST /api/auth/token/ HTTP/1.1" 500 108463
+ERROR 2025-08-02 20:30:23,687 log 32440 26008 Internal Server Error: /api/auth/token/
+Traceback (most recent call last):
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\authtoken\views.py", line 58, in post
+    token, created = Token.objects.get_or_create(user=user)
+                     ^^^^^^^^^^^^^
+AttributeError: type object 'Token' has no attribute 'objects'
+ERROR 2025-08-02 20:30:23,691 basehttp 32440 26008 "POST /api/auth/token/ HTTP/1.1" 500 108463
+INFO 2025-08-02 20:31:08,805 autoreload 32440 23744 C:\Users\tefba\Desktop\OverBrand\oapet_schedule_backend\oapet_schedule_backend\settings.py changed, reloading.
+INFO 2025-08-02 20:31:09,542 autoreload 33348 36272 Watching for file changes with StatReloader
+INFO 2025-08-02 20:31:56,837 autoreload 28240 2076 Watching for file changes with StatReloader
+INFO 2025-08-02 20:32:41,431 basehttp 28240 35292 "POST /api/auth/token/ HTTP/1.1" 200 52
+INFO 2025-08-03 09:22:20,696 autoreload 22348 3220 Watching for file changes with StatReloader
+INFO 2025-08-03 10:17:35,744 basehttp 22348 17620 "OPTIONS /api/users/auth/login/ HTTP/1.1" 200 0
+WARNING 2025-08-03 10:17:36,089 log 22348 17620 Unauthorized: /api/users/auth/login/
+WARNING 2025-08-03 10:17:36,090 basehttp 22348 17620 "POST /api/users/auth/login/ HTTP/1.1" 401 34
+INFO 2025-08-03 10:20:03,899 autoreload 12684 20236 Watching for file changes with StatReloader
+WARNING 2025-08-03 10:20:19,338 log 12684 21088 Not Found: /
+WARNING 2025-08-03 10:20:19,345 basehttp 12684 21088 "GET / HTTP/1.1" 404 4150
+WARNING 2025-08-03 10:20:20,222 log 12684 21088 Not Found: /favicon.ico
+WARNING 2025-08-03 10:20:20,223 basehttp 12684 21088 "GET /favicon.ico HTTP/1.1" 404 4201
+WARNING 2025-08-03 10:20:32,057 log 22348 17620 Unauthorized: /api/users/auth/login/
+WARNING 2025-08-03 10:20:32,058 basehttp 22348 17620 "POST /api/users/auth/login/ HTTP/1.1" 401 34
+WARNING 2025-08-03 10:20:59,041 log 22348 17620 Unauthorized: /api/users/auth/login/
+WARNING 2025-08-03 10:20:59,042 basehttp 22348 17620 "POST /api/users/auth/login/ HTTP/1.1" 401 34
