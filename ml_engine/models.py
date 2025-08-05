@@ -39,8 +39,23 @@ class MLModel(models.Model):
     performance_metrics = models.JSONField(default=dict)
     feature_names = models.JSONField(default=list)
     is_active = models.BooleanField(default=False)
+    is_trained = models.BooleanField(default=False)  # Nouveau champ
+    training_completed_at = models.DateTimeField(null=True, blank=True)  # Nouveau champ
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    @classmethod
+    def get_or_create_default_model(cls):
+        """Crée ou récupère le modèle par défaut"""
+        model, created = cls.objects.get_or_create(
+            name='default_schedule_model',
+            defaults={
+                'model_type': 'random_forest',
+                'description': 'Modèle par défaut pour la prédiction des emplois du temps',
+                'is_active': True
+            }
+        )
+        return model, created
 
     def __str__(self):
         return f"{self.name} ({self.model_type})"

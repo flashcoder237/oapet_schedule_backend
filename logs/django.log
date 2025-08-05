@@ -122,3 +122,290 @@ WARNING 2025-08-03 10:20:32,057 log 22348 17620 Unauthorized: /api/users/auth/lo
 WARNING 2025-08-03 10:20:32,058 basehttp 22348 17620 "POST /api/users/auth/login/ HTTP/1.1" 401 34
 WARNING 2025-08-03 10:20:59,041 log 22348 17620 Unauthorized: /api/users/auth/login/
 WARNING 2025-08-03 10:20:59,042 basehttp 22348 17620 "POST /api/users/auth/login/ HTTP/1.1" 401 34
+WARNING 2025-08-03 10:23:23,807 log 22348 17620 Unauthorized: /api/users/auth/login/
+WARNING 2025-08-03 10:23:23,807 basehttp 22348 17620 "POST /api/users/auth/login/ HTTP/1.1" 401 34
+INFO 2025-08-03 10:26:55,845 autoreload 22348 3220 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\users\apps.py changed, reloading.
+INFO 2025-08-03 10:26:56,472 autoreload 8740 5116 Watching for file changes with StatReloader
+INFO 2025-08-03 10:27:07,294 autoreload 8740 5116 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\users\models.py changed, reloading.
+INFO 2025-08-03 10:27:07,909 autoreload 15640 4344 Watching for file changes with StatReloader
+INFO 2025-08-03 10:28:33,388 basehttp 15640 18832 "POST /api/users/auth/login/ HTTP/1.1" 200 181
+WARNING 2025-08-03 10:30:04,114 log 15640 18832 Unauthorized: /api/users/auth/login/
+WARNING 2025-08-03 10:30:04,115 basehttp 15640 18832 "POST /api/users/auth/login/ HTTP/1.1" 401 34
+WARNING 2025-08-03 10:30:28,185 log 15640 18832 Too Many Requests: /api/users/auth/login/
+WARNING 2025-08-03 10:30:28,185 basehttp 15640 18832 "POST /api/users/auth/login/ HTTP/1.1" 429 70
+WARNING 2025-08-03 10:31:30,494 log 15640 18832 Too Many Requests: /api/users/auth/login/
+WARNING 2025-08-03 10:31:30,495 basehttp 15640 18832 "POST /api/users/auth/login/ HTTP/1.1" 429 70
+INFO 2025-08-03 10:32:22,396 autoreload 15640 4344 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\users\views.py changed, reloading.
+INFO 2025-08-03 10:32:23,039 autoreload 7044 13416 Watching for file changes with StatReloader
+INFO 2025-08-03 10:32:44,636 basehttp 7044 17828 "POST /api/users/auth/login/ HTTP/1.1" 200 181
+INFO 2025-08-03 10:38:09,922 autoreload 16908 6316 Watching for file changes with StatReloader
+INFO 2025-08-03 10:39:53,291 basehttp 16908 21324 "POST /api/users/auth/login/ HTTP/1.1" 200 181
+INFO 2025-08-03 10:40:28,091 basehttp 16908 21324 "OPTIONS /api/courses/courses/ HTTP/1.1" 200 0
+INFO 2025-08-03 10:40:28,093 basehttp 16908 17296 "OPTIONS /api/courses/courses/stats/ HTTP/1.1" 200 0
+INFO 2025-08-03 10:40:28,135 basehttp 16908 17296 "GET /api/courses/courses/stats/ HTTP/1.1" 200 488
+INFO 2025-08-03 10:40:28,183 basehttp 16908 21324 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 12:52:05,409 autoreload 16908 6316 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\users\models.py changed, reloading.
+INFO 2025-08-03 12:52:05,426 autoreload 7044 13416 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\users\apps.py changed, reloading.
+INFO 2025-08-03 12:52:06,536 autoreload 19372 23188 Watching for file changes with StatReloader
+INFO 2025-08-03 12:52:06,536 autoreload 19800 25560 Watching for file changes with StatReloader
+INFO 2025-08-03 13:09:29,188 basehttp 19800 25992 "OPTIONS /api/users/auth/login/ HTTP/1.1" 200 0
+INFO 2025-08-03 13:09:29,541 basehttp 19800 25992 "POST /api/users/auth/login/ HTTP/1.1" 200 181
+INFO 2025-08-03 13:10:30,155 basehttp 19800 25992 "OPTIONS /api/ml/optimize-schedule/ HTTP/1.1" 200 0
+WARNING 2025-08-03 13:10:30,177 log 19800 25992 Not Found: /api/ml/optimize-schedule/
+WARNING 2025-08-03 13:10:30,178 basehttp 19800 25992 "POST /api/ml/optimize-schedule/ HTTP/1.1" 404 23890
+INFO 2025-08-03 13:11:06,480 basehttp 19800 25992 "OPTIONS /api/users/auth/logout/ HTTP/1.1" 200 0
+INFO 2025-08-03 13:11:06,503 basehttp 19800 25992 "POST /api/users/auth/logout/ HTTP/1.1" 200 35
+WARNING 2025-08-03 13:11:46,936 log 19800 25992 Unauthorized: /api/users/auth/login/
+WARNING 2025-08-03 13:11:46,936 basehttp 19800 25992 "POST /api/users/auth/login/ HTTP/1.1" 401 34
+INFO 2025-08-03 13:23:40,787 basehttp 19800 6948 "POST /api/users/auth/login/ HTTP/1.1" 200 181
+INFO 2025-08-03 13:24:31,946 basehttp 19800 2220 "OPTIONS /api/courses/teachers/ HTTP/1.1" 200 0
+INFO 2025-08-03 13:24:31,971 basehttp 19800 2220 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 13:25:00,463 basehttp 19800 22188 "OPTIONS /api/courses/courses/stats/ HTTP/1.1" 200 0
+INFO 2025-08-03 13:25:00,463 basehttp 19800 2220 "OPTIONS /api/courses/courses/ HTTP/1.1" 200 0
+INFO 2025-08-03 13:25:00,503 basehttp 19800 2220 "GET /api/courses/courses/stats/ HTTP/1.1" 200 488
+INFO 2025-08-03 13:25:00,509 basehttp 19800 22188 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 13:36:09,900 basehttp 19800 23260 "GET /api/courses/courses/stats/ HTTP/1.1" 200 488
+INFO 2025-08-03 13:36:09,939 basehttp 19800 17660 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 13:37:07,222 basehttp 19800 17660 "OPTIONS /api/courses/departments/ HTTP/1.1" 200 0
+INFO 2025-08-03 13:37:07,240 basehttp 19800 23260 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 13:37:07,242 basehttp 19800 17660 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 13:39:52,065 basehttp 19800 23260 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 13:39:52,086 basehttp 19800 17660 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 13:39:52,095 basehttp 19800 23260 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 13:43:36,800 basehttp 19800 17660 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 13:43:36,846 basehttp 19800 17660 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 13:43:36,859 basehttp 19800 23260 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 13:48:36,716 basehttp 19800 17660 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 13:48:36,776 basehttp 19800 17660 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 13:48:36,780 basehttp 19800 23260 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 13:57:30,384 basehttp 19800 10352 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 13:57:30,407 basehttp 19800 1516 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 13:57:30,441 basehttp 19800 24896 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 14:00:41,565 basehttp 19800 1516 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 14:00:41,569 basehttp 19800 10352 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 14:00:41,602 basehttp 19800 24896 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 14:10:41,937 basehttp 19800 22064 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 14:11:11,903 basehttp 19800 26768 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 14:11:12,091 basehttp 19800 26768 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 14:11:12,109 basehttp 19800 22064 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 14:11:38,047 basehttp 19800 26768 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 14:11:38,057 basehttp 19800 26452 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 14:11:38,110 basehttp 19800 22064 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 14:49:34,920 basehttp 19800 3592 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 14:49:34,991 basehttp 19800 20960 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 14:49:35,000 basehttp 19800 4284 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 14:49:53,171 basehttp 19800 4284 "OPTIONS /api/courses/departments/?search= HTTP/1.1" 200 0
+INFO 2025-08-03 14:49:53,197 basehttp 19800 4284 "GET /api/courses/departments/?search= HTTP/1.1" 200 927
+WARNING 2025-08-03 14:53:08,853 log 19800 4284 Not Found: /api/ml/optimize-schedule/
+WARNING 2025-08-03 14:53:08,855 basehttp 19800 4284 "POST /api/ml/optimize-schedule/ HTTP/1.1" 404 23890
+INFO 2025-08-03 14:53:41,028 basehttp 19800 4284 "POST /api/users/auth/logout/ HTTP/1.1" 200 35
+INFO 2025-08-03 14:53:46,042 basehttp 19800 4284 "POST /api/users/auth/login/ HTTP/1.1" 200 181
+INFO 2025-08-03 14:53:46,130 basehttp 19800 20960 "GET /api/courses/departments/ HTTP/1.1" 200 927
+INFO 2025-08-03 14:53:46,149 basehttp 19800 3592 "GET /api/courses/teachers/ HTTP/1.1" 200 2708
+INFO 2025-08-03 14:53:46,191 basehttp 19800 4284 "GET /api/courses/courses/ HTTP/1.1" 200 7050
+INFO 2025-08-03 15:08:07,738 autoreload 24596 23720 Watching for file changes with StatReloader
+INFO 2025-08-03 15:08:33,222 basehttp 24596 22288 "GET /api/courses/departments/ HTTP/1.1" 200 979
+INFO 2025-08-03 15:08:33,289 basehttp 24596 21840 "GET /api/courses/teachers/ HTTP/1.1" 200 7949
+INFO 2025-08-03 15:08:33,323 basehttp 24596 20952 "GET /api/courses/courses/ HTTP/1.1" 200 10545
+INFO 2025-08-03 15:08:37,230 basehttp 24596 21840 "GET /api/courses/departments/ HTTP/1.1" 200 979
+INFO 2025-08-03 15:08:37,288 basehttp 24596 22288 "GET /api/courses/teachers/ HTTP/1.1" 200 7949
+INFO 2025-08-03 15:08:37,361 basehttp 24596 20952 "GET /api/courses/courses/ HTTP/1.1" 200 10545
+WARNING 2025-08-03 15:10:00,795 log 24596 20952 Not Found: /api/ml/optimize-schedule/
+WARNING 2025-08-03 15:10:00,797 basehttp 24596 20952 "POST /api/ml/optimize-schedule/ HTTP/1.1" 404 23890
+INFO 2025-08-03 15:10:43,347 basehttp 24596 20952 "GET /api/courses/departments/?search= HTTP/1.1" 200 979
+INFO 2025-08-04 14:22:37,298 autoreload 17972 11100 Watching for file changes with StatReloader
+INFO 2025-08-04 14:23:43,687 basehttp 17972 17036 "OPTIONS /api/users/auth/login/ HTTP/1.1" 200 0
+INFO 2025-08-04 14:24:16,991 basehttp 17972 17036 "OPTIONS /api/users/auth/login/ HTTP/1.1" 200 0
+INFO 2025-08-04 14:24:48,135 basehttp 17972 17036 "OPTIONS /api/users/auth/login/ HTTP/1.1" 200 0
+INFO 2025-08-04 14:25:29,076 basehttp 17972 17036 "OPTIONS /api/users/auth/login/ HTTP/1.1" 200 0
+INFO 2025-08-04 14:25:51,883 basehttp 17972 24824 "OPTIONS /api/users/auth/login/ HTTP/1.1" 200 0
+WARNING 2025-08-04 14:25:52,671 log 17972 24824 Unauthorized: /api/users/auth/login/
+WARNING 2025-08-04 14:25:52,672 basehttp 17972 24824 "POST /api/users/auth/login/ HTTP/1.1" 401 34
+INFO 2025-08-04 14:26:04,203 basehttp 17972 24824 "POST /api/users/auth/login/ HTTP/1.1" 200 181
+INFO 2025-08-04 14:26:14,797 basehttp 17972 24824 "OPTIONS /api/courses/courses/ HTTP/1.1" 200 0
+INFO 2025-08-04 14:26:14,797 basehttp 17972 27636 "OPTIONS /api/courses/departments/ HTTP/1.1" 200 0
+INFO 2025-08-04 14:26:14,803 basehttp 17972 24824 "OPTIONS /api/courses/teachers/ HTTP/1.1" 200 0
+INFO 2025-08-04 14:26:14,856 basehttp 17972 24824 "GET /api/courses/departments/ HTTP/1.1" 200 979
+INFO 2025-08-04 14:26:14,963 basehttp 17972 24824 "GET /api/courses/teachers/ HTTP/1.1" 200 7949
+INFO 2025-08-04 14:26:14,971 basehttp 17972 27636 "GET /api/courses/courses/ HTTP/1.1" 200 10545
+INFO 2025-08-04 14:26:24,567 basehttp 17972 27636 "OPTIONS /api/ml/optimize-schedule/ HTTP/1.1" 200 0
+WARNING 2025-08-04 14:26:24,625 log 17972 27636 Not Found: /api/ml/optimize-schedule/
+WARNING 2025-08-04 14:26:24,627 basehttp 17972 27636 "POST /api/ml/optimize-schedule/ HTTP/1.1" 404 31310
+INFO 2025-08-04 14:29:44,505 autoreload 22836 19216 Watching for file changes with StatReloader
+INFO 2025-08-04 14:30:10,752 basehttp 22836 24388 "OPTIONS /api/users/auth/me/ HTTP/1.1" 200 0
+INFO 2025-08-04 14:30:10,761 basehttp 22836 24388 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-04 14:30:10,896 basehttp 22836 24388 "GET /api/courses/courses/ HTTP/1.1" 200 52
+INFO 2025-08-04 14:30:10,931 basehttp 22836 24388 "GET /api/courses/departments/ HTTP/1.1" 200 1719
+INFO 2025-08-04 14:30:11,015 basehttp 22836 24388 "GET /api/courses/teachers/ HTTP/1.1" 200 14926
+INFO 2025-08-04 16:02:16,706 basehttp 22836 10936 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 09:39:37,598 autoreload 22836 19216 C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\tzdata\__init__.py changed, reloading.
+INFO 2025-08-05 09:39:38,387 autoreload 18548 28504 Watching for file changes with StatReloader
+INFO 2025-08-05 09:42:02,921 basehttp 18548 19304 "OPTIONS /api/courses/departments/ HTTP/1.1" 200 0
+INFO 2025-08-05 09:42:02,922 basehttp 18548 27680 "OPTIONS /api/courses/teachers/ HTTP/1.1" 200 0
+INFO 2025-08-05 09:42:02,923 basehttp 18548 16784 "OPTIONS /api/courses/courses/ HTTP/1.1" 200 0
+INFO 2025-08-05 09:42:02,984 basehttp 18548 27680 "GET /api/courses/departments/ HTTP/1.1" 200 982
+INFO 2025-08-05 09:42:03,026 basehttp 18548 19304 "GET /api/courses/teachers/ HTTP/1.1" 200 7983
+INFO 2025-08-05 09:42:03,042 basehttp 18548 16784 "GET /api/courses/courses/ HTTP/1.1" 200 10566
+INFO 2025-08-05 09:43:02,564 autoreload 7020 17748 Watching for file changes with StatReloader
+INFO 2025-08-05 09:48:51,758 basehttp 18548 16708 "GET /api/courses/departments/ HTTP/1.1" 200 982
+INFO 2025-08-05 09:48:51,834 basehttp 18548 27592 "GET /api/courses/teachers/ HTTP/1.1" 200 7983
+INFO 2025-08-05 09:48:51,860 basehttp 18548 16236 "GET /api/courses/courses/ HTTP/1.1" 200 10566
+INFO 2025-08-05 09:49:14,102 basehttp 18548 16236 "OPTIONS /api/schedules/schedules/?date=2025-08-05&published_only=true HTTP/1.1" 200 0
+INFO 2025-08-05 09:49:14,151 basehttp 18548 16236 "GET /api/schedules/schedules/?date=2025-08-05&published_only=true HTTP/1.1" 200 6496
+INFO 2025-08-05 09:51:26,941 basehttp 18548 27592 "GET /api/courses/departments/ HTTP/1.1" 200 982
+INFO 2025-08-05 09:51:26,975 basehttp 18548 16708 "GET /api/courses/teachers/ HTTP/1.1" 200 7983
+INFO 2025-08-05 09:51:26,991 basehttp 18548 16236 "GET /api/courses/courses/ HTTP/1.1" 200 10566
+INFO 2025-08-05 09:55:13,877 autoreload 7020 17748 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\views.py changed, reloading.
+INFO 2025-08-05 09:55:13,885 autoreload 18548 28504 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\views.py changed, reloading.
+INFO 2025-08-05 09:55:14,555 autoreload 25740 16640 Watching for file changes with StatReloader
+INFO 2025-08-05 09:56:28,780 basehttp 25740 28036 "GET /api/courses/departments/ HTTP/1.1" 200 982
+INFO 2025-08-05 09:56:28,819 basehttp 25740 27052 "GET /api/courses/teachers/ HTTP/1.1" 200 7983
+INFO 2025-08-05 09:56:28,838 basehttp 25740 17292 "GET /api/courses/courses/ HTTP/1.1" 200 10566
+INFO 2025-08-05 10:01:01,440 basehttp 25740 10640 "OPTIONS /api/courses/courses/ HTTP/1.1" 200 0
+INFO 2025-08-05 10:01:01,440 basehttp 25740 22412 "OPTIONS /api/courses/departments/ HTTP/1.1" 200 0
+INFO 2025-08-05 10:01:01,441 basehttp 25740 29380 "OPTIONS /api/courses/teachers/ HTTP/1.1" 200 0
+INFO 2025-08-05 10:01:01,469 basehttp 25740 10640 "GET /api/courses/departments/ HTTP/1.1" 200 982
+INFO 2025-08-05 10:01:01,497 basehttp 25740 29380 "GET /api/courses/teachers/ HTTP/1.1" 200 7983
+INFO 2025-08-05 10:01:01,510 basehttp 25740 22412 "GET /api/courses/courses/ HTTP/1.1" 200 10566
+INFO 2025-08-05 10:01:19,408 basehttp 25740 22412 "OPTIONS /api/users/auth/me/ HTTP/1.1" 200 0
+INFO 2025-08-05 10:01:19,418 basehttp 25740 22412 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:01:19,874 basehttp 25740 29380 "GET /api/courses/departments/ HTTP/1.1" 200 982
+INFO 2025-08-05 10:01:19,927 basehttp 25740 10640 "GET /api/courses/teachers/ HTTP/1.1" 200 7983
+INFO 2025-08-05 10:01:19,956 basehttp 25740 22412 "GET /api/courses/courses/ HTTP/1.1" 200 10566
+INFO 2025-08-05 10:06:05,429 autoreload 23504 24744 Watching for file changes with StatReloader
+INFO 2025-08-05 10:06:12,911 basehttp 23504 8796 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:06:12,924 basehttp 23504 23172 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:06:12,977 basehttp 23504 29336 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:08:57,393 basehttp 23504 14932 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:08:57,394 basehttp 23504 28836 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:08:57,445 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:09:09,313 basehttp 23504 29000 "GET /api/schedules/schedules/?date=2025-08-05&published_only=true HTTP/1.1" 200 7460
+INFO 2025-08-05 10:09:54,678 basehttp 23504 28836 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:09:54,703 basehttp 23504 14932 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:09:54,734 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:10:02,500 basehttp 23504 14932 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:10:02,521 basehttp 23504 28836 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:10:02,588 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:10:24,908 basehttp 23504 28836 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:10:24,936 basehttp 23504 14932 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:10:25,006 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:10:38,392 basehttp 23504 29000 "OPTIONS /api/ml/optimize-schedule/ HTTP/1.1" 200 0
+WARNING 2025-08-05 10:10:38,404 log 23504 29000 Not Found: /api/ml/optimize-schedule/
+WARNING 2025-08-05 10:10:38,405 basehttp 23504 29000 "POST /api/ml/optimize-schedule/ HTTP/1.1" 404 31310
+INFO 2025-08-05 10:11:46,597 basehttp 23504 14932 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:11:46,621 basehttp 23504 28836 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:11:46,669 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:12:42,363 basehttp 23504 28836 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:12:42,394 basehttp 23504 14932 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:12:42,407 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:13:19,337 basehttp 23504 14932 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:13:19,353 basehttp 23504 28836 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:13:19,386 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:14:02,339 basehttp 23504 28836 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:14:02,360 basehttp 23504 14932 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:14:02,379 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:14:45,954 basehttp 23504 28836 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:14:45,958 basehttp 23504 14932 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:14:45,977 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:17:59,596 basehttp 23504 14292 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:17:59,602 basehttp 23504 1088 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:17:59,628 basehttp 23504 24328 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:18:05,089 basehttp 23504 24328 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:18:05,535 basehttp 23504 1088 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:18:05,549 basehttp 23504 14292 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:18:05,595 basehttp 23504 24328 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:18:37,264 basehttp 23504 24328 "OPTIONS /api/schedules/sessions/?date=2025-08-05&curriculum=MED-L1 HTTP/1.1" 200 0
+INFO 2025-08-05 10:18:37,320 basehttp 23504 24328 "GET /api/schedules/sessions/?date=2025-08-05&curriculum=MED-L1 HTTP/1.1" 200 18880
+INFO 2025-08-05 10:18:37,432 basehttp 23504 29000 "OPTIONS /api/schedules/sessions/?date=2025-08-05&curriculum=MED-L1 HTTP/1.1" 200 0
+INFO 2025-08-05 10:18:37,496 basehttp 23504 29000 "GET /api/schedules/sessions/?date=2025-08-05&curriculum=MED-L1 HTTP/1.1" 200 18880
+INFO 2025-08-05 10:18:38,035 basehttp 23504 24328 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:18:38,309 basehttp 23504 14292 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:18:38,321 basehttp 23504 1088 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:18:38,347 basehttp 23504 24328 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:18:39,749 basehttp 23504 28836 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:18:39,797 basehttp 23504 14932 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:18:39,803 basehttp 23504 29000 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:18:45,606 basehttp 23504 24328 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:18:45,778 basehttp 23504 1088 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:18:45,797 basehttp 23504 14292 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:18:45,868 basehttp 23504 24328 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:18:46,016 autoreload 23504 24744 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\views.py changed, reloading.
+INFO 2025-08-05 10:18:46,923 autoreload 24852 4748 Watching for file changes with StatReloader
+INFO 2025-08-05 10:19:06,176 basehttp 24852 23112 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:19:06,182 basehttp 24852 19144 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:19:06,226 basehttp 24852 27384 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:20:38,837 basehttp 24852 19144 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:20:38,845 basehttp 24852 23112 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:20:38,907 basehttp 24852 27384 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:20:49,111 basehttp 24852 23112 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:20:49,113 basehttp 24852 19144 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:20:49,148 basehttp 24852 27384 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:20:52,374 basehttp 24852 19144 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:20:52,392 basehttp 24852 23112 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:20:52,421 basehttp 24852 27384 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:22:00,175 basehttp 24852 27384 "OPTIONS /api/users/auth/login/ HTTP/1.1" 200 0
+INFO 2025-08-05 10:22:01,076 basehttp 24852 27384 "POST /api/users/auth/login/ HTTP/1.1" 200 181
+INFO 2025-08-05 10:22:01,211 basehttp 24852 23112 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:22:01,247 basehttp 24852 19144 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:22:01,304 basehttp 24852 27384 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:22:52,888 basehttp 24852 27384 "OPTIONS /api/users/auth/me/ HTTP/1.1" 200 0
+INFO 2025-08-05 10:22:52,900 basehttp 24852 27384 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:22:53,101 basehttp 24852 19144 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:22:53,109 basehttp 24852 23112 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:22:53,164 basehttp 24852 27384 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:22:53,936 basehttp 24852 14340 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:22:54,469 basehttp 24852 18064 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:22:54,533 basehttp 24852 18064 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:22:54,555 basehttp 24852 14340 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:23:15,070 basehttp 24852 27384 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:24:41,049 basehttp 24852 14340 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:24:41,356 basehttp 24852 18064 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:24:41,387 basehttp 24852 14340 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+INFO 2025-08-05 10:24:41,413 basehttp 24852 18064 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:24:41,738 basehttp 24852 23112 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-08-05 10:24:41,748 basehttp 24852 19144 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+INFO 2025-08-05 10:24:41,789 basehttp 24852 27384 "GET /api/courses/courses/ HTTP/1.1" 200 9704
+WARNING 2025-08-05 10:28:25,661 log 24852 18064 Forbidden: /api/courses/curricula/
+WARNING 2025-08-05 10:28:25,662 basehttp 24852 18064 "GET /api/courses/curricula/ HTTP/1.1" 403 58
+WARNING 2025-08-05 10:28:25,677 log 24852 27384 Forbidden: /api/courses/curricula/
+WARNING 2025-08-05 10:28:25,678 basehttp 24852 27384 "GET /api/courses/curricula/ HTTP/1.1" 403 58
+INFO 2025-08-05 10:28:58,216 autoreload 24852 4748 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\ml_engine\models.py changed, reloading.
+INFO 2025-08-05 10:28:59,127 autoreload 8496 29148 Watching for file changes with StatReloader
+INFO 2025-08-05 10:29:36,917 autoreload 8496 29148 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\ml_engine\views.py changed, reloading.
+INFO 2025-08-05 10:29:37,522 autoreload 23840 26732 Watching for file changes with StatReloader
+INFO 2025-08-05 10:30:43,662 basehttp 23840 14416 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+WARNING 2025-08-05 10:30:43,779 log 23840 14416 Forbidden: /api/courses/curricula/
+WARNING 2025-08-05 10:30:43,781 basehttp 23840 14416 "GET /api/courses/curricula/ HTTP/1.1" 403 58
+WARNING 2025-08-05 10:30:43,784 log 23840 14416 Forbidden: /api/courses/curricula/
+WARNING 2025-08-05 10:30:43,785 basehttp 23840 14416 "GET /api/courses/curricula/ HTTP/1.1" 403 58
+INFO 2025-08-05 10:31:27,949 basehttp 23840 14416 "GET /api/courses/teachers/ HTTP/1.1" 200 3322
+WARNING 2025-08-05 10:31:42,981 log 23840 14416 Forbidden: /api/courses/curricula/
+WARNING 2025-08-05 10:31:42,987 basehttp 23840 14416 "GET /api/courses/curricula/ HTTP/1.1" 403 58
+WARNING 2025-08-05 10:31:42,992 log 23840 23116 Forbidden: /api/courses/curricula/
+WARNING 2025-08-05 10:31:42,993 basehttp 23840 23116 "GET /api/courses/curricula/ HTTP/1.1" 403 58
+INFO 2025-08-05 10:32:12,772 basehttp 23840 23116 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:32:15,458 basehttp 23840 23116 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+WARNING 2025-08-05 10:32:17,736 log 23840 23116 Forbidden: /api/courses/curricula/
+WARNING 2025-08-05 10:32:17,738 basehttp 23840 23116 "GET /api/courses/curricula/ HTTP/1.1" 403 58
+WARNING 2025-08-05 10:32:17,740 log 23840 14416 Forbidden: /api/courses/curricula/
+WARNING 2025-08-05 10:32:17,741 basehttp 23840 14416 "GET /api/courses/curricula/ HTTP/1.1" 403 58
+INFO 2025-08-05 10:32:44,116 autoreload 23840 26732 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\courses\views.py changed, reloading.
+INFO 2025-08-05 10:32:44,539 autoreload 28008 15004 Watching for file changes with StatReloader
+INFO 2025-08-05 10:32:51,668 basehttp 28008 24304 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-08-05 10:32:51,745 basehttp 28008 24304 "GET /api/courses/curricula/ HTTP/1.1" 200 2142
+INFO 2025-08-05 10:32:51,783 basehttp 28008 24304 "GET /api/courses/curricula/ HTTP/1.1" 200 2142
+WARNING 2025-08-05 10:32:51,795 log 28008 24304 Forbidden: /api/schedules/sessions/
+WARNING 2025-08-05 10:32:51,796 basehttp 28008 24304 "GET /api/schedules/sessions/?curriculum=BIO-L1&date=2025-08-05 HTTP/1.1" 403 58
+WARNING 2025-08-05 10:32:55,009 log 28008 24304 Forbidden: /api/schedules/sessions/
+WARNING 2025-08-05 10:32:55,011 basehttp 28008 24304 "GET /api/schedules/sessions/?curriculum=CHIM-L1&date=2025-08-05 HTTP/1.1" 403 58
+WARNING 2025-08-05 10:32:58,015 log 28008 24304 Forbidden: /api/schedules/sessions/
+WARNING 2025-08-05 10:32:58,017 basehttp 28008 24304 "GET /api/schedules/sessions/?curriculum=MED-L1&date=2025-08-05 HTTP/1.1" 403 58
+WARNING 2025-08-05 10:32:59,039 log 28008 24304 Forbidden: /api/schedules/sessions/
+WARNING 2025-08-05 10:32:59,040 basehttp 28008 24304 "GET /api/schedules/sessions/?curriculum=PHAR-L1&date=2025-08-05 HTTP/1.1" 403 58
+WARNING 2025-08-05 10:32:59,921 log 28008 24304 Forbidden: /api/schedules/sessions/
+WARNING 2025-08-05 10:32:59,923 basehttp 28008 24304 "GET /api/schedules/sessions/?curriculum=MED-L3&date=2025-08-05 HTTP/1.1" 403 58
+WARNING 2025-08-05 10:33:01,052 log 28008 24304 Forbidden: /api/schedules/sessions/
+WARNING 2025-08-05 10:33:01,053 basehttp 28008 24304 "GET /api/schedules/sessions/?curriculum=MED-L2&date=2025-08-05 HTTP/1.1" 403 58
+INFO 2025-08-05 10:33:02,930 autoreload 28008 15004 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\views.py changed, reloading.
+INFO 2025-08-05 10:33:03,516 autoreload 24900 28700 Watching for file changes with StatReloader
+INFO 2025-08-05 10:33:07,190 basehttp 24900 28876 "GET /api/schedules/sessions/?curriculum=CHIM-L1&date=2025-08-05 HTTP/1.1" 200 2721

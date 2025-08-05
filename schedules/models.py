@@ -1,6 +1,7 @@
 # schedules/models.py
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from courses.models import Course, Teacher, Student, Curriculum
 from rooms.models import Room
 
@@ -50,6 +51,21 @@ class TimeSlot(models.Model):
 
 class Schedule(models.Model):
     """Modèle principal pour les emplois du temps"""
+    SCHEDULE_STATUS_CHOICES = [
+        ('draft', 'Brouillon'),
+        ('review', 'En révision'),
+        ('approved', 'Approuvé'),
+        ('published', 'Publié'),
+        ('archived', 'Archivé'),
+    ]
+    
+    SCHEDULE_TYPE_CHOICES = [
+        ('curriculum', 'Par cursus'),
+        ('teacher', 'Par enseignant'),
+        ('room', 'Par salle'),
+        ('global', 'Global'),
+    ]
+    
     name = models.CharField(max_length=200)
     academic_period = models.ForeignKey(AcademicPeriod, on_delete=models.CASCADE)
     curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, blank=True, null=True)
@@ -61,10 +77,18 @@ class Schedule(models.Model):
         ('M1', 'Master 1'),
         ('M2', 'Master 2'),
     ], blank=True)
+    schedule_type = models.CharField(max_length=15, choices=SCHEDULE_TYPE_CHOICES, default='curriculum')
+    status = models.CharField(max_length=15, choices=SCHEDULE_STATUS_CHOICES, default='draft')
     description = models.TextField(blank=True)
     is_published = models.BooleanField(default=False)
     published_at = models.DateTimeField(blank=True, null=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_schedules')
+    approved_at = models.DateTimeField(blank=True, null=True)
     version = models.IntegerField(default=1)
+    total_hours = models.IntegerField(default=0)
+    utilization_rate = models.FloatField(default=0.0)
+    conflict_score = models.FloatField(default=0.0)
+    quality_score = models.FloatField(default=0.0)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -74,6 +98,52 @@ class Schedule(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['academic_period', 'status']),
+            models.Index(fields=['curriculum', 'level']),
+            models.Index(fields=['schedule_type', 'is_published']),
+        ]
+    
+    def calculate_metrics(self):
+        """Calcule les métriques de l'emploi du temps"""
+        sessions = self.sessions.all()
+        total_sessions = sessions.count()
+        
+        if total_sessions == 0:
+            return
+            
+        # Heures totales
+        self.total_hours = sum(session.get_duration_hours() for session in sessions)
+        
+        # Taux d'utilisation des salles
+        unique_rooms = sessions.values_list('room', flat=True).distinct().count()
+        if unique_rooms > 0:
+            self.utilization_rate = total_sessions / (unique_rooms * 30)  # 30 créneaux par semaine
+        
+        # Score de conflit
+        conflicts = Conflict.objects.filter(schedule_session__schedule=self, is_resolved=False)
+        self.conflict_score = min(conflicts.count() / max(total_sessions, 1), 1.0)
+        
+        # Score de qualité global
+        self.quality_score = max(0, 1.0 - self.conflict_score + (self.utilization_rate * 0.3))
+        
+        self.save(update_fields=['total_hours', 'utilization_rate', 'conflict_score', 'quality_score'])
+    
+    def publish(self, approved_by=None):
+        """Publie l'emploi du temps"""
+        self.status = 'published'
+        self.is_published = True
+        self.published_at = timezone.now()
+        if approved_by:
+            self.approved_by = approved_by
+            self.approved_at = timezone.now()
+        self.save()
+    
+    def archive(self):
+        """Archive l'emploi du temps"""
+        self.status = 'archived'
+        self.is_published = False
+        self.save()
 
 
 class ScheduleSession(models.Model):
@@ -117,6 +187,65 @@ class ScheduleSession(models.Model):
     class Meta:
         unique_together = ['schedule', 'time_slot', 'room']
         ordering = ['time_slot__day_of_week', 'time_slot__start_time']
+        indexes = [
+            models.Index(fields=['schedule', 'time_slot']),
+            models.Index(fields=['teacher', 'time_slot']),
+            models.Index(fields=['room', 'time_slot']),
+            models.Index(fields=['course', 'session_type']),
+        ]
+    
+    def get_duration_hours(self):
+        """Retourne la durée en heures de la session"""
+        if self.specific_start_time and self.specific_end_time:
+            start = self.specific_start_time
+            end = self.specific_end_time
+        else:
+            start = self.time_slot.start_time
+            end = self.time_slot.end_time
+        
+        duration = timezone.datetime.combine(timezone.datetime.today(), end) - \
+                  timezone.datetime.combine(timezone.datetime.today(), start)
+        return duration.total_seconds() / 3600
+    
+    def get_conflicts(self):
+        """Retourne les conflits liés à cette session"""
+        return Conflict.objects.filter(
+            models.Q(schedule_session=self) | 
+            models.Q(conflicting_session=self)
+        ).filter(is_resolved=False)
+    
+    def has_conflicts(self):
+        """Vérifie si la session a des conflits non résolus"""
+        return self.get_conflicts().exists()
+    
+    def get_full_schedule_info(self):
+        """Retourne les informations complètes de planification"""
+        return {
+            'course': {
+                'code': self.course.code,
+                'name': self.course.name,
+                'type': self.session_type,
+                'level': self.course.level,
+            },
+            'teacher': {
+                'name': self.teacher.user.get_full_name(),
+                'id': self.teacher.employee_id,
+            },
+            'room': {
+                'code': self.room.code,
+                'name': self.room.name,
+                'capacity': self.room.capacity,
+                'building': self.room.building.name,
+            },
+            'time': {
+                'day': self.time_slot.get_day_of_week_display(),
+                'start': self.time_slot.start_time.strftime('%H:%M'),
+                'end': self.time_slot.end_time.strftime('%H:%M'),
+                'duration_hours': self.get_duration_hours(),
+            },
+            'students': self.expected_students,
+            'conflicts': self.has_conflicts(),
+        }
 
 
 class Conflict(models.Model):

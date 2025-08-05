@@ -17,7 +17,8 @@ from .serializers import (
     ModelTrainingTaskSerializer, FeatureImportanceSerializer, PredictionHistorySerializer,
     ModelPerformanceMetricSerializer, CoursePredictionSerializer, PredictionResponseSerializer
 )
-from .services import TimetableDataProcessor, MLTrainingService, TimetablePredictor
+from .simple_ml_service import ml_service
+# from .services import TimetableDataProcessor, MLTrainingService, TimetablePredictor  # Désactivé temporairement
 
 
 class TimetableDatasetViewSet(viewsets.ModelViewSet):
@@ -164,6 +165,7 @@ class ModelTrainingTaskViewSet(viewsets.ModelViewSet):
         dataset_id = request.data.get('dataset_id')
         model_types = request.data.get('model_types', ['xgboost', 'random_forest'])
         parameters = request.data.get('parameters', {})
+        async_training = request.data.get('async', True)
         
         if not dataset_id:
             return Response({
@@ -173,16 +175,36 @@ class ModelTrainingTaskViewSet(viewsets.ModelViewSet):
         try:
             dataset = get_object_or_404(TimetableDataset, id=dataset_id)
             
-            # Démarrer la tâche d'entraînement
-            training_task = MLTrainingService.start_training(
-                dataset=dataset,
-                model_types=model_types,
-                parameters=parameters,
-                user=request.user
-            )
+            if async_training:
+                # Lancement asynchrone avec Celery
+                from .tasks import train_ml_models_async
+                
+                task_result = train_ml_models_async.delay(
+                    dataset_id=dataset_id,
+                    model_types=model_types,
+                    parameters=parameters,
+                    user_id=request.user.id
+                )
+                
+                return Response({
+                    'message': 'Entraînement lancé en arrière-plan',
+                    'task_id': task_result.id,
+                    'async': True,
+                    'dataset': dataset.name,
+                    'algorithms': model_types
+                }, status=status.HTTP_202_ACCEPTED)
             
-            serializer = self.get_serializer(training_task)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                # Lancement synchrone
+                training_task = MLTrainingService.start_training(
+                    dataset=dataset,
+                    model_types=model_types,
+                    parameters=parameters,
+                    user=request.user
+                )
+                
+                serializer = self.get_serializer(training_task)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
             return Response({
@@ -199,6 +221,11 @@ class ModelTrainingTaskViewSet(viewsets.ModelViewSet):
                 'error': 'Impossible d\'annuler une tâche terminée'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Annuler la tâche Celery si elle existe
+        from .tasks import TaskMonitor
+        if hasattr(task, 'celery_task_id'):
+            TaskMonitor.cancel_task(task.celery_task_id)
+        
         task.status = 'failed'
         task.logs += f'\nTâche annulée par {request.user.username} à {timezone.now()}'
         task.save()
@@ -206,6 +233,23 @@ class ModelTrainingTaskViewSet(viewsets.ModelViewSet):
         return Response({
             'message': 'Tâche annulée avec succès'
         }, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['get'])
+    def progress(self, request, pk=None):
+        """Récupère le progrès d'une tâche"""
+        task = self.get_object()
+        
+        if hasattr(task, 'celery_task_id'):
+            from .tasks import TaskMonitor
+            progress_data = TaskMonitor.get_task_progress(task.celery_task_id)
+        else:
+            progress_data = {
+                'progress': task.progress,
+                'message': f'Statut: {task.status}',
+                'state': task.status
+            }
+        
+        return Response(progress_data, status=status.HTTP_200_OK)
 
 
 class PredictionRequestViewSet(viewsets.ModelViewSet):
@@ -397,3 +441,234 @@ class ModelPerformanceMetricViewSet(viewsets.ReadOnlyModelViewSet):
             'metric_name': metric_name,
             'models_performance': models_performance
         }, status=status.HTTP_200_OK)
+
+
+class ScheduleOptimizationViewSet(viewsets.ModelViewSet):
+    """ViewSet pour la gestion des optimisations d'emplois du temps"""
+    
+    def get_queryset(self):
+        from schedules.models import ScheduleOptimization
+        queryset = ScheduleOptimization.objects.all()
+        
+        # Filtrer par emploi du temps
+        schedule_id = self.request.query_params.get('schedule_id')
+        if schedule_id:
+            queryset = queryset.filter(schedule_id=schedule_id)
+        
+        return queryset.order_by('-started_at')
+    
+    @action(detail=False, methods=['post'])
+    def optimize_schedule(self, request):
+        """Lance l'optimisation d'un emploi du temps"""
+        schedule_id = request.data.get('schedule_id')
+        algorithm = request.data.get('algorithm', 'genetic')
+        parameters = request.data.get('parameters', {})
+        async_optimization = request.data.get('async', True)
+        
+        if not schedule_id:
+            return Response({
+                'error': 'schedule_id est requis'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from schedules.models import Schedule
+            schedule = get_object_or_404(Schedule, id=schedule_id)
+            
+            if async_optimization:
+                # Lancement asynchrone
+                from .tasks import optimize_schedule_async
+                
+                task_result = optimize_schedule_async.delay(
+                    schedule_id=schedule_id,
+                    algorithm=algorithm,
+                    algorithm_params=parameters,
+                    user_id=request.user.id
+                )
+                
+                return Response({
+                    'message': 'Optimisation lancée en arrière-plan',
+                    'task_id': task_result.id,
+                    'schedule_name': schedule.name,
+                    'algorithm': algorithm
+                }, status=status.HTTP_202_ACCEPTED)
+            
+            else:
+                # Lancement synchrone
+                from .algorithms import TimetableOptimizer
+                
+                optimizer = TimetableOptimizer()
+                result = optimizer.optimize_schedule(
+                    schedule=schedule,
+                    algorithm=algorithm,
+                    algorithm_params=parameters
+                )
+                
+                return Response(result, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de l\'optimisation: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def predict_conflicts(self, request):
+        """Prédit les conflits potentiels d'un emploi du temps"""
+        schedule_id = request.data.get('schedule_id')
+        
+        if not schedule_id:
+            return Response({
+                'error': 'schedule_id est requis'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from .tasks import predict_conflicts_async
+            
+            task_result = predict_conflicts_async.delay(schedule_id=schedule_id)
+            
+            return Response({
+                'message': 'Prédiction des conflits lancée',
+                'task_id': task_result.id,
+                'schedule_id': schedule_id
+            }, status=status.HTTP_202_ACCEPTED)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la prédiction: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def optimization_history(self, request):
+        """Récupère l'historique des optimisations"""
+        schedule_id = request.query_params.get('schedule_id')
+        
+        if not schedule_id:
+            return Response({
+                'error': 'schedule_id est requis'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from schedules.models import ScheduleOptimization
+            
+            optimizations = ScheduleOptimization.objects.filter(
+                schedule_id=schedule_id
+            ).order_by('-started_at')[:10]  # 10 dernières optimisations
+            
+            history = []
+            for opt in optimizations:
+                history.append({
+                    'id': opt.id,
+                    'algorithm': opt.algorithm_used,
+                    'conflicts_before': opt.conflicts_before,
+                    'conflicts_after': opt.conflicts_after,
+                    'optimization_score': opt.optimization_score,
+                    'started_at': opt.started_at.isoformat() if opt.started_at else None,
+                    'completed_at': opt.completed_at.isoformat() if opt.completed_at else None,
+                    'efficiency_metrics': opt.efficiency_metrics
+                })
+            
+            return Response({
+                'schedule_id': schedule_id,
+                'optimizations': history
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la récupération: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class MLDashboardViewSet(viewsets.ViewSet):
+    """ViewSet pour le dashboard ML"""
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Récupère les statistiques globales ML"""
+        try:
+            from .tasks import TaskMonitor
+            
+            stats = {
+                'models': {
+                    'active': MLModel.objects.filter(is_active=True).count(),
+                    'total': MLModel.objects.count()
+                },
+                'training_tasks': {
+                    'running': ModelTrainingTask.objects.filter(status='running').count(),
+                    'completed_today': ModelTrainingTask.objects.filter(
+                        status='completed',
+                        completed_at__date=timezone.now().date()
+                    ).count(),
+                    'total': ModelTrainingTask.objects.count()
+                },
+                'predictions': {
+                    'today': PredictionRequest.objects.filter(
+                        created_at__date=timezone.now().date()
+                    ).count(),
+                    'successful': PredictionRequest.objects.filter(
+                        status='completed'
+                    ).count(),
+                    'total': PredictionRequest.objects.count()
+                },
+                'running_tasks': len(TaskMonitor.get_running_tasks())
+            }
+            
+            return Response(stats, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la récupération des stats: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def running_tasks(self, request):
+        """Récupère les tâches en cours d'exécution"""
+        try:
+            from .tasks import TaskMonitor
+            
+            tasks = TaskMonitor.get_running_tasks()
+            return Response({
+                'tasks': tasks,
+                'count': len(tasks)
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la récupération des tâches: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def model_performance_summary(self, request):
+        """Récupère un résumé des performances des modèles"""
+        try:
+            performance_summary = []
+            
+            for model in MLModel.objects.filter(is_active=True):
+                latest_metrics = ModelPerformanceMetric.objects.filter(
+                    model=model
+                ).order_by('-recorded_at')[:3]
+                
+                performance_summary.append({
+                    'model_id': model.id,
+                    'model_name': model.name,
+                    'model_type': model.model_type,
+                    'created_at': model.created_at.isoformat(),
+                    'performance_metrics': model.performance_metrics,
+                    'latest_metrics': [
+                        {
+                            'name': metric.metric_name,
+                            'value': metric.metric_value,
+                            'date': metric.recorded_at.isoformat()
+                        }
+                        for metric in latest_metrics
+                    ]
+                })
+            
+            return Response({
+                'models': performance_summary,
+                'count': len(performance_summary)
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la récupération des performances: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

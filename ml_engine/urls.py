@@ -3,7 +3,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     TimetableDatasetViewSet, MLModelViewSet, ModelTrainingTaskViewSet,
-    PredictionRequestViewSet, PredictionHistoryViewSet, ModelPerformanceMetricViewSet
+    PredictionRequestViewSet, PredictionHistoryViewSet, ModelPerformanceMetricViewSet,
+    ScheduleOptimizationViewSet, MLDashboardViewSet
 )
 
 router = DefaultRouter()
@@ -13,6 +14,8 @@ router.register(r'training-tasks', ModelTrainingTaskViewSet)
 router.register(r'predictions', PredictionRequestViewSet)
 router.register(r'prediction-history', PredictionHistoryViewSet)
 router.register(r'performance-metrics', ModelPerformanceMetricViewSet)
+router.register(r'optimizations', ScheduleOptimizationViewSet, basename='optimization')
+router.register(r'dashboard', MLDashboardViewSet, basename='ml-dashboard')
 
 urlpatterns = [
     path('', include(router.urls)),
