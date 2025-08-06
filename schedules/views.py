@@ -251,6 +251,152 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             'unresolved_conflicts': list(conflicts_by_severity),
             'by_academic_period': list(by_period)
         })
+    
+    @action(detail=False, methods=['get'])
+    def weekly_sessions(self, request):
+        """Récupère toutes les sessions d'une semaine donnée"""
+        from datetime import datetime, timedelta
+        
+        # Paramètres
+        curriculum = request.query_params.get('curriculum')
+        week_start = request.query_params.get('week_start')  # Format: YYYY-MM-DD
+        teacher_id = request.query_params.get('teacher')
+        room_id = request.query_params.get('room')
+        
+        if not week_start:
+            return Response({
+                'error': 'Le paramètre week_start est requis (format YYYY-MM-DD)'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            start_date = datetime.strptime(week_start, '%Y-%m-%d').date()
+            end_date = start_date + timedelta(days=6)
+        except ValueError:
+            return Response({
+                'error': 'Format de date invalide. Utilisez YYYY-MM-DD'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Construction de la requête
+        queryset = ScheduleSession.objects.select_related(
+            'course', 'teacher', 'room', 'time_slot', 'schedule'
+        ).filter(
+            models.Q(specific_date__range=[start_date, end_date]) |
+            models.Q(specific_date__isnull=True, schedule__is_published=True)
+        ).order_by('time_slot__day_of_week', 'time_slot__start_time')
+        
+        # Filtres
+        if curriculum:
+            if curriculum.isdigit():
+                queryset = queryset.filter(schedule__curriculum_id=curriculum)
+            else:
+                queryset = queryset.filter(schedule__curriculum__code=curriculum)
+        
+        if teacher_id:
+            queryset = queryset.filter(teacher_id=teacher_id)
+            
+        if room_id:
+            queryset = queryset.filter(room_id=room_id)
+        
+        # Organiser par jour
+        week_data = {
+            'monday': [],
+            'tuesday': [],
+            'wednesday': [],
+            'thursday': [],
+            'friday': [],
+            'saturday': [],
+            'sunday': []
+        }
+        
+        for session in queryset:
+            day_key = session.time_slot.day_of_week
+            if day_key in week_data:
+                session_data = ScheduleSessionSerializer(session).data
+                # Ajouter la date spécifique si elle existe
+                if session.specific_date:
+                    session_data['effective_date'] = session.specific_date.strftime('%Y-%m-%d')
+                else:
+                    # Calculer la date effective basée sur le jour de la semaine
+                    days_mapping = {
+                        'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
+                        'friday': 4, 'saturday': 5, 'sunday': 6
+                    }
+                    if day_key in days_mapping:
+                        effective_date = start_date + timedelta(days=days_mapping[day_key])
+                        session_data['effective_date'] = effective_date.strftime('%Y-%m-%d')
+                
+                week_data[day_key].append(session_data)
+        
+        return Response({
+            'week_start': week_start,
+            'week_end': end_date.strftime('%Y-%m-%d'),
+            'sessions_by_day': week_data,
+            'total_sessions': sum(len(sessions) for sessions in week_data.values())
+        })
+    
+    @action(detail=False, methods=['get'])
+    def daily_sessions(self, request):
+        """Récupère toutes les sessions d'une journée donnée"""
+        from datetime import datetime
+        
+        # Paramètres
+        date_param = request.query_params.get('date')
+        curriculum = request.query_params.get('curriculum')
+        teacher_id = request.query_params.get('teacher')
+        room_id = request.query_params.get('room')
+        
+        if not date_param:
+            return Response({
+                'error': 'Le paramètre date est requis (format YYYY-MM-DD)'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            target_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+            day_of_week = target_date.strftime('%A').lower()
+        except ValueError:
+            return Response({
+                'error': 'Format de date invalide. Utilisez YYYY-MM-DD'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Construction de la requête
+        queryset = ScheduleSession.objects.select_related(
+            'course', 'teacher', 'room', 'time_slot', 'schedule'
+        ).filter(
+            models.Q(specific_date=target_date) |
+            models.Q(
+                specific_date__isnull=True,
+                time_slot__day_of_week=day_of_week,
+                schedule__is_published=True
+            )
+        ).order_by('time_slot__start_time')
+        
+        # Filtres
+        if curriculum:
+            if curriculum.isdigit():
+                queryset = queryset.filter(schedule__curriculum_id=curriculum)
+            else:
+                queryset = queryset.filter(schedule__curriculum__code=curriculum)
+        
+        if teacher_id:
+            queryset = queryset.filter(teacher_id=teacher_id)
+            
+        if room_id:
+            queryset = queryset.filter(room_id=room_id)
+        
+        # Sérialiser les résultats
+        sessions_data = []
+        for session in queryset:
+            session_data = ScheduleSessionSerializer(session).data
+            session_data['effective_date'] = date_param
+            sessions_data.append(session_data)
+        
+        return Response({
+            'date': date_param,
+            'day_of_week': target_date.strftime('%A'),
+            'day_of_week_fr': target_date.strftime('%A'),  # TODO: Traduire en français
+            'sessions': sessions_data,
+            'total_sessions': len(sessions_data)
+        })
 
 
 class ScheduleSessionViewSet(viewsets.ModelViewSet):
@@ -278,10 +424,14 @@ class ScheduleSessionViewSet(viewsets.ModelViewSet):
         if room_id:
             queryset = queryset.filter(room_id=room_id)
         
-        # Filtrage par curriculum
+        # Filtrage par curriculum (accepte à la fois l'ID et le code)
         curriculum = self.request.query_params.get('curriculum')
         if curriculum:
-            queryset = queryset.filter(schedule__curriculum__code=curriculum)
+            # Si c'est un nombre, filtrer par ID, sinon par code
+            if curriculum.isdigit():
+                queryset = queryset.filter(schedule__curriculum_id=curriculum)
+            else:
+                queryset = queryset.filter(schedule__curriculum__code=curriculum)
         
         # Filtrage par date spécifique
         date_param = self.request.query_params.get('date')
