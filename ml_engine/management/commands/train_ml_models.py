@@ -82,7 +82,7 @@ class Command(BaseCommand):
     
     def handle(self, *args, **options):
         self.stdout.write(
-            self.style.SUCCESS('🚀 Démarrage de l\'entraînement des modèles ML OAPET')
+            self.style.SUCCESS('==> Démarrage de l\'entraînement des modèles ML OAPET')
         )
         
         # Télécharger les datasets si demandé
@@ -119,7 +119,7 @@ class Command(BaseCommand):
             
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'✅ Entraînement lancé en arrière-plan\n'
+                    f'==> Entraînement lancé en arrière-plan\n'
                     f'   Task ID: {task_result.id}\n'
                     f'   Dataset: {dataset.name}\n'
                     f'   Algorithmes: {", ".join(options["algorithms"])}\n'
@@ -140,7 +140,7 @@ class Command(BaseCommand):
                 if result.status == 'completed':
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f'✅ Entraînement terminé avec succès!\n'
+                            f'==> Entraînement terminé avec succès!\n'
                             f'   Meilleur modèle: {result.results.get("best_model", "N/A")}\n'
                             f'   ID du modèle: {result.results.get("model_id", "N/A")}\n'
                             f'   Performance: {result.results.get("performance", {})}'
@@ -154,7 +154,7 @@ class Command(BaseCommand):
     
     def _download_datasets(self):
         """Télécharge les datasets ITC 2007"""
-        self.stdout.write("📥 Téléchargement des datasets ITC 2007...")
+        self.stdout.write("==> Téléchargement des datasets ITC 2007...")
         
         try:
             processor = TimetableDataProcessor()
@@ -162,7 +162,7 @@ class Command(BaseCommand):
             
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'✅ {len(downloaded_files)} datasets téléchargés'
+                    f'==> {len(downloaded_files)} datasets téléchargés'
                 )
             )
             
@@ -175,7 +175,7 @@ class Command(BaseCommand):
         if dataset_name:
             try:
                 dataset = TimetableDataset.objects.get(name=dataset_name)
-                self.stdout.write(f"📊 Utilisation du dataset: {dataset.name}")
+                self.stdout.write(f"==> Utilisation du dataset: {dataset.name}")
                 return dataset
             except TimetableDataset.DoesNotExist:
                 raise CommandError(f"Dataset '{dataset_name}' non trouvé")
@@ -190,8 +190,8 @@ class Command(BaseCommand):
                     description='Dataset combiné ITC 2007 pour entraînement',
                     metadata={'source': 'ITC 2007', 'auto_created': True}
                 )
-                self.stdout.write(f"📊 Dataset créé: {dataset.name}")
+                self.stdout.write(f"==> Dataset créé: {dataset.name}")
             else:
-                self.stdout.write(f"📊 Utilisation du dataset: {dataset.name}")
+                self.stdout.write(f"==> Utilisation du dataset: {dataset.name}")
             
             return dataset

@@ -398,12 +398,23 @@ class OAPETSeeder:
         print("[CURRICULUM] Création des curriculums...")
         
         curricula_data = [
-            {'code': 'MED-L1', 'name': 'Médecine - Licence 1', 'dept': 'MED', 'level': 'L1', 'credits': 60},
-            {'code': 'MED-L2', 'name': 'Médecine - Licence 2', 'dept': 'MED', 'level': 'L2', 'credits': 60},
-            {'code': 'MED-L3', 'name': 'Médecine - Licence 3', 'dept': 'MED', 'level': 'L3', 'credits': 60},
+            # Médecine avec plusieurs classes par niveau
+            {'code': 'MED-L1-A', 'name': 'Médecine - Licence 1 Classe A', 'dept': 'MED', 'level': 'L1', 'credits': 60},
+            {'code': 'MED-L1-B', 'name': 'Médecine - Licence 1 Classe B', 'dept': 'MED', 'level': 'L1', 'credits': 60},
+            {'code': 'MED-L1-C', 'name': 'Médecine - Licence 1 Classe C', 'dept': 'MED', 'level': 'L1', 'credits': 60},
+            {'code': 'MED-L2-A', 'name': 'Médecine - Licence 2 Classe A', 'dept': 'MED', 'level': 'L2', 'credits': 60},
+            {'code': 'MED-L2-B', 'name': 'Médecine - Licence 2 Classe B', 'dept': 'MED', 'level': 'L2', 'credits': 60},
+            {'code': 'MED-L3-A', 'name': 'Médecine - Licence 3 Classe A', 'dept': 'MED', 'level': 'L3', 'credits': 60},
+            {'code': 'MED-L3-B', 'name': 'Médecine - Licence 3 Classe B', 'dept': 'MED', 'level': 'L3', 'credits': 60},
+            {'code': 'MED-M1', 'name': 'Médecine - Master 1', 'dept': 'MED', 'level': 'M1', 'credits': 60},
+            {'code': 'MED-M2', 'name': 'Médecine - Master 2', 'dept': 'MED', 'level': 'M2', 'credits': 60},
+            # Autres filières
             {'code': 'PHAR-L1', 'name': 'Pharmacie - Licence 1', 'dept': 'PHAR', 'level': 'L1', 'credits': 60},
+            {'code': 'PHAR-L2', 'name': 'Pharmacie - Licence 2', 'dept': 'PHAR', 'level': 'L2', 'credits': 60},
             {'code': 'BIO-L1', 'name': 'Biologie - Licence 1', 'dept': 'BIO', 'level': 'L1', 'credits': 60},
-            {'code': 'CHIM-L1', 'name': 'Chimie - Licence 1', 'dept': 'CHIM', 'level': 'L1', 'credits': 60}
+            {'code': 'BIO-L2', 'name': 'Biologie - Licence 2', 'dept': 'BIO', 'level': 'L2', 'credits': 60},
+            {'code': 'CHIM-L1', 'name': 'Chimie - Licence 1', 'dept': 'CHIM', 'level': 'L1', 'credits': 60},
+            {'code': 'CHIM-L2', 'name': 'Chimie - Licence 2', 'dept': 'CHIM', 'level': 'L2', 'credits': 60}
         ]
         
         for curriculum_data in curricula_data:
@@ -422,18 +433,28 @@ class OAPETSeeder:
         
         # Association cours-curriculum
         associations = [
-            # Médecine L1
-            ('MED-L1', ['MED-L1-001', 'MED-L1-002', 'MED-L1-003', 'MED-L1-004']),
+            # Médecine L1 - toutes les classes ont les mêmes cours de base
+            ('MED-L1-A', ['MED-L1-001', 'MED-L1-002', 'MED-L1-003', 'MED-L1-004']),
+            ('MED-L1-B', ['MED-L1-001', 'MED-L1-002', 'MED-L1-003', 'MED-L1-004']),
+            ('MED-L1-C', ['MED-L1-001', 'MED-L1-002', 'MED-L1-003', 'MED-L1-004']),
             # Médecine L2
-            ('MED-L2', ['MED-L2-001', 'MED-L2-002', 'MED-L2-003']),
+            ('MED-L2-A', ['MED-L2-001', 'MED-L2-002', 'MED-L2-003']),
+            ('MED-L2-B', ['MED-L2-001', 'MED-L2-002', 'MED-L2-003']),
             # Médecine L3
-            ('MED-L3', ['MED-L3-001', 'MED-L3-002']),
-            # Pharmacie L1
+            ('MED-L3-A', ['MED-L3-001', 'MED-L3-002']),
+            ('MED-L3-B', ['MED-L3-001', 'MED-L3-002']),
+            # Médecine Master
+            ('MED-M1', ['MED-L3-001', 'MED-L3-002']),
+            ('MED-M2', ['MED-L3-001', 'MED-L3-002']),
+            # Pharmacie
             ('PHAR-L1', ['PHAR-L1-001', 'PHAR-L1-002']),
-            # Biologie L1
+            ('PHAR-L2', ['PHAR-L1-001', 'PHAR-L1-002']),
+            # Biologie
             ('BIO-L1', ['BIO-L1-001', 'BIO-L1-002']),
-            # Chimie L1
-            ('CHIM-L1', ['CHIM-L1-001', 'CHIM-L1-002'])
+            ('BIO-L2', ['BIO-L1-001', 'BIO-L1-002']),
+            # Chimie
+            ('CHIM-L1', ['CHIM-L1-001', 'CHIM-L1-002']),
+            ('CHIM-L2', ['CHIM-L1-001', 'CHIM-L1-002'])
         ]
         
         for curriculum_code, course_codes in associations:
@@ -518,16 +539,30 @@ class OAPETSeeder:
     
     def create_schedules_and_sessions(self):
         """Crée les emplois du temps et leurs sessions"""
-        print("[CURRICULUM] Création des emplois du temps et sessions...")
+        print("[SCHEDULES] Création des emplois du temps et sessions...")
         
-        # Emplois du temps
+        # Emplois du temps pour toutes les classes
         schedules_data = [
-            {'code': 'MED-L1-S1', 'name': 'Emploi du temps Médecine L1 - S1 2024/2025', 'curriculum': 'MED-L1', 'level': 'L1'},
-            {'code': 'MED-L2-S1', 'name': 'Emploi du temps Médecine L2 - S1 2024/2025', 'curriculum': 'MED-L2', 'level': 'L2'},
-            {'code': 'MED-L3-S1', 'name': 'Emploi du temps Médecine L3 - S1 2024/2025', 'curriculum': 'MED-L3', 'level': 'L3'},
+            # Médecine L1
+            {'code': 'MED-L1-A-S1', 'name': 'Emploi du temps Médecine L1 Classe A - S1 2024/2025', 'curriculum': 'MED-L1-A', 'level': 'L1'},
+            {'code': 'MED-L1-B-S1', 'name': 'Emploi du temps Médecine L1 Classe B - S1 2024/2025', 'curriculum': 'MED-L1-B', 'level': 'L1'},
+            {'code': 'MED-L1-C-S1', 'name': 'Emploi du temps Médecine L1 Classe C - S1 2024/2025', 'curriculum': 'MED-L1-C', 'level': 'L1'},
+            # Médecine L2
+            {'code': 'MED-L2-A-S1', 'name': 'Emploi du temps Médecine L2 Classe A - S1 2024/2025', 'curriculum': 'MED-L2-A', 'level': 'L2'},
+            {'code': 'MED-L2-B-S1', 'name': 'Emploi du temps Médecine L2 Classe B - S1 2024/2025', 'curriculum': 'MED-L2-B', 'level': 'L2'},
+            # Médecine L3
+            {'code': 'MED-L3-A-S1', 'name': 'Emploi du temps Médecine L3 Classe A - S1 2024/2025', 'curriculum': 'MED-L3-A', 'level': 'L3'},
+            {'code': 'MED-L3-B-S1', 'name': 'Emploi du temps Médecine L3 Classe B - S1 2024/2025', 'curriculum': 'MED-L3-B', 'level': 'L3'},
+            # Médecine Master
+            {'code': 'MED-M1-S1', 'name': 'Emploi du temps Médecine M1 - S1 2024/2025', 'curriculum': 'MED-M1', 'level': 'M1'},
+            {'code': 'MED-M2-S1', 'name': 'Emploi du temps Médecine M2 - S1 2024/2025', 'curriculum': 'MED-M2', 'level': 'M2'},
+            # Autres filières
             {'code': 'PHAR-L1-S1', 'name': 'Emploi du temps Pharmacie L1 - S1 2024/2025', 'curriculum': 'PHAR-L1', 'level': 'L1'},
+            {'code': 'PHAR-L2-S1', 'name': 'Emploi du temps Pharmacie L2 - S1 2024/2025', 'curriculum': 'PHAR-L2', 'level': 'L2'},
             {'code': 'BIO-L1-S1', 'name': 'Emploi du temps Biologie L1 - S1 2024/2025', 'curriculum': 'BIO-L1', 'level': 'L1'},
-            {'code': 'CHIM-L1-S1', 'name': 'Emploi du temps Chimie L1 - S1 2024/2025', 'curriculum': 'CHIM-L1', 'level': 'L1'}
+            {'code': 'BIO-L2-S1', 'name': 'Emploi du temps Biologie L2 - S1 2024/2025', 'curriculum': 'BIO-L2', 'level': 'L2'},
+            {'code': 'CHIM-L1-S1', 'name': 'Emploi du temps Chimie L1 - S1 2024/2025', 'curriculum': 'CHIM-L1', 'level': 'L1'},
+            {'code': 'CHIM-L2-S1', 'name': 'Emploi du temps Chimie L2 - S1 2024/2025', 'curriculum': 'CHIM-L2', 'level': 'L2'}
         ]
         
         for schedule_data in schedules_data:
@@ -546,132 +581,461 @@ class OAPETSeeder:
             )
             self.schedules[schedule_data['code']] = schedule
         
-        # Sessions spécifiques pour le 05/08/2025 (lundi)
-        today_date = date(2025, 8, 5)
-        today_sessions = [
-            # 08h-10h: Anatomie Générale (CM) - Médecine L1
-            {
-                'schedule': 'MED-L1-S1',
-                'course': 'MED-L1-001',
-                'room': 'AMPHI-MED',
-                'teacher': 'T001',
-                'date': today_date,
-                'start': time(8, 0),
-                'end': time(10, 0),
-                'type': 'CM',
-                'students': 150
-            },
-            # 10h30-12h30: Physiologie Humaine (CM) - Médecine L1  
-            {
-                'schedule': 'MED-L1-S1',
-                'course': 'MED-L1-002',
-                'room': 'AMPHI-A',
-                'teacher': 'T002',
-                'date': today_date,
-                'start': time(10, 30),
-                'end': time(12, 30),
-                'type': 'CM',
-                'students': 150
-            },
-            # 14h-16h: Histologie Pratique (TP) - Médecine L1
-            {
-                'schedule': 'MED-L1-S1',
-                'course': 'MED-L1-003',
-                'room': 'LABO-ANAT',
-                'teacher': 'T001',
-                'date': today_date,
-                'start': time(14, 0),
-                'end': time(16, 0),
-                'type': 'TP',
-                'students': 30
-            },
-            # 16h30-18h30: Anatomie Pathologique (CM) - Médecine L2
-            {
-                'schedule': 'MED-L2-S1',
-                'course': 'MED-L2-001',
-                'room': 'AMPHI-B',
-                'teacher': 'T001',
-                'date': today_date,
-                'start': time(16, 30),
-                'end': time(18, 30),
-                'type': 'CM',
-                'students': 120
-            },
-            # 19h-21h: Pharmacologie Générale (EXAMEN) - Médecine L2
-            {
-                'schedule': 'MED-L2-S1',
-                'course': 'MED-L2-002',
-                'room': 'AMPHI-MED',
-                'teacher': 'T003',
-                'date': today_date,
-                'start': time(19, 0),
-                'end': time(21, 0),
-                'type': 'EXAM',
-                'students': 120
-            },
-            # Sessions supplémentaires pour d'autres filières
-            # 08h-10h: Chimie Organique (CM) - Chimie L1
-            {
-                'schedule': 'CHIM-L1-S1',
-                'course': 'CHIM-L1-001',
-                'room': 'SALLE-101',
-                'teacher': 'T006',
-                'date': today_date,
-                'start': time(8, 0),
-                'end': time(10, 0),
-                'type': 'CM',
-                'students': 50
-            },
-            # 14h-16h: Biologie Cellulaire (CM) - Biologie L1
-            {
-                'schedule': 'BIO-L1-S1',
-                'course': 'BIO-L1-001',
-                'room': 'SALLE-102',
-                'teacher': 'T004',
-                'date': today_date,
-                'start': time(14, 0),
-                'end': time(16, 0),
-                'type': 'CM',
-                'students': 60
-            }
+        # Sessions pour toute la semaine du 5 au 9 août 2025
+        week_sessions = []
+        
+        # Lundi 5 août 2025
+        monday_sessions = [
+            # Médecine L1-A
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-MED', 'teacher': 'T001', 'date': date(2025, 8, 5), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-002', 'room': 'SALLE-MED-101', 'teacher': 'T002', 'date': date(2025, 8, 5), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TD', 'students': 50},
+            # Médecine L1-B
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-A', 'teacher': 'T001', 'date': date(2025, 8, 5), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 5), 'start': time(16, 30), 'end': time(18, 30), 'type': 'TP', 'students': 30},
+            # Médecine L1-C
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-B', 'teacher': 'T002', 'date': date(2025, 8, 5), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-004', 'room': 'TD-101', 'teacher': 'T002', 'date': date(2025, 8, 5), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TD', 'students': 35},
+            # Médecine L2-A
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-001', 'room': 'SALLE-201', 'teacher': 'T001', 'date': date(2025, 8, 5), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-003', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 5), 'start': time(19, 0), 'end': time(21, 0), 'type': 'TP', 'students': 24},
+            # Médecine L2-B  
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-002', 'room': 'SALLE-101', 'teacher': 'T003', 'date': date(2025, 8, 5), 'start': time(16, 30), 'end': time(18, 30), 'type': 'CM', 'students': 40},
+            # Autres filières
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-102', 'teacher': 'T003', 'date': date(2025, 8, 5), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 40},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-001', 'room': 'TD-102', 'teacher': 'T004', 'date': date(2025, 8, 5), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 30}
         ]
         
-        # Créer les sessions pour aujourd'hui
-        for session_data in today_sessions:
-            # Trouver le time_slot par défaut (on n'en a pas besoin avec specific_date)
-            default_slot = list(self.time_slots.values())[0]
-            
-            session, created = ScheduleSession.objects.get_or_create(
-                schedule=self.schedules[session_data['schedule']],
-                course=self.courses[session_data['course']],
-                room=self.rooms[session_data['room']],
-                teacher=self.teachers[session_data['teacher']],
-                specific_date=session_data['date'],
-                specific_start_time=session_data['start'],
-                specific_end_time=session_data['end'],
-                defaults={
-                    'session_type': session_data['type'],
-                    'expected_students': session_data['students'],
-                    'difficulty_score': 0.6,
-                    'complexity_level': 'Moyenne',
-                    'scheduling_priority': 3 if session_data['type'] == 'EXAM' else 2,
-                    'time_slot': default_slot,  # Obligatoire mais pas utilisé avec specific_date
-                    'is_cancelled': False
-                }
-            )
+        # Mardi 6 août 2025
+        tuesday_sessions = [
+            # Médecine L1-A
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 6), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 30},
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-004', 'room': 'TD-101', 'teacher': 'T002', 'date': date(2025, 8, 6), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TD', 'students': 35},
+            # Médecine L1-B
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-A', 'teacher': 'T002', 'date': date(2025, 8, 6), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-004', 'room': 'TD-102', 'teacher': 'T002', 'date': date(2025, 8, 6), 'start': time(16, 30), 'end': time(18, 30), 'type': 'TD', 'students': 30},
+            # Médecine L1-C
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-B', 'teacher': 'T001', 'date': date(2025, 8, 6), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 6), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 30},
+            # Médecine L2
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-002', 'room': 'SALLE-MED-101', 'teacher': 'T003', 'date': date(2025, 8, 6), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-001', 'room': 'SALLE-201', 'teacher': 'T001', 'date': date(2025, 8, 6), 'start': time(19, 0), 'end': time(21, 0), 'type': 'CM', 'students': 40},
+            # Médecine L3
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'AMPHI-MED', 'teacher': 'T005', 'date': date(2025, 8, 6), 'start': time(16, 30), 'end': time(18, 30), 'type': 'CM', 'students': 50},
+            # Autres filières
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-001', 'room': 'SALLE-101', 'teacher': 'T006', 'date': date(2025, 8, 6), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 25},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 6), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 20}
+        ]
         
-        print(f"[OK] {len(self.schedules)} emplois du temps et {len(today_sessions)} sessions pour le 05/08/2025 créés")
+        # Mercredi 7 août 2025
+        wednesday_sessions = [
+            # Médecine L1 - Révisions et examens
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-A', 'teacher': 'T001', 'date': date(2025, 8, 7), 'start': time(8, 0), 'end': time(10, 0), 'type': 'EXAM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-B', 'teacher': 'T001', 'date': date(2025, 8, 7), 'start': time(10, 30), 'end': time(12, 30), 'type': 'EXAM', 'students': 50},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-MED', 'teacher': 'T002', 'date': date(2025, 8, 7), 'start': time(14, 0), 'end': time(16, 0), 'type': 'EXAM', 'students': 50},
+            # Médecine L2 - Cours normaux
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-003', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 7), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 24},
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-002', 'room': 'SALLE-MED-101', 'teacher': 'T003', 'date': date(2025, 8, 7), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 40},
+            # Médecine L3
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-002', 'room': 'TD-101', 'teacher': 'T005', 'date': date(2025, 8, 7), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TD', 'students': 35},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-001', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 7), 'start': time(16, 30), 'end': time(18, 30), 'type': 'CM', 'students': 45},
+            # Autres filières
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 7), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 20},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 7), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 24}
+        ]
+        
+        # Jeudi 8 août 2025 - Journée très dense
+        thursday_sessions = [
+            # Médecine L1 - Sessions complètes
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-MED', 'teacher': 'T002', 'date': date(2025, 8, 8), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 8), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 30},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-004', 'room': 'TD-101', 'teacher': 'T002', 'date': date(2025, 8, 8), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TD', 'students': 30},
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-001', 'room': 'SALLE-MED-101', 'teacher': 'T001', 'date': date(2025, 8, 8), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-004', 'room': 'TD-102', 'teacher': 'T002', 'date': date(2025, 8, 8), 'start': time(16, 30), 'end': time(18, 30), 'type': 'TD', 'students': 35},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-A', 'teacher': 'T002', 'date': date(2025, 8, 8), 'start': time(19, 0), 'end': time(21, 0), 'type': 'CM', 'students': 50},
+            
+            # Médecine L2 - Sessions intensives
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-001', 'room': 'AMPHI-B', 'teacher': 'T001', 'date': date(2025, 8, 8), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-002', 'room': 'SALLE-201', 'teacher': 'T003', 'date': date(2025, 8, 8), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-003', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 8), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 24},
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-001', 'room': 'SALLE-101', 'teacher': 'T001', 'date': date(2025, 8, 8), 'start': time(16, 30), 'end': time(18, 30), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-002', 'room': 'SALLE-102', 'teacher': 'T003', 'date': date(2025, 8, 8), 'start': time(19, 0), 'end': time(21, 0), 'type': 'CM', 'students': 40},
+            
+            # Médecine L3 et Master - Sessions avancées
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-MED-101', 'teacher': 'T005', 'date': date(2025, 8, 8), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-002', 'room': 'TD-101', 'teacher': 'T005', 'date': date(2025, 8, 8), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TD', 'students': 35},
+            {'schedule': 'MED-M1-S1', 'course': 'MED-L3-001', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 8), 'start': time(16, 30), 'end': time(18, 30), 'type': 'CM', 'students': 30},
+            {'schedule': 'MED-M2-S1', 'course': 'MED-L3-002', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 8), 'start': time(19, 0), 'end': time(21, 0), 'type': 'TD', 'students': 25},
+            
+            # Autres filières - Sessions complètes
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-101', 'teacher': 'T003', 'date': date(2025, 8, 8), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 35},
+            {'schedule': 'PHAR-L2-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 8), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TP', 'students': 20},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 8), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 20},
+            
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-001', 'room': 'SALLE-102', 'teacher': 'T004', 'date': date(2025, 8, 8), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 30},
+            {'schedule': 'BIO-L2-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 8), 'start': time(16, 30), 'end': time(18, 30), 'type': 'TP', 'students': 24},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 8), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TP', 'students': 24},
+            
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-001', 'room': 'AMPHI-A', 'teacher': 'T006', 'date': date(2025, 8, 8), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 25},
+            {'schedule': 'CHIM-L2-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 8), 'start': time(16, 30), 'end': time(18, 30), 'type': 'TP', 'students': 20},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 8), 'start': time(19, 0), 'end': time(21, 0), 'type': 'TP', 'students': 20}
+        ]
+        
+        # Vendredi 9 août 2025 - Journée très chargée
+        friday_sessions = [
+            # Médecine L1 - Sessions du matin
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 9), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 30},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-004', 'room': 'TD-101', 'teacher': 'T002', 'date': date(2025, 8, 9), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TD', 'students': 35},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-MED', 'teacher': 'T001', 'date': date(2025, 8, 9), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 50},
+            
+            # Médecine L1 - Sessions de l'après-midi
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-002', 'room': 'SALLE-MED-101', 'teacher': 'T002', 'date': date(2025, 8, 9), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-A', 'teacher': 'T001', 'date': date(2025, 8, 9), 'start': time(16, 30), 'end': time(18, 30), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 9), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 30},
+            
+            # Médecine L2 - Sessions complètes
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-002', 'room': 'AMPHI-B', 'teacher': 'T003', 'date': date(2025, 8, 9), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-001', 'room': 'SALLE-201', 'teacher': 'T001', 'date': date(2025, 8, 9), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-003', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 9), 'start': time(16, 30), 'end': time(18, 30), 'type': 'TP', 'students': 24},
+            
+            # Médecine L3 - Séminaires intensifs
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-002', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 9), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TD', 'students': 30},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-001', 'room': 'TD-101', 'teacher': 'T005', 'date': date(2025, 8, 9), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 45},
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-101', 'teacher': 'T005', 'date': date(2025, 8, 9), 'start': time(16, 30), 'end': time(18, 30), 'type': 'CM', 'students': 50},
+            
+            # Master - Séminaires de recherche
+            {'schedule': 'MED-M1-S1', 'course': 'MED-L3-001', 'room': 'SALLE-102', 'teacher': 'T005', 'date': date(2025, 8, 9), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 30},
+            {'schedule': 'MED-M2-S1', 'course': 'MED-L3-002', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 9), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TD', 'students': 25},
+            
+            # Autres filières - Sessions intensives de fin de semaine
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-101', 'teacher': 'T003', 'date': date(2025, 8, 9), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 40},
+            {'schedule': 'PHAR-L2-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 9), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TP', 'students': 20},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 9), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 20},
+            
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-001', 'room': 'AMPHI-A', 'teacher': 'T004', 'date': date(2025, 8, 9), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 30},
+            {'schedule': 'BIO-L2-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 9), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TP', 'students': 24},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 9), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 24},
+            
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-001', 'room': 'SALLE-102', 'teacher': 'T006', 'date': date(2025, 8, 9), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 30},
+            {'schedule': 'CHIM-L2-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 9), 'start': time(16, 30), 'end': time(18, 30), 'type': 'TP', 'students': 20},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 9), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TP', 'students': 20}
+        ]
+        
+        # Samedi 10 août 2025 - Sessions supplémentaires
+        saturday_sessions = [
+            # Médecine L1 - Sessions de rattrapage et révisions
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-A', 'teacher': 'T001', 'date': date(2025, 8, 10), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-B', 'teacher': 'T002', 'date': date(2025, 8, 10), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 10), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TP', 'students': 30},
+            
+            # Médecine L2 - Examens pratiques
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-003', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 10), 'start': time(8, 0), 'end': time(10, 0), 'type': 'EXAM', 'students': 40},
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-002', 'room': 'AMPHI-MED', 'teacher': 'T003', 'date': date(2025, 8, 10), 'start': time(10, 30), 'end': time(12, 30), 'type': 'EXAM', 'students': 40},
+            
+            # Médecine L3 - Séminaires spéciaux samedi
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-MED-101', 'teacher': 'T005', 'date': date(2025, 8, 10), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-002', 'room': 'TD-101', 'teacher': 'T005', 'date': date(2025, 8, 10), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TD', 'students': 35},
+            
+            # Master - Conférences et séminaires de recherche
+            {'schedule': 'MED-M1-S1', 'course': 'MED-L3-002', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 10), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TD', 'students': 30},
+            {'schedule': 'MED-M2-S1', 'course': 'MED-L3-001', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 10), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TD', 'students': 25},
+            
+            # Autres filières - Sessions de rattrapage
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 10), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 20},
+            {'schedule': 'PHAR-L2-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-102', 'teacher': 'T003', 'date': date(2025, 8, 10), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 35},
+            
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-001', 'room': 'SALLE-101', 'teacher': 'T004', 'date': date(2025, 8, 10), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 30},
+            {'schedule': 'BIO-L2-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 10), 'start': time(16, 30), 'end': time(18, 30), 'type': 'TP', 'students': 24},
+            
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-001', 'room': 'SALLE-101', 'teacher': 'T006', 'date': date(2025, 8, 10), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 25},
+            {'schedule': 'CHIM-L2-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 10), 'start': time(16, 30), 'end': time(18, 30), 'type': 'TP', 'students': 20}
+        ]
+        
+        # SEMAINE ACTUELLE (18-24 août 2025) - EMPLOI DU TEMPS TRÈS CHARGÉ
+        
+        # Lundi 18 août 2025 - Journée ultra-dense
+        current_monday_sessions = [
+            # Matin - Sessions simultanées multiples
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-MED', 'teacher': 'T001', 'date': date(2025, 8, 18), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-A', 'teacher': 'T002', 'date': date(2025, 8, 18), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 18), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 30},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-101', 'teacher': 'T003', 'date': date(2025, 8, 18), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 40},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-001', 'room': 'SALLE-102', 'teacher': 'T004', 'date': date(2025, 8, 18), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 30},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-001', 'room': 'TD-101', 'teacher': 'T006', 'date': date(2025, 8, 18), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TD', 'students': 25},
+            
+            # 8h30-10h30 - Chevauchement partiel
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-001', 'room': 'SALLE-MED-101', 'teacher': 'T001', 'date': date(2025, 8, 18), 'start': time(8, 30), 'end': time(10, 30), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 18), 'start': time(8, 30), 'end': time(10, 30), 'type': 'CM', 'students': 35},
+            
+            # 9h-11h
+            {'schedule': 'PHAR-L2-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 18), 'start': time(9, 0), 'end': time(11, 0), 'type': 'TP', 'students': 20},
+            {'schedule': 'BIO-L2-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 18), 'start': time(9, 0), 'end': time(11, 0), 'type': 'TP', 'students': 24},
+            
+            # 10h-12h
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-004', 'room': 'TD-102', 'teacher': 'T002', 'date': date(2025, 8, 18), 'start': time(10, 0), 'end': time(12, 0), 'type': 'TD', 'students': 35},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-B', 'teacher': 'T001', 'date': date(2025, 8, 18), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 50},
+            
+            # 11h-13h
+            {'schedule': 'CHIM-L2-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 18), 'start': time(11, 0), 'end': time(13, 0), 'type': 'TP', 'students': 20},
+            
+            # Après-midi - Sessions intensives
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-002', 'room': 'AMPHI-MED', 'teacher': 'T003', 'date': date(2025, 8, 18), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-002', 'room': 'TD-101', 'teacher': 'T005', 'date': date(2025, 8, 18), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TD', 'students': 30},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-ANAT', 'teacher': 'T003', 'date': date(2025, 8, 18), 'start': time(14, 30), 'end': time(16, 30), 'type': 'TP', 'students': 20},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 18), 'start': time(15, 0), 'end': time(17, 0), 'type': 'TP', 'students': 24},
+            
+            # 16h-18h
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-002', 'room': 'SALLE-MED-101', 'teacher': 'T002', 'date': date(2025, 8, 18), 'start': time(16, 0), 'end': time(18, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 18), 'start': time(17, 0), 'end': time(19, 0), 'type': 'TP', 'students': 20},
+            
+            # Soirée - Sessions tardives
+            {'schedule': 'MED-M1-S1', 'course': 'MED-L3-001', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 18), 'start': time(18, 30), 'end': time(20, 30), 'type': 'CM', 'students': 25},
+            {'schedule': 'MED-M2-S1', 'course': 'MED-L3-002', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 18), 'start': time(19, 0), 'end': time(21, 0), 'type': 'TD', 'students': 20}
+        ]
+        
+        # Mardi 19 août 2025 - Journée de TP intensifs
+        current_tuesday_sessions = [
+            # Matinée - Laboratoires en parallèle
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 19), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 30},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 19), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 20},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 19), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 24},
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-001', 'room': 'AMPHI-MED', 'teacher': 'T001', 'date': date(2025, 8, 19), 'start': time(8, 30), 'end': time(10, 30), 'type': 'CM', 'students': 40},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-001', 'room': 'SALLE-101', 'teacher': 'T006', 'date': date(2025, 8, 19), 'start': time(9, 0), 'end': time(11, 0), 'type': 'CM', 'students': 25},
+            
+            # 10h-12h - Rotation des groupes
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 19), 'start': time(10, 0), 'end': time(12, 0), 'type': 'TP', 'students': 30},
+            {'schedule': 'PHAR-L2-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 19), 'start': time(10, 0), 'end': time(12, 0), 'type': 'TP', 'students': 20},
+            {'schedule': 'BIO-L2-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 19), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TP', 'students': 24},
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-MED-101', 'teacher': 'T005', 'date': date(2025, 8, 19), 'start': time(11, 0), 'end': time(13, 0), 'type': 'CM', 'students': 35},
+            
+            # Après-midi - Sessions mixtes
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 19), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 30},
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-003', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 19), 'start': time(14, 30), 'end': time(16, 30), 'type': 'TP', 'students': 24},
+            {'schedule': 'CHIM-L2-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 19), 'start': time(15, 0), 'end': time(17, 0), 'type': 'TP', 'students': 20},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-002', 'room': 'TD-101', 'teacher': 'T005', 'date': date(2025, 8, 19), 'start': time(16, 0), 'end': time(18, 0), 'type': 'TD', 'students': 30},
+            
+            # Soirée - Sessions avancées
+            {'schedule': 'MED-M1-S1', 'course': 'MED-L3-001', 'room': 'AMPHI-A', 'teacher': 'T005', 'date': date(2025, 8, 19), 'start': time(18, 0), 'end': time(20, 0), 'type': 'CM', 'students': 25},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-201', 'teacher': 'T003', 'date': date(2025, 8, 19), 'start': time(19, 0), 'end': time(21, 0), 'type': 'CM', 'students': 40}
+        ]
+        
+        # Mercredi 20 août 2025 - Journée d'examens et cours magistraux
+        current_wednesday_sessions = [
+            # Matin - Examens simultanés
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-MED', 'teacher': 'T001', 'date': date(2025, 8, 20), 'start': time(8, 0), 'end': time(10, 0), 'type': 'EXAM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-A', 'teacher': 'T001', 'date': date(2025, 8, 20), 'start': time(8, 0), 'end': time(10, 0), 'type': 'EXAM', 'students': 50},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-B', 'teacher': 'T001', 'date': date(2025, 8, 20), 'start': time(8, 0), 'end': time(10, 0), 'type': 'EXAM', 'students': 50},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-101', 'teacher': 'T003', 'date': date(2025, 8, 20), 'start': time(8, 30), 'end': time(10, 30), 'type': 'EXAM', 'students': 40},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-001', 'room': 'SALLE-102', 'teacher': 'T004', 'date': date(2025, 8, 20), 'start': time(9, 0), 'end': time(11, 0), 'type': 'EXAM', 'students': 30},
+            
+            # 10h-12h - Cours normaux pendant que d'autres passent les examens
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-002', 'room': 'SALLE-MED-101', 'teacher': 'T003', 'date': date(2025, 8, 20), 'start': time(10, 0), 'end': time(12, 0), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 20), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 35},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 20), 'start': time(11, 0), 'end': time(13, 0), 'type': 'TP', 'students': 25},
+            
+            # Après-midi - Rattrapage et TD
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-001', 'room': 'TD-101', 'teacher': 'T001', 'date': date(2025, 8, 20), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TD', 'students': 40},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-002', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 20), 'start': time(14, 30), 'end': time(16, 30), 'type': 'TD', 'students': 30},
+            {'schedule': 'PHAR-L2-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-102', 'teacher': 'T003', 'date': date(2025, 8, 20), 'start': time(15, 0), 'end': time(17, 0), 'type': 'CM', 'students': 30},
+            {'schedule': 'BIO-L2-S1', 'course': 'BIO-L1-001', 'room': 'SALLE-MED-101', 'teacher': 'T004', 'date': date(2025, 8, 20), 'start': time(16, 0), 'end': time(18, 0), 'type': 'CM', 'students': 25},
+            
+            # Soirée - Cours de rattrapage
+            {'schedule': 'CHIM-L2-S1', 'course': 'CHIM-L1-001', 'room': 'SALLE-201', 'teacher': 'T006', 'date': date(2025, 8, 20), 'start': time(18, 0), 'end': time(20, 0), 'type': 'CM', 'students': 20},
+            {'schedule': 'MED-M1-S1', 'course': 'MED-L3-002', 'room': 'AMPHI-B', 'teacher': 'T005', 'date': date(2025, 8, 20), 'start': time(19, 0), 'end': time(21, 0), 'type': 'TD', 'students': 25}
+        ]
+        
+        # Jeudi 21 août 2025 - Pic d'activité maximum
+        current_thursday_sessions = [
+            # Matin - Sessions ultra-intensives
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-MED', 'teacher': 'T002', 'date': date(2025, 8, 21), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-004', 'room': 'TD-101', 'teacher': 'T002', 'date': date(2025, 8, 21), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TD', 'students': 35},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 21), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 30},
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-003', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 21), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 24},
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-MED-101', 'teacher': 'T005', 'date': date(2025, 8, 21), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 35},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 21), 'start': time(8, 0), 'end': time(10, 0), 'type': 'TP', 'students': 20},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-001', 'room': 'SALLE-101', 'teacher': 'T004', 'date': date(2025, 8, 21), 'start': time(8, 30), 'end': time(10, 30), 'type': 'CM', 'students': 30},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-001', 'room': 'SALLE-102', 'teacher': 'T006', 'date': date(2025, 8, 21), 'start': time(9, 0), 'end': time(11, 0), 'type': 'CM', 'students': 25},
+            
+            # 10h-12h - Continuité
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-A', 'teacher': 'T001', 'date': date(2025, 8, 21), 'start': time(10, 0), 'end': time(12, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-002', 'room': 'SALLE-201', 'teacher': 'T003', 'date': date(2025, 8, 21), 'start': time(10, 30), 'end': time(12, 30), 'type': 'CM', 'students': 40},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-002', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 21), 'start': time(11, 0), 'end': time(13, 0), 'type': 'TD', 'students': 30},
+            {'schedule': 'PHAR-L2-S1', 'course': 'PHAR-L1-001', 'room': 'AMPHI-B', 'teacher': 'T003', 'date': date(2025, 8, 21), 'start': time(11, 30), 'end': time(13, 30), 'type': 'CM', 'students': 30},
+            
+            # Après-midi - Sessions marathon
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-002', 'room': 'SALLE-MED-101', 'teacher': 'T002', 'date': date(2025, 8, 21), 'start': time(14, 0), 'end': time(16, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-004', 'room': 'TD-101', 'teacher': 'T002', 'date': date(2025, 8, 21), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TD', 'students': 35},
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-001', 'room': 'AMPHI-MED', 'teacher': 'T001', 'date': date(2025, 8, 21), 'start': time(14, 30), 'end': time(16, 30), 'type': 'CM', 'students': 40},
+            {'schedule': 'BIO-L2-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 21), 'start': time(15, 0), 'end': time(17, 0), 'type': 'TP', 'students': 24},
+            {'schedule': 'CHIM-L2-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 21), 'start': time(15, 30), 'end': time(17, 30), 'type': 'TP', 'students': 20},
+            
+            # 16h-18h - Rush final de la journée
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 21), 'start': time(16, 0), 'end': time(18, 0), 'type': 'CM', 'students': 35},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-101', 'teacher': 'T003', 'date': date(2025, 8, 21), 'start': time(16, 30), 'end': time(18, 30), 'type': 'CM', 'students': 40},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-001', 'room': 'SALLE-102', 'teacher': 'T004', 'date': date(2025, 8, 21), 'start': time(17, 0), 'end': time(19, 0), 'type': 'CM', 'students': 30},
+            
+            # Soirée - Sessions de pointe
+            {'schedule': 'MED-M1-S1', 'course': 'MED-L3-001', 'room': 'AMPHI-A', 'teacher': 'T005', 'date': date(2025, 8, 21), 'start': time(18, 30), 'end': time(20, 30), 'type': 'CM', 'students': 25},
+            {'schedule': 'MED-M2-S1', 'course': 'MED-L3-002', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 21), 'start': time(19, 0), 'end': time(21, 0), 'type': 'TD', 'students': 20},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 21), 'start': time(19, 30), 'end': time(21, 30), 'type': 'TP', 'students': 25}
+        ]
+        
+        # Vendredi 22 août 2025 - Journée de synthèse intensive
+        current_friday_sessions = [
+            # Matin - Révisions et cours magistraux
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-001', 'room': 'AMPHI-MED', 'teacher': 'T001', 'date': date(2025, 8, 22), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-A', 'teacher': 'T002', 'date': date(2025, 8, 22), 'start': time(8, 0), 'end': time(10, 0), 'type': 'CM', 'students': 50},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-004', 'room': 'TD-101', 'teacher': 'T002', 'date': date(2025, 8, 22), 'start': time(8, 30), 'end': time(10, 30), 'type': 'TD', 'students': 35},
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-002', 'room': 'SALLE-MED-101', 'teacher': 'T003', 'date': date(2025, 8, 22), 'start': time(9, 0), 'end': time(11, 0), 'type': 'CM', 'students': 40},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-101', 'teacher': 'T003', 'date': date(2025, 8, 22), 'start': time(9, 30), 'end': time(11, 30), 'type': 'CM', 'students': 40},
+            
+            # 10h-12h - TP de fin de semaine
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 22), 'start': time(10, 0), 'end': time(12, 0), 'type': 'CM', 'students': 35},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 22), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TP', 'students': 24},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T006', 'date': date(2025, 8, 22), 'start': time(11, 0), 'end': time(13, 0), 'type': 'TP', 'students': 25},
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 22), 'start': time(11, 30), 'end': time(13, 30), 'type': 'TP', 'students': 30},
+            
+            # Après-midi - Sessions finales de la semaine
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 22), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TP', 'students': 30},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-002', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 22), 'start': time(14, 30), 'end': time(16, 30), 'type': 'TD', 'students': 30},
+            {'schedule': 'PHAR-L2-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 22), 'start': time(15, 0), 'end': time(17, 0), 'type': 'TP', 'students': 20},
+            {'schedule': 'BIO-L2-S1', 'course': 'BIO-L1-001', 'room': 'SALLE-102', 'teacher': 'T004', 'date': date(2025, 8, 22), 'start': time(16, 0), 'end': time(18, 0), 'type': 'CM', 'students': 25},
+            {'schedule': 'CHIM-L2-S1', 'course': 'CHIM-L1-001', 'room': 'AMPHI-B', 'teacher': 'T006', 'date': date(2025, 8, 22), 'start': time(16, 30), 'end': time(18, 30), 'type': 'CM', 'students': 20},
+            
+            # Soirée - Fin de semaine intensive
+            {'schedule': 'MED-M1-S1', 'course': 'MED-L3-002', 'room': 'SALLE-MED-101', 'teacher': 'T005', 'date': date(2025, 8, 22), 'start': time(18, 0), 'end': time(20, 0), 'type': 'TD', 'students': 25},
+            {'schedule': 'MED-M2-S1', 'course': 'MED-L3-001', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 22), 'start': time(19, 0), 'end': time(21, 0), 'type': 'CM', 'students': 20}
+        ]
+        
+        # Samedi 23 août 2025 - Journée de rattrapage et examens
+        current_saturday_sessions = [
+            # Matin - Examens de rattrapage
+            {'schedule': 'MED-L1-A-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-MED', 'teacher': 'T002', 'date': date(2025, 8, 23), 'start': time(8, 0), 'end': time(10, 0), 'type': 'EXAM', 'students': 50},
+            {'schedule': 'MED-L1-B-S1', 'course': 'MED-L1-002', 'room': 'AMPHI-A', 'teacher': 'T002', 'date': date(2025, 8, 23), 'start': time(8, 0), 'end': time(10, 0), 'type': 'EXAM', 'students': 50},
+            {'schedule': 'PHAR-L1-S1', 'course': 'PHAR-L1-002', 'room': 'LABO-CHIM-1', 'teacher': 'T003', 'date': date(2025, 8, 23), 'start': time(8, 30), 'end': time(10, 30), 'type': 'EXAM', 'students': 20},
+            {'schedule': 'BIO-L1-S1', 'course': 'BIO-L1-002', 'room': 'LABO-BIO-1', 'teacher': 'T004', 'date': date(2025, 8, 23), 'start': time(9, 0), 'end': time(11, 0), 'type': 'EXAM', 'students': 24},
+            {'schedule': 'CHIM-L1-S1', 'course': 'CHIM-L1-002', 'room': 'SALLE-101', 'teacher': 'T006', 'date': date(2025, 8, 23), 'start': time(9, 30), 'end': time(11, 30), 'type': 'EXAM', 'students': 25},
+            
+            # 10h-12h - Cours de soutien
+            {'schedule': 'MED-L2-A-S1', 'course': 'MED-L2-001', 'room': 'SALLE-MED-101', 'teacher': 'T001', 'date': date(2025, 8, 23), 'start': time(10, 0), 'end': time(12, 0), 'type': 'TD', 'students': 40},
+            {'schedule': 'MED-L3-A-S1', 'course': 'MED-L3-001', 'room': 'SALLE-201', 'teacher': 'T005', 'date': date(2025, 8, 23), 'start': time(10, 30), 'end': time(12, 30), 'type': 'TD', 'students': 35},
+            {'schedule': 'MED-L1-C-S1', 'course': 'MED-L1-003', 'room': 'LABO-ANAT', 'teacher': 'T001', 'date': date(2025, 8, 23), 'start': time(11, 0), 'end': time(13, 0), 'type': 'TP', 'students': 30},
+            
+            # Après-midi - Sessions de fin de semaine
+            {'schedule': 'MED-L2-B-S1', 'course': 'MED-L2-002', 'room': 'TD-101', 'teacher': 'T003', 'date': date(2025, 8, 23), 'start': time(14, 0), 'end': time(16, 0), 'type': 'TD', 'students': 40},
+            {'schedule': 'MED-L3-B-S1', 'course': 'MED-L3-002', 'room': 'TD-102', 'teacher': 'T005', 'date': date(2025, 8, 23), 'start': time(14, 30), 'end': time(16, 30), 'type': 'TD', 'students': 30},
+            {'schedule': 'PHAR-L2-S1', 'course': 'PHAR-L1-001', 'room': 'SALLE-102', 'teacher': 'T003', 'date': date(2025, 8, 23), 'start': time(15, 0), 'end': time(17, 0), 'type': 'CM', 'students': 30},
+            {'schedule': 'BIO-L2-S1', 'course': 'BIO-L1-001', 'room': 'AMPHI-B', 'teacher': 'T004', 'date': date(2025, 8, 23), 'start': time(16, 0), 'end': time(18, 0), 'type': 'CM', 'students': 25},
+            
+            # Soirée - Séances de clôture de semaine
+            {'schedule': 'MED-M1-S1', 'course': 'MED-L3-001', 'room': 'SALLE-MED-101', 'teacher': 'T005', 'date': date(2025, 8, 23), 'start': time(18, 0), 'end': time(20, 0), 'type': 'CM', 'students': 25},
+            {'schedule': 'CHIM-L2-S1', 'course': 'CHIM-L1-001', 'room': 'SALLE-201', 'teacher': 'T006', 'date': date(2025, 8, 23), 'start': time(19, 0), 'end': time(21, 0), 'type': 'CM', 'students': 20}
+        ]
+        
+        # SESSIONS COMBINÉES - Semaine historique (5-10 août) + Semaine actuelle (18-23 août)
+        current_week_sessions = (current_monday_sessions + current_tuesday_sessions + 
+                               current_wednesday_sessions + current_thursday_sessions + 
+                               current_friday_sessions + current_saturday_sessions)
+        
+        # Combiner toutes les sessions : historique + actuelle
+        week_sessions = (monday_sessions + tuesday_sessions + wednesday_sessions + 
+                        thursday_sessions + friday_sessions + saturday_sessions + 
+                        current_week_sessions)
+        
+        # Créer les sessions pour toute la semaine
+        for i, session_data in enumerate(week_sessions):
+            # Trouver un time_slot unique pour éviter les conflits
+            day_mapping = {
+                'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3, 'friday': 4, 'saturday': 5
+            }
+            
+            # Convertir la date en jour de la semaine
+            weekday = session_data['date'].strftime('%A').lower()
+            if weekday in day_mapping:
+                # Trouver les time_slots pour ce jour
+                day_slots = [slot for key, slot in self.time_slots.items() if key.startswith(weekday)]
+                if day_slots:
+                    # Utiliser un time_slot différent pour chaque session pour éviter les conflits
+                    time_slot_index = i % len(day_slots)
+                    selected_slot = day_slots[time_slot_index]
+                else:
+                    selected_slot = list(self.time_slots.values())[0]
+            else:
+                selected_slot = list(self.time_slots.values())[0]
+            
+            # Pour éviter les conflits de contraintes uniques, utiliser des salles différentes
+            # pour les sessions qui se chevauchent
+            available_rooms = list(self.rooms.keys())
+            room_index = i % len(available_rooms)
+            selected_room = available_rooms[room_index]
+            
+            # Vérifier s'il y a déjà une session avec la même contrainte unique
+            schedule_obj = self.schedules[session_data['schedule']]
+            room_obj = self.rooms[selected_room]
+            
+            # Si conflit, essayer avec une autre salle
+            attempts = 0
+            while attempts < len(available_rooms):
+                existing = ScheduleSession.objects.filter(
+                    schedule=schedule_obj,
+                    time_slot=selected_slot,
+                    room=room_obj
+                ).exists()
+                
+                if not existing:
+                    break
+                    
+                # Essayer la salle suivante
+                room_index = (room_index + 1) % len(available_rooms)
+                selected_room = available_rooms[room_index]
+                room_obj = self.rooms[selected_room]
+                attempts += 1
+            
+            # Créer une session unique
+            try:
+                session = ScheduleSession.objects.create(
+                    schedule=schedule_obj,
+                    course=self.courses[session_data['course']],
+                    room=room_obj,
+                    teacher=self.teachers[session_data['teacher']],
+                    time_slot=selected_slot,  # Utiliser un time_slot unique
+                    specific_date=session_data['date'],
+                    specific_start_time=session_data['start'],
+                    specific_end_time=session_data['end'],
+                    session_type=session_data['type'],
+                    expected_students=session_data['students'],
+                    difficulty_score=0.6,
+                    complexity_level='Moyenne',
+                    scheduling_priority=3 if session_data['type'] == 'EXAM' else 2,
+                    is_cancelled=False
+                )
+            except Exception as e:
+                print(f"[WARNING] Impossible de créer la session {i+1}: {e}")
+                continue
+        
+        print(f"[OK] {len(self.schedules)} emplois du temps et {len(week_sessions)} sessions créées:")
+        print(f"   • Semaine historique (05-10/08/2025): {len(monday_sessions + tuesday_sessions + wednesday_sessions + thursday_sessions + friday_sessions + saturday_sessions)} sessions")
+        print(f"   • Semaine actuelle (18-23/08/2025): {len(current_week_sessions)} sessions")
+        print(f"   • TOTAL: {len(week_sessions)} sessions")
     
     def create_students(self):
         """Crée quelques étudiants pour les tests"""
         print("[STUDENTS] Création d'étudiants...")
         
         students_data = [
-            {'username': 'etudiant.med1', 'first_name': 'Pierre', 'last_name': 'Ngono', 'student_id': 'MED24001', 'curriculum': 'MED-L1'},
-            {'username': 'etudiant.med2', 'first_name': 'Marie', 'last_name': 'Ateba', 'student_id': 'MED24002', 'curriculum': 'MED-L1'},
-            {'username': 'etudiant.med3', 'first_name': 'Joseph', 'last_name': 'Essomba', 'student_id': 'MED23001', 'curriculum': 'MED-L2'},
+            {'username': 'etudiant.med1a', 'first_name': 'Pierre', 'last_name': 'Ngono', 'student_id': 'MED24001', 'curriculum': 'MED-L1-A'},
+            {'username': 'etudiant.med1b', 'first_name': 'Marie', 'last_name': 'Ateba', 'student_id': 'MED24002', 'curriculum': 'MED-L1-B'},
+            {'username': 'etudiant.med1c', 'first_name': 'Claude', 'last_name': 'Beka', 'student_id': 'MED24003', 'curriculum': 'MED-L1-C'},
+            {'username': 'etudiant.med2a', 'first_name': 'Joseph', 'last_name': 'Essomba', 'student_id': 'MED23001', 'curriculum': 'MED-L2-A'},
+            {'username': 'etudiant.med2b', 'first_name': 'Amélie', 'last_name': 'Tchoumi', 'student_id': 'MED23002', 'curriculum': 'MED-L2-B'},
+            {'username': 'etudiant.med3a', 'first_name': 'Serge', 'last_name': 'Nkomo', 'student_id': 'MED22001', 'curriculum': 'MED-L3-A'},
+            {'username': 'etudiant.medm1', 'first_name': 'Diane', 'last_name': 'Fokou', 'student_id': 'MED21001', 'curriculum': 'MED-M1'},
+            {'username': 'etudiant.medm2', 'first_name': 'Roger', 'last_name': 'Kemajou', 'student_id': 'MED20001', 'curriculum': 'MED-M2'},
             {'username': 'etudiant.phar1', 'first_name': 'Grace', 'last_name': 'Mengue', 'student_id': 'PHAR24001', 'curriculum': 'PHAR-L1'},
+            {'username': 'etudiant.phar2', 'first_name': 'Alain', 'last_name': 'Mvondo', 'student_id': 'PHAR23001', 'curriculum': 'PHAR-L2'},
             {'username': 'etudiant.bio1', 'first_name': 'Paul', 'last_name': 'Owona', 'student_id': 'BIO24001', 'curriculum': 'BIO-L1'},
+            {'username': 'etudiant.bio2', 'first_name': 'Sarah', 'last_name': 'Ndongo', 'student_id': 'BIO23001', 'curriculum': 'BIO-L2'},
+            {'username': 'etudiant.chim1', 'first_name': 'Eric', 'last_name': 'Mbarga', 'student_id': 'CHIM24001', 'curriculum': 'CHIM-L1'},
+            {'username': 'etudiant.chim2', 'first_name': 'Celine', 'last_name': 'Njankouo', 'student_id': 'CHIM23001', 'curriculum': 'CHIM-L2'}
         ]
         
         for student_data in students_data:
@@ -739,10 +1103,17 @@ class OAPETSeeder:
             print("   • Enseignants: dr.mballa, dr.nguema, pr.fotso, etc. / teacher123")
             print("   • Étudiants: etudiant.med1, etudiant.med2, etc. / student123")
             
-            print("\n[SESSIONS] COURS POUR LE 05/08/2025:")
-            today_sessions = ScheduleSession.objects.filter(specific_date=date(2025, 8, 5))
-            for session in today_sessions:
-                print(f"   • {session.specific_start_time}-{session.specific_end_time}: {session.course.name} ({session.session_type}) - {session.room.code}")
+            print(f"\n[SESSIONS] COURS POUR LA SEMAINE DU 05-10/08/2025:")
+            week_sessions_db = ScheduleSession.objects.filter(
+                specific_date__range=[date(2025, 8, 5), date(2025, 8, 10)]
+            ).order_by('specific_date', 'specific_start_time')
+            
+            current_date = None
+            for session in week_sessions_db:
+                if current_date != session.specific_date:
+                    current_date = session.specific_date
+                    print(f"\n   === {session.specific_date.strftime('%A %d/%m/%Y')} ===")
+                print(f"   • {session.specific_start_time}-{session.specific_end_time}: {session.course.name} ({session.session_type}) - {session.room.code} - {session.schedule.curriculum.name}")
             
         except Exception as e:
             print(f"\n[ERREUR] ECHEC DU SEEDING: {str(e)}")

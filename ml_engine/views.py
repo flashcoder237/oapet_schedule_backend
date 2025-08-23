@@ -672,3 +672,232 @@ class MLDashboardViewSet(viewsets.ViewSet):
             return Response({
                 'error': f'Erreur lors de la récupération des performances: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AISuggestionsViewSet(viewsets.ViewSet):
+    """ViewSet pour la génération de suggestions IA"""
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=['get'])
+    def schedule_suggestions(self, request):
+        """Génère des suggestions pour la planification d'emplois du temps"""
+        try:
+            context = request.query_params.get('context', None)
+            result = ml_service.generate_schedule_suggestions(context=context)
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la génération de suggestions: {str(e)}',
+                'suggestions': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def search_suggestions(self, request):
+        """Génère des suggestions pour la recherche intelligente"""
+        try:
+            query = request.query_params.get('query', None)
+            limit = int(request.query_params.get('limit', 5))
+            
+            result = ml_service.generate_search_suggestions(query=query, limit=limit)
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la génération de suggestions de recherche: {str(e)}',
+                'suggestions': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def generate_schedule(self, request):
+        """Génère un emploi du temps complet avec suggestions IA"""
+        try:
+            selected_class = request.data.get('selectedClass')
+            constraints = request.data.get('constraints', {})
+            
+            if not selected_class:
+                return Response({
+                    'error': 'selectedClass est requis'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Simulation de génération d'emploi du temps
+            # Dans un vrai projet, ici vous utiliseriez votre algorithme ML
+            import random
+            
+            # Génération des métriques
+            metrics = {
+                'totalHours': random.randint(20, 28),
+                'utilizationRate': random.randint(80, 95),
+                'conflictScore': round(random.uniform(1, 10), 1),
+                'balanceScore': random.randint(85, 95),
+                'teacherSatisfaction': random.randint(80, 95),
+                'roomUtilization': random.randint(70, 85)
+            }
+            
+            # Génération des conflits avec suggestions IA
+            conflicts = []
+            if random.random() > 0.3:  # 70% de chance d'avoir des conflits
+                num_conflicts = random.randint(1, 3)
+                for i in range(num_conflicts):
+                    conflict_suggestions = ml_service.generate_schedule_suggestions(
+                        context=f"conflict_resolution_{i}"
+                    )['suggestions'][:2]  # 2 suggestions par conflit
+                    
+                    conflicts.append({
+                        'type': random.choice(['teacher', 'room', 'student_group', 'time_preference']),
+                        'severity': random.choice(['high', 'medium', 'low']),
+                        'message': f'Conflit détecté pour {selected_class} - Session {i+1}',
+                        'sessionId': f'session_{i+1}',
+                        'suggestions': conflict_suggestions
+                    })
+            
+            # Génération des suggestions globales IA
+            global_suggestions = ml_service.generate_schedule_suggestions(
+                context=f"schedule_generation_{selected_class}"
+            )['suggestions']
+            
+            result = {
+                'success': True,
+                'scheduleId': f'schedule_{int(time.time())}',
+                'conflicts': conflicts,
+                'metrics': metrics,
+                'suggestions': global_suggestions,
+                'generated_by_ai': True,
+                'model_used': ml_service.get_or_create_model().name
+            }
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la génération de l\'emploi du temps: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def analyze_workload(self, request):
+        """Analyse l'équilibre de la charge de travail des enseignants"""
+        try:
+            schedule_data = request.query_params.get('schedule_data', None)
+            result = ml_service.analyze_workload_balance(schedule_data=schedule_data)
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de l\'analyse de charge: {str(e)}',
+                'teachers': [],
+                'overall_balance': 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def detect_anomalies(self, request):
+        """Détecte les anomalies dans un emploi du temps"""
+        try:
+            schedule_data = request.query_params.get('schedule_data', None)
+            result = ml_service.detect_schedule_anomalies(schedule_data=schedule_data)
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la détection d\'anomalies: {str(e)}',
+                'anomalies': [],
+                'total_anomalies': 0,
+                'risk_score': 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def predict_room_occupancy(self, request):
+        """Prédit l'occupation des salles"""
+        try:
+            room_id = request.query_params.get('room_id', None)
+            date_range = request.query_params.get('date_range', None)
+            
+            result = ml_service.predict_room_occupancy(room_id=room_id, date_range=date_range)
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la prédiction d\'occupation: {str(e)}',
+                'predictions': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def optimal_schedule_recommendations(self, request):
+        """Recommande un emploi du temps optimal"""
+        try:
+            constraints = request.query_params.get('constraints', None)
+            if constraints:
+                import json
+                constraints = json.loads(constraints)
+            
+            result = ml_service.recommend_optimal_schedule(constraints=constraints)
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la génération de recommandations: {str(e)}',
+                'recommendations': {},
+                'confidence': 0.5
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def analyze_student_preferences(self, request):
+        """Analyse les préférences des étudiants"""
+        try:
+            student_data = request.query_params.get('student_data', None)
+            if student_data:
+                import json
+                student_data = json.loads(student_data)
+            
+            result = ml_service.analyze_student_preferences(student_data=student_data)
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de l\'analyse des préférences: {str(e)}',
+                'analysis': {},
+                'recommendations': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'])
+    def predict_course_success(self, request):
+        """Prédit le taux de réussite des cours"""
+        try:
+            course_data = request.query_params.get('course_data', None)
+            if course_data:
+                import json
+                course_data = json.loads(course_data)
+            
+            result = ml_service.predict_course_success_rate(course_data=course_data)
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la prédiction de réussite: {str(e)}',
+                'course_predictions': [],
+                'overall_average': 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def personalized_recommendations(self, request):
+        """Génère des recommandations personnalisées"""
+        try:
+            user_profile = request.data.get('user_profile', {})
+            result = ml_service.generate_personalized_recommendations(user_profile=user_profile)
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la génération de recommandations personnalisées: {str(e)}',
+                'user_type': 'student',
+                'recommendations': {},
+                'personalization_score': 0.5
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

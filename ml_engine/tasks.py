@@ -20,7 +20,7 @@ from django.core.cache import cache
 
 from .models import (
     ModelTrainingTask, MLModel, PredictionRequest, 
-    TimetableDataset, ScheduleOptimization
+    TimetableDataset
 )
 from .services import (
     TimetableDataProcessor, FeatureExtractor, TimetableMLService,
@@ -30,7 +30,7 @@ from .algorithms import (
     TimetableOptimizer, ConflictPredictor, 
     GeneticAlgorithm, SimulatedAnnealing
 )
-from schedules.models import Schedule, ScheduleSession
+from schedules.models import Schedule, ScheduleSession, ScheduleOptimization
 
 logger = logging.getLogger('ml_engine.tasks')
 

@@ -137,6 +137,17 @@ class CourseViewSet(viewsets.ModelViewSet):
         if course_type:
             queryset = queryset.filter(course_type=course_type)
         
+        # Filtre de recherche
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                models.Q(name__icontains=search) |
+                models.Q(code__icontains=search) |
+                models.Q(description__icontains=search) |
+                models.Q(teacher__user__first_name__icontains=search) |
+                models.Q(teacher__user__last_name__icontains=search)
+            )
+        
         return queryset.filter(is_active=True)
     
     @action(detail=False, methods=['get'])
@@ -198,6 +209,149 @@ class CourseViewSet(viewsets.ModelViewSet):
             'course': course.name,
             'total_enrollments': len(data),
             'enrollments': data
+        })
+    
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, pk=None):
+        """Dupliquer un cours"""
+        original_course = self.get_object()
+        
+        # Créer une copie du cours
+        new_course = Course.objects.create(
+            name=f"{original_course.name} (Copie)",
+            code=f"{original_course.code}_COPY",
+            description=original_course.description,
+            department=original_course.department,
+            teacher=original_course.teacher,
+            course_type=original_course.course_type,
+            level=original_course.level,
+            credits=original_course.credits,
+            hours_per_week=original_course.hours_per_week,
+            total_hours=original_course.total_hours,
+            max_students=original_course.max_students,
+            min_room_capacity=original_course.min_room_capacity,
+            requires_computer=original_course.requires_computer,
+            requires_projector=original_course.requires_projector,
+            requires_laboratory=original_course.requires_laboratory,
+            semester=original_course.semester,
+            academic_year=original_course.academic_year,
+            min_sessions_per_week=original_course.min_sessions_per_week,
+            max_sessions_per_week=original_course.max_sessions_per_week,
+            preferred_times=original_course.preferred_times,
+            unavailable_times=original_course.unavailable_times
+        )
+        
+        serializer = self.get_serializer(new_course)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['post'])
+    def toggle_status(self, request, pk=None):
+        """Activer/désactiver un cours"""
+        course = self.get_object()
+        course.is_active = not course.is_active
+        course.save()
+        
+        return Response({
+            'id': course.id,
+            'is_active': course.is_active,
+            'message': f"Cours {'activé' if course.is_active else 'désactivé'} avec succès"
+        })
+    
+    @action(detail=False, methods=['post'])
+    def bulk_update(self, request):
+        """Mise à jour en lot de cours"""
+        course_ids = request.data.get('course_ids', [])
+        update_data = request.data.get('update_data', {})
+        
+        if not course_ids:
+            return Response({'error': 'Aucun cours spécifié'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        courses = Course.objects.filter(id__in=course_ids)
+        updated_count = 0
+        
+        for course in courses:
+            for field, value in update_data.items():
+                if hasattr(course, field):
+                    setattr(course, field, value)
+            course.save()
+            updated_count += 1
+        
+        return Response({
+            'updated_count': updated_count,
+            'message': f"{updated_count} cours mis à jour avec succès"
+        })
+    
+    @action(detail=False, methods=['post'])
+    def bulk_delete(self, request):
+        """Suppression en lot de cours"""
+        course_ids = request.data.get('course_ids', [])
+        
+        if not course_ids:
+            return Response({'error': 'Aucun cours spécifié'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Soft delete - marquer comme inactif plutôt que supprimer
+        updated_count = Course.objects.filter(id__in=course_ids).update(is_active=False)
+        
+        return Response({
+            'deleted_count': updated_count,
+            'message': f"{updated_count} cours supprimés avec succès"
+        })
+    
+    @action(detail=True, methods=['get'])
+    def conflicts(self, request, pk=None):
+        """Détecter les conflits pour un cours spécifique"""
+        from schedules.models import ScheduleSession
+        course = self.get_object()
+        
+        # Récupérer les sessions du cours
+        sessions = ScheduleSession.objects.filter(
+            course=course,
+            is_cancelled=False
+        ).select_related('time_slot', 'room', 'teacher')
+        
+        conflicts = []
+        
+        for session in sessions:
+            # Vérifier les conflits de salle
+            room_conflicts = ScheduleSession.objects.filter(
+                time_slot=session.time_slot,
+                room=session.room,
+                is_cancelled=False
+            ).exclude(id=session.id)
+            
+            # Vérifier les conflits d'enseignant
+            teacher_conflicts = ScheduleSession.objects.filter(
+                time_slot=session.time_slot,
+                teacher=session.teacher,
+                is_cancelled=False
+            ).exclude(id=session.id)
+            
+            if room_conflicts.exists() or teacher_conflicts.exists():
+                conflicts.append({
+                    'session_id': session.id,
+                    'time_slot': {
+                        'day': session.time_slot.day_of_week,
+                        'start_time': session.time_slot.start_time,
+                        'end_time': session.time_slot.end_time
+                    },
+                    'room_conflicts': [
+                        {
+                            'course_name': conf.course.name,
+                            'teacher': conf.teacher.user.get_full_name()
+                        } for conf in room_conflicts
+                    ],
+                    'teacher_conflicts': [
+                        {
+                            'course_name': conf.course.name,
+                            'room': conf.room.code
+                        } for conf in teacher_conflicts
+                    ]
+                })
+        
+        return Response({
+            'course': course.name,
+            'total_conflicts': len(conflicts),
+            'conflicts': conflicts
         })
 
 

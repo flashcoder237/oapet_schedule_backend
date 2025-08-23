@@ -1,0 +1,56 @@
+{
+  "feature_names": [
+    "lectures",
+    "min_days",
+    "students",
+    "total_courses",
+    "total_rooms",
+    "total_days",
+    "periods_per_day",
+    "lecture_density",
+    "student_lecture_ratio",
+    "course_room_ratio",
+    "utilization_pressure",
+    "min_days_constraint_tightness",
+    "conflict_degree",
+    "conflict_density",
+    "clustering_coefficient",
+    "betweenness_centrality",
+    "unavailability_count",
+    "unavailability_ratio",
+    "room_constraint_count",
+    "teacher_encoded",
+    "instance_encoded"
+  ],
+  "model_type": "XGBRegressor",
+  "performance": {
+    "XGBoost": {
+      "mse": 0.16532669658990679,
+      "mae": 0.27429449715419124,
+      "r2": 0.907804327103482,
+      "cv_mean": 0.9361738187478197,
+      "cv_std": 0.02868649718525104
+    },
+    "Random Forest": {
+      "mse": 0.19773493618155585,
+      "mae": 0.32018340350877333,
+      "r2": 0.8897316291171722,
+      "cv_mean": 0.9275240701970182,
+      "cv_std": 0.04276716421397372
+    },
+    "Neural Network": {
+      "mse": 2.146752042462138,
+      "mae": 0.6000496930986142,
+      "r2": -0.19715238481849795,
+      "cv_mean": 0.7534178007771144,
+      "cv_std": 0.15822019501721643
+    },
+    "Gradient Boosting": {
+      "mse": 0.22622343079782128,
+      "mae": 0.32479724090004697,
+      "r2": 0.8738448063285302,
+      "cv_mean": 0.9327326124697644,
+      "cv_std": 0.028450166693086504
+    }
+  }
+}
