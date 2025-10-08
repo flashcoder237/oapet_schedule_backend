@@ -56,6 +56,7 @@ urlpatterns = [
     path('api/rooms/', include('rooms.urls')),
     path('api/schedules/', include('schedules.urls')),
     path('api/ml/', include('ml_engine.urls')),
+    path('api/chatbot/', include('chatbot.urls')),
     
     # API de base pour l'authentification DRF
     path('api-auth/', include('rest_framework.urls')),

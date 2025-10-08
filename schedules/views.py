@@ -129,6 +129,127 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             'message': 'Emploi du temps dépublié avec succès'
         }, status=status.HTTP_200_OK)
     
+    @action(detail=False, methods=['post'])
+    def generate_for_period(self, request):
+        """Génère les emplois du temps pour une période (semestre, année, personnalisée)"""
+        from datetime import datetime, timedelta
+        from courses.models import Course
+
+        period_type = request.data.get('period_type')  # 'semester', 'year', 'custom'
+        academic_period_id = request.data.get('academic_period_id')
+        start_date = request.data.get('start_date')
+        end_date = request.data.get('end_date')
+        curriculum_ids = request.data.get('curriculum_ids', [])
+
+        try:
+            # Récupérer la période académique
+            academic_period = AcademicPeriod.objects.get(id=academic_period_id)
+
+            # Déterminer les dates selon le type de période
+            if period_type == 'semester':
+                # Utiliser les dates de la période académique
+                period_start = academic_period.start_date
+                period_end = academic_period.end_date
+            elif period_type == 'year':
+                # Année académique complète
+                period_start = academic_period.start_date
+                # Calculer la fin de l'année (2 semestres)
+                period_end = period_start + timedelta(days=365)
+            else:  # custom
+                period_start = datetime.strptime(start_date, '%Y-%m-%d').date()
+                period_end = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+            generated_schedules = []
+
+            with transaction.atomic():
+                # Générer pour chaque curriculum sélectionné
+                for curriculum_id in curriculum_ids:
+                    # Créer l'emploi du temps
+                    schedule = Schedule.objects.create(
+                        name=f"Emploi du temps {academic_period.name} - {period_type}",
+                        academic_period=academic_period,
+                        curriculum_id=curriculum_id,
+                        schedule_type='curriculum',
+                        start_date=period_start,
+                        end_date=period_end,
+                        status='draft',
+                        created_by=request.user
+                    )
+
+                    # Récupérer les cours du curriculum
+                    courses = Course.objects.filter(curriculum_id=curriculum_id)
+
+                    # Générer les sessions (algorithme simplifié)
+                    time_slots = TimeSlot.objects.filter(is_active=True)
+                    current_date = period_start
+                    course_index = 0
+
+                    while current_date <= period_end and courses.exists():
+                        # Pour chaque jour de la semaine
+                        day_name = current_date.strftime('%A').lower()
+                        day_slots = time_slots.filter(day_of_week=day_name)
+
+                        for slot in day_slots:
+                            if course_index >= courses.count():
+                                course_index = 0
+
+                            course = courses[course_index]
+
+                            # Trouver une salle disponible
+                            from rooms.models import Room
+                            available_room = Room.objects.filter(
+                                is_active=True,
+                                capacity__gte=30
+                            ).first()
+
+                            if available_room and course.teacher:
+                                # Créer la session
+                                ScheduleSession.objects.create(
+                                    schedule=schedule,
+                                    course=course,
+                                    teacher=course.teacher,
+                                    room=available_room,
+                                    time_slot=slot,
+                                    date=current_date,
+                                    start_time=slot.start_time,
+                                    end_time=slot.end_time,
+                                    session_type='lecture'
+                                )
+
+                            course_index += 1
+
+                        # Passer au jour suivant
+                        current_date += timedelta(days=1)
+
+                        # Sauter les week-ends
+                        if current_date.weekday() >= 5:
+                            current_date += timedelta(days=7 - current_date.weekday())
+
+                    generated_schedules.append({
+                        'id': schedule.id,
+                        'name': schedule.name,
+                        'sessions_count': schedule.sessions.count()
+                    })
+
+            return Response({
+                'message': f'{len(generated_schedules)} emplois du temps générés avec succès',
+                'schedules': generated_schedules,
+                'period': {
+                    'start': period_start,
+                    'end': period_end,
+                    'type': period_type
+                }
+            }, status=status.HTTP_201_CREATED)
+
+        except AcademicPeriod.DoesNotExist:
+            return Response({
+                'error': 'Période académique non trouvée'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'error': f'Erreur lors de la génération: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=True, methods=['get'])
     def weekly_view(self, request, pk=None):
         """Vue hebdomadaire de l'emploi du temps"""
@@ -136,7 +257,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         sessions = schedule.sessions.all().select_related(
             'course', 'teacher', 'room', 'time_slot'
         )
-        
+
         # Organiser par jour de la semaine
         weekly_data = {
             'monday': [],
