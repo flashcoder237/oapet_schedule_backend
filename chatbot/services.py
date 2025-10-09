@@ -13,18 +13,23 @@ from difflib import SequenceMatcher
 
 
 class ChatbotService:
-    """Service principal du chatbot"""
+    """Service principal du chatbot avec IA avancée"""
 
     def __init__(self):
+        # Mémoire contextuelle pour les conversations
+        self.context = {}
+
         self.intents = {
             'schedule': {
-                'keywords': ['emploi', 'planning', 'horaire', 'programme', 'cours', 'session', 'quand', 'aujourd\'hui', 'demain', 'semaine'],
+                'keywords': ['emploi', 'planning', 'horaire', 'programme', 'cours', 'session', 'quand', 'aujourd\'hui', 'demain', 'semaine', 'prochain'],
                 'patterns': [
                     r'emploi.*temps',
                     r'(mon|mes)\s+cours',
                     r'quand.*cours',
                     r'planning.*(?:jour|semaine|mois)',
-                ]
+                    r'prochaine?\s+(?:cours|session)',
+                ],
+                'actions': ['view_schedule', 'find_next_class']
             },
             'course': {
                 'keywords': ['cours', 'matière', 'module', 'enseignement', 'crédit', 'heures', 'leçon'],
@@ -91,6 +96,48 @@ class ChatbotService:
                     r'je\s+(?:te|vous)\s+remercie',
                 ]
             },
+            'create': {
+                'keywords': ['creer', 'ajouter', 'nouveau', 'nouvelle', 'inscrire', 'enregistrer'],
+                'patterns': [
+                    r'(?:creer|ajouter|nouveau)\s+(?:cours|salle|enseignant|etudiant)',
+                    r'(?:inscrire|enregistrer)\s+un',
+                ]
+            },
+            'modify': {
+                'keywords': ['modifier', 'changer', 'mettre a jour', 'editer', 'corriger'],
+                'patterns': [
+                    r'modifier.*(?:cours|salle|horaire)',
+                    r'changer.*(?:date|heure|salle)',
+                ]
+            },
+            'delete': {
+                'keywords': ['supprimer', 'effacer', 'retirer', 'annuler'],
+                'patterns': [
+                    r'supprimer.*(?:cours|session)',
+                    r'annuler.*(?:cours|reservation)',
+                ]
+            },
+            'search': {
+                'keywords': ['chercher', 'trouver', 'rechercher', 'localiser'],
+                'patterns': [
+                    r'(?:chercher|trouver|rechercher)\s+(?:cours|salle|prof)',
+                    r'ou\s+(?:se trouve|est|trouver)',
+                ]
+            },
+            'recommendation': {
+                'keywords': ['suggerer', 'proposer', 'recommander', 'meilleur', 'optimal'],
+                'patterns': [
+                    r'(?:suggerer|proposer|recommander)\s+',
+                    r'(?:meilleur|optimal).*(?:horaire|planning)',
+                ]
+            },
+            'export': {
+                'keywords': ['exporter', 'telecharger', 'extraire', 'sauvegarder'],
+                'patterns': [
+                    r'exporter.*(?:emploi|planning|donnees)',
+                    r'telecharger.*(?:csv|excel|pdf)',
+                ]
+            },
         }
 
     def detect_intent(self, message):
@@ -135,8 +182,11 @@ class ChatbotService:
         return 'unknown', 0.0
 
     def process_message(self, message, user):
-        """Traite le message et génère une réponse"""
+        """Traite le message et génère une réponse avec contexte"""
         intent, confidence = self.detect_intent(message)
+
+        # Gérer le contexte de la conversation
+        user_context = self.context.get(user.id, {})
 
         # Chercher dans la base de connaissances
         knowledge_response = self._search_knowledge_base(message, intent)
@@ -149,29 +199,37 @@ class ChatbotService:
                 'attachments': []
             }
 
-        # Traiter selon l'intention
-        if intent == 'greeting':
-            return self._handle_greeting(user)
-        elif intent == 'thanks':
-            return self._handle_thanks(user)
-        elif intent == 'schedule':
-            return self._handle_schedule_query(message, user)
-        elif intent == 'course':
-            return self._handle_course_query(message, user)
-        elif intent == 'room':
-            return self._handle_room_query(message, user)
-        elif intent == 'teacher':
-            return self._handle_teacher_query(message, user)
-        elif intent == 'conflict':
-            return self._handle_conflict_query(message, user)
-        elif intent == 'availability':
-            return self._handle_availability_query(message, user)
-        elif intent == 'statistics':
-            return self._handle_statistics_query(message, user)
-        elif intent == 'help':
-            return self._handle_help()
-        else:
-            return self._handle_unknown()
+        # Traiter selon l'intention avec contexte
+        handlers = {
+            'greeting': lambda: self._handle_greeting(user),
+            'thanks': lambda: self._handle_thanks(user),
+            'schedule': lambda: self._handle_schedule_query(message, user, user_context),
+            'course': lambda: self._handle_course_query(message, user, user_context),
+            'room': lambda: self._handle_room_query(message, user),
+            'teacher': lambda: self._handle_teacher_query(message, user),
+            'conflict': lambda: self._handle_conflict_query(message, user),
+            'availability': lambda: self._handle_availability_query(message, user),
+            'statistics': lambda: self._handle_statistics_query(message, user),
+            'create': lambda: self._handle_create_action(message, user),
+            'modify': lambda: self._handle_modify_action(message, user),
+            'delete': lambda: self._handle_delete_action(message, user),
+            'search': lambda: self._handle_search_query(message, user),
+            'recommendation': lambda: self._handle_recommendation(message, user),
+            'export': lambda: self._handle_export_request(message, user),
+            'help': lambda: self._handle_help(),
+        }
+
+        handler = handlers.get(intent, self._handle_unknown)
+        response = handler()
+
+        # Mettre à jour le contexte
+        self.context[user.id] = {
+            'last_intent': intent,
+            'last_message': message,
+            'timestamp': timezone.now()
+        }
+
+        return response
 
     def _search_knowledge_base(self, message, intent):
         """Recherche dans la base de connaissances"""
@@ -222,10 +280,20 @@ class ChatbotService:
             'attachments': []
         }
 
-    def _handle_schedule_query(self, message, user):
-        """Gère les questions sur les emplois du temps"""
+    def _handle_schedule_query(self, message, user, context=None):
+        """Gère les questions sur les emplois du temps avec contexte"""
         # Chercher des dates dans le message
         today = timezone.now().date()
+        message_lower = message.lower()
+
+        # Détection intelligente de la période demandée
+        if 'demain' in message_lower:
+            today = today + timezone.timedelta(days=1)
+        elif 'hier' in message_lower:
+            today = today - timezone.timedelta(days=1)
+        elif any(word in message_lower for word in ['prochaine', 'prochain']):
+            # Chercher la prochaine session
+            return self._find_next_session(user)
 
         # Récupérer les sessions d'aujourd'hui
         sessions = ScheduleSession.objects.filter(
@@ -253,9 +321,24 @@ class ChatbotService:
             'attachments': [{'type': 'schedule', 'sessions': list(sessions.values())}] if sessions else []
         }
 
-    def _handle_course_query(self, message, user):
-        """Gère les questions sur les cours"""
-        courses = Course.objects.all()[:5]
+    def _handle_course_query(self, message, user, context=None):
+        """Gère les questions sur les cours avec recherche intelligente"""
+        message_lower = message.lower()
+
+        # Recherche intelligente dans le message
+        courses = Course.objects.all()
+
+        # Filtrer par mots-clés du message
+        words = message_lower.split()
+        for word in words:
+            if len(word) > 3:
+                courses = courses.filter(
+                    Q(name__icontains=word) |
+                    Q(code__icontains=word) |
+                    Q(description__icontains=word)
+                )
+
+        courses = courses[:5]
 
         if courses:
             response = "Voici quelques cours disponibles :\n\n"
@@ -504,6 +587,203 @@ class ChatbotService:
             'attachments': []
         }
 
+    def _find_next_session(self, user):
+        """Trouve la prochaine session pour l'utilisateur"""
+        now = timezone.now()
+        next_session = ScheduleSession.objects.filter(
+            specific_date__gte=now.date(),
+            specific_start_time__gte=now.time() if now.date() == now.date() else None
+        ).select_related('course', 'room', 'teacher').order_by('specific_date', 'specific_start_time').first()
+
+        if next_session:
+            start = next_session.specific_start_time or (next_session.time_slot.start_time if next_session.time_slot else "N/A")
+            response = f"Votre prochain cours est :\n\n"
+            response += f"- {next_session.course.name}\n"
+            response += f"- Date : {next_session.specific_date.strftime('%d/%m/%Y')}\n"
+            response += f"- Heure : {start}\n"
+            response += f"- Salle : {next_session.room.name if next_session.room else 'N/A'}\n"
+            if next_session.teacher:
+                response += f"- Enseignant : {next_session.teacher.user.get_full_name()}\n"
+        else:
+            response = "Aucun cours programme pour le moment."
+
+        return {
+            'response': response,
+            'intent': 'schedule',
+            'confidence': 90,
+            'context_data': {},
+            'attachments': []
+        }
+
+    def _handle_create_action(self, message, user):
+        """Guide l'utilisateur pour créer de nouvelles entités"""
+        message_lower = message.lower()
+
+        if 'cours' in message_lower:
+            entity = "cours"
+            steps = ["nom du cours", "code", "nombre de credits", "heures par semaine"]
+        elif 'salle' in message_lower:
+            entity = "salle"
+            steps = ["nom de la salle", "batiment", "capacite"]
+        elif 'enseignant' in message_lower:
+            entity = "enseignant"
+            steps = ["nom", "prenom", "email", "departement"]
+        else:
+            entity = "entite"
+            steps = []
+
+        response = f"Pour creer un nouveau/nouvelle {entity}, vous devez fournir :\n\n"
+        for i, step in enumerate(steps, 1):
+            response += f"{i}. {step}\n"
+        response += f"\nVeuillez utiliser le formulaire correspondant dans l'interface pour creer un {entity}."
+
+        return {
+            'response': response,
+            'intent': 'create',
+            'confidence': 85,
+            'context_data': {'entity': entity},
+            'attachments': []
+        }
+
+    def _handle_modify_action(self, message, user):
+        """Guide pour modifier des entités"""
+        response = "Pour modifier des informations :\n\n"
+        response += "- Utilisez le tableau de bord\n"
+        response += "- Cliquez sur l'element a modifier\n"
+        response += "- Apportez vos changements\n"
+        response += "- Sauvegardez\n\n"
+        response += "Que souhaitez-vous modifier ?"
+
+        return {
+            'response': response,
+            'intent': 'modify',
+            'confidence': 80,
+            'context_data': {},
+            'attachments': []
+        }
+
+    def _handle_delete_action(self, message, user):
+        """Guide pour supprimer des entités"""
+        response = "Attention ! La suppression est irreversible.\n\n"
+        response += "Pour supprimer un element :\n"
+        response += "- Allez dans la section correspondante\n"
+        response += "- Selectionnez l'element\n"
+        response += "- Cliquez sur supprimer\n"
+        response += "- Confirmez l'action\n\n"
+        response += "Assurez-vous que l'element n'est pas utilise ailleurs avant de le supprimer."
+
+        return {
+            'response': response,
+            'intent': 'delete',
+            'confidence': 80,
+            'context_data': {},
+            'attachments': []
+        }
+
+    def _handle_search_query(self, message, user):
+        """Recherche avancée multi-entités"""
+        message_lower = message.lower()
+        words = [w for w in message_lower.split() if len(w) > 3]
+
+        results = {
+            'cours': [],
+            'salles': [],
+            'enseignants': []
+        }
+
+        for word in words:
+            # Recherche cours
+            courses = Course.objects.filter(
+                Q(name__icontains=word) | Q(code__icontains=word)
+            )[:3]
+            results['cours'].extend(courses)
+
+            # Recherche salles
+            rooms = Room.objects.filter(
+                Q(name__icontains=word) | Q(building__icontains=word)
+            )[:3]
+            results['salles'].extend(rooms)
+
+            # Recherche enseignants
+            teachers = Teacher.objects.filter(
+                Q(user__first_name__icontains=word) | Q(user__last_name__icontains=word)
+            )[:3]
+            results['enseignants'].extend(teachers)
+
+        response = "Resultats de recherche :\n\n"
+
+        if results['cours']:
+            response += "Cours trouves :\n"
+            for c in results['cours'][:3]:
+                response += f"- {c.name} ({c.code})\n"
+            response += "\n"
+
+        if results['salles']:
+            response += "Salles trouvees :\n"
+            for r in results['salles'][:3]:
+                response += f"- {r.name} ({r.building})\n"
+            response += "\n"
+
+        if results['enseignants']:
+            response += "Enseignants trouves :\n"
+            for t in results['enseignants'][:3]:
+                response += f"- {t.user.get_full_name()}\n"
+
+        if not any(results.values()):
+            response = "Aucun resultat trouve pour votre recherche."
+
+        return {
+            'response': response,
+            'intent': 'search',
+            'confidence': 85,
+            'context_data': results,
+            'attachments': []
+        }
+
+    def _handle_recommendation(self, message, user):
+        """Fournit des recommandations intelligentes"""
+        # Analyser les conflits existants
+        from schedules.models import ScheduleSession
+        today = timezone.now().date()
+        sessions = ScheduleSession.objects.filter(specific_date__gte=today)[:20]
+
+        response = "Recommandations intelligentes :\n\n"
+        response += "1. Optimisation des horaires :\n"
+        response += "   - Evitez les cours tardifs le vendredi\n"
+        response += "   - Privilegiez les matins pour les cours theoriques\n\n"
+        response += "2. Gestion des salles :\n"
+        response += "   - Groupez les cours par batiment\n"
+        response += "   - Reservez les grandes salles pour les CM\n\n"
+        response += "3. Charge de travail :\n"
+        response += "   - Maximum 6h de cours par jour\n"
+        response += "   - Pause dejeuner de 1h minimum\n"
+
+        return {
+            'response': response,
+            'intent': 'recommendation',
+            'confidence': 75,
+            'context_data': {},
+            'attachments': []
+        }
+
+    def _handle_export_request(self, message, user):
+        """Guide pour exporter des données"""
+        response = "Export de donnees :\n\n"
+        response += "Formats disponibles :\n"
+        response += "- CSV : Pour Excel et tableurs\n"
+        response += "- JSON : Pour integration technique\n"
+        response += "- PDF : Pour impression\n\n"
+        response += "Dans chaque section, utilisez le bouton 'Exporter' pour telecharger les donnees.\n\n"
+        response += "Que souhaitez-vous exporter ?"
+
+        return {
+            'response': response,
+            'intent': 'export',
+            'confidence': 85,
+            'context_data': {'formats': ['csv', 'json', 'pdf']},
+            'attachments': []
+        }
+
     def _get_suggested_questions(self):
         """Retourne des suggestions de questions frequentes"""
         return [
@@ -513,4 +793,7 @@ class ChatbotService:
             "Quand est mon prochain cours ?",
             "Y a-t-il des conflits d'horaire ?",
             "Combien de cours y a-t-il ?",
+            "Cherche le cours de mathematiques",
+            "Suggere-moi un meilleur horaire",
+            "Comment exporter mon emploi du temps ?",
         ]

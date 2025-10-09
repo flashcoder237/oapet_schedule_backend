@@ -176,9 +176,229 @@ class CoursePrerequisite(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='prerequisites')
     prerequisite_course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='prerequisite_for')
     is_mandatory = models.BooleanField(default=True)
-    
+
     def __str__(self):
         return f"{self.course} nécessite {self.prerequisite_course}"
 
     class Meta:
         unique_together = ['course', 'prerequisite_course']
+
+
+class TeacherPreference(models.Model):
+    """Modèle pour les préférences et désirs des enseignants"""
+    PREFERENCE_TYPE_CHOICES = [
+        ('time_slot', 'Créneau horaire préféré'),
+        ('day', 'Jour préféré'),
+        ('max_hours_per_day', 'Heures maximales par jour'),
+        ('consecutive_days', 'Jours consécutifs'),
+        ('break_time', 'Temps de pause'),
+        ('room', 'Salle préférée'),
+        ('avoid_time', 'Créneaux à éviter'),
+        ('teaching_load', 'Charge d\'enseignement'),
+    ]
+
+    PRIORITY_CHOICES = [
+        ('required', 'Obligatoire'),
+        ('high', 'Élevée'),
+        ('medium', 'Moyenne'),
+        ('low', 'Faible'),
+    ]
+
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='preferences')
+    preference_type = models.CharField(max_length=20, choices=PREFERENCE_TYPE_CHOICES)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    preference_data = models.JSONField(default=dict, help_text="Données de préférence en format JSON")
+
+    # Métadonnées
+    is_active = models.BooleanField(default=True)
+    reason = models.TextField(blank=True, help_text="Raison de la préférence")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['teacher', 'priority', 'preference_type']
+        indexes = [
+            models.Index(fields=['teacher', 'preference_type']),
+            models.Index(fields=['priority', 'is_active']),
+        ]
+
+    def __str__(self):
+        return f"{self.teacher.user.get_full_name()} - {self.get_preference_type_display()} ({self.priority})"
+
+
+class TeacherUnavailability(models.Model):
+    """Modèle pour les indisponibilités des enseignants"""
+    UNAVAILABILITY_TYPE_CHOICES = [
+        ('permanent', 'Permanente'),
+        ('temporary', 'Temporaire'),
+        ('recurring', 'Récurrente'),
+    ]
+
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='unavailabilities')
+    unavailability_type = models.CharField(max_length=15, choices=UNAVAILABILITY_TYPE_CHOICES)
+
+    # Pour les indisponibilités temporaires
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+
+    # Pour les indisponibilités récurrentes (ex: chaque lundi matin)
+    day_of_week = models.CharField(max_length=10, blank=True, help_text="Jour de la semaine")
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+
+    reason = models.TextField(blank=True)
+    is_approved = models.BooleanField(default=False)
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_unavailabilities'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Teacher unavailabilities'
+
+    def __str__(self):
+        return f"{self.teacher.user.get_full_name()} - {self.get_unavailability_type_display()}"
+
+
+class TeacherScheduleRequest(models.Model):
+    """Modèle pour les demandes de modification d'emploi du temps par les enseignants"""
+    REQUEST_TYPE_CHOICES = [
+        ('schedule_change', 'Changement de créneau'),
+        ('room_change', 'Changement de salle'),
+        ('session_cancellation', 'Annulation de session'),
+        ('additional_session', 'Session supplémentaire'),
+        ('time_swap', 'Échange de créneaux'),
+        ('other', 'Autre'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'En attente'),
+        ('under_review', 'En cours d\'examen'),
+        ('approved', 'Approuvée'),
+        ('rejected', 'Rejetée'),
+        ('completed', 'Complétée'),
+    ]
+
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='schedule_requests')
+    request_type = models.CharField(max_length=25, choices=REQUEST_TYPE_CHOICES)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
+
+    # Informations sur la session concernée
+    session = models.ForeignKey(
+        'schedules.ScheduleSession',
+        on_delete=models.CASCADE,
+        related_name='modification_requests',
+        null=True,
+        blank=True
+    )
+
+    # Détails de la demande
+    current_situation = models.TextField(help_text="Description de la situation actuelle")
+    requested_change = models.TextField(help_text="Description du changement demandé")
+    reason = models.TextField(help_text="Raison de la demande")
+
+    # Données structurées pour les changements spécifiques
+    change_data = models.JSONField(
+        default=dict,
+        help_text="Données structurées du changement (nouveau créneau, nouvelle salle, etc.)"
+    )
+
+    # Priorité
+    priority = models.CharField(max_length=10, choices=[
+        ('low', 'Basse'),
+        ('medium', 'Moyenne'),
+        ('high', 'Haute'),
+        ('urgent', 'Urgente'),
+    ], default='medium')
+
+    # Approbation
+    reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_schedule_requests'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_notes = models.TextField(blank=True)
+
+    # Métadonnées
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at', '-priority']
+        indexes = [
+            models.Index(fields=['teacher', 'status']),
+            models.Index(fields=['status', 'priority']),
+        ]
+
+    def __str__(self):
+        return f"{self.teacher.user.get_full_name()} - {self.get_request_type_display()} ({self.get_status_display()})"
+
+
+class SessionFeedback(models.Model):
+    """Modèle pour les retours des enseignants sur leurs sessions"""
+    FEEDBACK_TYPE_CHOICES = [
+        ('confirmation', 'Confirmation'),
+        ('issue', 'Problème'),
+        ('suggestion', 'Suggestion'),
+    ]
+
+    ISSUE_TYPE_CHOICES = [
+        ('room_problem', 'Problème de salle'),
+        ('equipment_issue', 'Problème d\'équipement'),
+        ('timing_issue', 'Problème de timing'),
+        ('student_attendance', 'Problème de présence étudiants'),
+        ('other', 'Autre'),
+    ]
+
+    session = models.ForeignKey(
+        'schedules.ScheduleSession',
+        on_delete=models.CASCADE,
+        related_name='teacher_feedbacks'
+    )
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='session_feedbacks')
+    feedback_type = models.CharField(max_length=15, choices=FEEDBACK_TYPE_CHOICES)
+    issue_type = models.CharField(max_length=20, choices=ISSUE_TYPE_CHOICES, blank=True)
+
+    # Détails du retour
+    description = models.TextField()
+    severity = models.CharField(max_length=10, choices=[
+        ('low', 'Faible'),
+        ('medium', 'Moyenne'),
+        ('high', 'Élevée'),
+        ('critical', 'Critique'),
+    ], default='medium', blank=True)
+
+    # Traitement
+    is_resolved = models.BooleanField(default=False)
+    resolution_notes = models.TextField(blank=True)
+    resolved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='resolved_session_feedbacks'
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['teacher', 'feedback_type']),
+            models.Index(fields=['session', 'is_resolved']),
+        ]
+
+    def __str__(self):
+        return f"{self.teacher.user.get_full_name()} - {self.get_feedback_type_display()} - Session {self.session.id}"

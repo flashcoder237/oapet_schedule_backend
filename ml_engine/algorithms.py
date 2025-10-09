@@ -26,7 +26,7 @@ import logging
 
 from django.db import transaction
 from schedules.models import Schedule, ScheduleSession, TimeSlot, Conflict
-from courses.models import Course, Teacher
+from courses.models import Course, Teacher, TeacherPreference, TeacherUnavailability
 from rooms.models import Room
 
 logger = logging.getLogger('ml_engine.algorithms')
@@ -90,7 +90,10 @@ class ObjectiveCalculator:
             OptimizationObjective("maximize_room_utilization", 0.3, False),
             OptimizationObjective("minimize_teacher_gaps", 0.2, True),
             OptimizationObjective("balance_daily_load", 0.15, True),
-            OptimizationObjective("respect_preferences", 0.1, False),
+            OptimizationObjective("respect_teacher_preferences", 0.5, False),
+            OptimizationObjective("avoid_teacher_unavailability", 0.8, True),
+            OptimizationObjective("respect_max_hours_per_day", 0.6, True),
+            OptimizationObjective("respect_consecutive_days", 0.4, True),
         ]
     
     def calculate_fitness(self, solution: TimetableSolution) -> float:
@@ -223,18 +226,18 @@ class ObjectiveCalculator:
         return math.sqrt(variance)  # Écart-type comme mesure de déséquilibre
     
     def calculate_respect_preferences(self, solution: TimetableSolution) -> float:
-        """Calcule le respect des préférences"""
+        """Calcule le respect des préférences (legacy - garder pour compatibilité)"""
         preference_score = 0.0
         total_sessions = len(solution.assignments)
-        
+
         if total_sessions == 0:
             return 0.0
-        
+
         for session_id, (time_slot_id, room_id) in solution.assignments.items():
             try:
                 session = ScheduleSession.objects.get(id=session_id)
                 time_slot = TimeSlot.objects.get(id=time_slot_id)
-                
+
                 # Vérifier les préférences du cours
                 if session.course.preferred_times:
                     for pref in session.course.preferred_times:
@@ -244,11 +247,204 @@ class ObjectiveCalculator:
                             break
                 else:
                     preference_score += 0.5  # Score neutre si pas de préférence
-                
+
             except (ScheduleSession.DoesNotExist, TimeSlot.DoesNotExist):
                 continue
-        
+
         return preference_score / total_sessions
+
+    def calculate_respect_teacher_preferences(self, solution: TimetableSolution) -> float:
+        """Calcule le respect des préférences des enseignants"""
+        preference_score = 0.0
+        total_sessions = len(solution.assignments)
+
+        if total_sessions == 0:
+            return 0.0
+
+        for session_id, (time_slot_id, room_id) in solution.assignments.items():
+            try:
+                session = ScheduleSession.objects.get(id=session_id)
+                time_slot = TimeSlot.objects.get(id=time_slot_id)
+                teacher = session.teacher
+
+                # Récupérer toutes les préférences actives de l'enseignant
+                preferences = TeacherPreference.objects.filter(
+                    teacher=teacher,
+                    is_active=True
+                )
+
+                session_score = 0.5  # Score neutre par défaut
+
+                for pref in preferences:
+                    pref_data = pref.preference_data
+                    weight = {'required': 2.0, 'high': 1.5, 'medium': 1.0, 'low': 0.5}.get(pref.priority, 1.0)
+
+                    if pref.preference_type == 'time_slot':
+                        # Vérifier si le créneau correspond
+                        if (pref_data.get('day') == time_slot.day_of_week and
+                            pref_data.get('start_time') <= time_slot.start_time.strftime('%H:%M') <= pref_data.get('end_time', '23:59')):
+                            session_score += weight
+
+                    elif pref.preference_type == 'day':
+                        # Vérifier le jour préféré
+                        if pref_data.get('day') == time_slot.day_of_week:
+                            session_score += weight * 0.5
+
+                    elif pref.preference_type == 'avoid_time':
+                        # Pénaliser si dans une plage à éviter
+                        if (pref_data.get('day') == time_slot.day_of_week and
+                            pref_data.get('start_time') <= time_slot.start_time.strftime('%H:%M') <= pref_data.get('end_time', '23:59')):
+                            session_score -= weight
+
+                    elif pref.preference_type == 'room':
+                        # Vérifier la salle préférée
+                        if pref_data.get('room_id') == room_id:
+                            session_score += weight * 0.3
+
+                preference_score += max(0, session_score)  # Ne pas avoir de score négatif
+
+            except (ScheduleSession.DoesNotExist, TimeSlot.DoesNotExist):
+                continue
+
+        return preference_score / total_sessions if total_sessions > 0 else 0.0
+
+    def calculate_avoid_teacher_unavailability(self, solution: TimetableSolution) -> float:
+        """Calcule les violations d'indisponibilité des enseignants"""
+        violations = 0.0
+
+        for session_id, (time_slot_id, room_id) in solution.assignments.items():
+            try:
+                session = ScheduleSession.objects.get(id=session_id)
+                time_slot = TimeSlot.objects.get(id=time_slot_id)
+                teacher = session.teacher
+
+                # Vérifier les indisponibilités approuvées
+                unavailabilities = TeacherUnavailability.objects.filter(
+                    teacher=teacher,
+                    is_approved=True
+                )
+
+                for unavail in unavailabilities:
+                    if unavail.unavailability_type == 'recurring':
+                        # Vérifier les indisponibilités récurrentes
+                        if (unavail.day_of_week == time_slot.day_of_week and
+                            unavail.start_time and unavail.end_time):
+                            if unavail.start_time <= time_slot.start_time <= unavail.end_time:
+                                violations += 2.0  # Pénalité élevée
+
+                    elif unavail.unavailability_type in ['temporary', 'permanent']:
+                        # Pour l'instant, on se concentre sur les récurrentes
+                        # Les temporaires nécessitent des dates spécifiques
+                        pass
+
+            except (ScheduleSession.DoesNotExist, TimeSlot.DoesNotExist):
+                continue
+
+        return violations
+
+    def calculate_respect_max_hours_per_day(self, solution: TimetableSolution) -> float:
+        """Calcule les violations du nombre max d'heures par jour pour chaque enseignant"""
+        violations = 0.0
+        teacher_daily_hours = defaultdict(lambda: defaultdict(float))
+
+        for session_id, (time_slot_id, room_id) in solution.assignments.items():
+            try:
+                session = ScheduleSession.objects.get(id=session_id)
+                time_slot = TimeSlot.objects.get(id=time_slot_id)
+                teacher = session.teacher
+
+                # Calculer la durée de la session
+                duration = session.get_duration_hours()
+                teacher_daily_hours[teacher.id][time_slot.day_of_week] += duration
+
+            except (ScheduleSession.DoesNotExist, TimeSlot.DoesNotExist):
+                continue
+
+        # Vérifier les préférences de max heures par jour
+        for teacher_id, daily_hours in teacher_daily_hours.items():
+            try:
+                teacher = Teacher.objects.get(id=teacher_id)
+
+                # Vérifier si l'enseignant a une préférence max_hours_per_day
+                max_hours_prefs = TeacherPreference.objects.filter(
+                    teacher=teacher,
+                    preference_type='max_hours_per_day',
+                    is_active=True
+                )
+
+                for pref in max_hours_prefs:
+                    max_hours = pref.preference_data.get('max_hours', 8)
+
+                    for day, hours in daily_hours.items():
+                        if hours > max_hours:
+                            # Pénalité proportionnelle au dépassement
+                            excess = hours - max_hours
+                            weight = {'required': 3.0, 'high': 2.0, 'medium': 1.0, 'low': 0.5}.get(pref.priority, 1.0)
+                            violations += excess * weight
+
+            except Teacher.DoesNotExist:
+                continue
+
+        return violations
+
+    def calculate_respect_consecutive_days(self, solution: TimetableSolution) -> float:
+        """Calcule les violations des préférences de jours consécutifs"""
+        violations = 0.0
+        teacher_working_days = defaultdict(set)
+
+        # Mapper les jours de la semaine
+        day_order = {
+            'monday': 0, 'tuesday': 1, 'wednesday': 2,
+            'thursday': 3, 'friday': 4, 'saturday': 5, 'sunday': 6
+        }
+
+        for session_id, (time_slot_id, room_id) in solution.assignments.items():
+            try:
+                session = ScheduleSession.objects.get(id=session_id)
+                time_slot = TimeSlot.objects.get(id=time_slot_id)
+                teacher = session.teacher
+
+                teacher_working_days[teacher.id].add(time_slot.day_of_week)
+
+            except (ScheduleSession.DoesNotExist, TimeSlot.DoesNotExist):
+                continue
+
+        # Vérifier les préférences de jours consécutifs
+        for teacher_id, working_days in teacher_working_days.items():
+            try:
+                teacher = Teacher.objects.get(id=teacher_id)
+
+                consecutive_prefs = TeacherPreference.objects.filter(
+                    teacher=teacher,
+                    preference_type='consecutive_days',
+                    is_active=True
+                )
+
+                for pref in consecutive_prefs:
+                    max_consecutive = pref.preference_data.get('max_consecutive_days', 5)
+
+                    # Convertir les jours en nombres et trier
+                    day_numbers = sorted([day_order.get(day, 0) for day in working_days])
+
+                    # Compter les jours consécutifs
+                    consecutive_count = 1
+                    max_found = 1
+
+                    for i in range(1, len(day_numbers)):
+                        if day_numbers[i] == day_numbers[i-1] + 1:
+                            consecutive_count += 1
+                            max_found = max(max_found, consecutive_count)
+                        else:
+                            consecutive_count = 1
+
+                    if max_found > max_consecutive:
+                        weight = {'required': 2.0, 'high': 1.5, 'medium': 1.0, 'low': 0.5}.get(pref.priority, 1.0)
+                        violations += (max_found - max_consecutive) * weight
+
+            except Teacher.DoesNotExist:
+                continue
+
+        return violations
 
 
 class GeneticAlgorithm:

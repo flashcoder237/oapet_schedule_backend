@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q, Avg, Count, Min, Max
 from django.db import models
 
+from core.mixins import ImportExportMixin
 from .models import (
     Building, RoomType, Room, RoomEquipment, RoomAvailability,
     RoomBooking, MaintenanceRecord
@@ -17,27 +18,36 @@ from .serializers import (
 )
 
 
-class BuildingViewSet(viewsets.ModelViewSet):
+class BuildingViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des bâtiments"""
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
     permission_classes = [IsAuthenticated]
-    
+
+    export_fields = ['id', 'name', 'code', 'address', 'floors', 'description', 'is_active']
+    import_fields = ['name', 'code', 'address', 'floors', 'description']
+
     def get_queryset(self):
         return super().get_queryset().filter(is_active=True)
 
 
-class RoomTypeViewSet(viewsets.ModelViewSet):
+class RoomTypeViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des types de salles"""
     queryset = RoomType.objects.all()
     serializer_class = RoomTypeSerializer
     permission_classes = [IsAuthenticated]
 
+    export_fields = ['id', 'name', 'description']
+    import_fields = ['name', 'description']
 
-class RoomViewSet(viewsets.ModelViewSet):
+
+class RoomViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des salles"""
     queryset = Room.objects.all()
     permission_classes = [IsAuthenticated]
+
+    export_fields = ['id', 'code', 'name', 'building', 'room_type', 'floor', 'capacity', 'has_projector', 'has_computer', 'is_laboratory', 'is_active']
+    import_fields = ['code', 'name', 'building', 'room_type', 'floor', 'capacity', 'has_projector', 'has_computer', 'is_laboratory']
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -178,11 +188,14 @@ class RoomViewSet(viewsets.ModelViewSet):
         })
 
 
-class RoomEquipmentViewSet(viewsets.ModelViewSet):
+class RoomEquipmentViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des équipements"""
     queryset = RoomEquipment.objects.all()
     serializer_class = RoomEquipmentSerializer
     permission_classes = [IsAuthenticated]
+
+    export_fields = ['id', 'room', 'equipment_type', 'quantity', 'condition', 'notes']
+    import_fields = ['room', 'equipment_type', 'quantity', 'condition', 'notes']
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -192,11 +205,14 @@ class RoomEquipmentViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class RoomAvailabilityViewSet(viewsets.ModelViewSet):
+class RoomAvailabilityViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des disponibilités"""
     queryset = RoomAvailability.objects.all()
     serializer_class = RoomAvailabilitySerializer
     permission_classes = [IsAuthenticated]
+
+    export_fields = ['id', 'room', 'day_of_week', 'period', 'is_available', 'notes']
+    import_fields = ['room', 'day_of_week', 'period', 'is_available', 'notes']
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -212,11 +228,14 @@ class RoomAvailabilityViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class RoomBookingViewSet(viewsets.ModelViewSet):
+class RoomBookingViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des réservations"""
     queryset = RoomBooking.objects.all()
     serializer_class = RoomBookingSerializer
     permission_classes = [IsAuthenticated]
+
+    export_fields = ['id', 'room', 'date', 'start_time', 'end_time', 'booking_type', 'purpose', 'is_approved']
+    import_fields = ['room', 'date', 'start_time', 'end_time', 'booking_type', 'purpose']
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -248,11 +267,14 @@ class RoomBookingViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
 
-class MaintenanceRecordViewSet(viewsets.ModelViewSet):
+class MaintenanceRecordViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion de la maintenance"""
     queryset = MaintenanceRecord.objects.all()
     serializer_class = MaintenanceRecordSerializer
     permission_classes = [IsAuthenticated]
+
+    export_fields = ['id', 'room', 'maintenance_type', 'date_scheduled', 'date_completed', 'is_completed', 'notes']
+    import_fields = ['room', 'maintenance_type', 'date_scheduled', 'notes']
     
     def get_queryset(self):
         queryset = super().get_queryset()

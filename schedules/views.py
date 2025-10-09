@@ -1,4 +1,5 @@
 # schedules/views.py
+import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -7,6 +8,9 @@ from django.db import transaction, models
 from django.utils import timezone
 from django.db.models import Count, Avg
 
+logger = logging.getLogger('schedules.views')
+
+from core.mixins import ImportExportMixin
 from .models import (
     AcademicPeriod, TimeSlot, Schedule, ScheduleSession, Conflict,
     ScheduleOptimization, ScheduleTemplate, ScheduleConstraint, ScheduleExport
@@ -19,34 +23,109 @@ from .serializers import (
 )
 
 
-class AcademicPeriodViewSet(viewsets.ModelViewSet):
+class AcademicPeriodViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des périodes académiques"""
     queryset = AcademicPeriod.objects.all()
     serializer_class = AcademicPeriodSerializer
     permission_classes = [IsAuthenticated]
-    
+
+    export_fields = ['id', 'name', 'type', 'start_date', 'end_date', 'is_current']
+    import_fields = ['name', 'type', 'start_date', 'end_date']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Filtrer par année académique
+        academic_year = self.request.query_params.get('academic_year')
+        if academic_year:
+            queryset = queryset.filter(academic_year=academic_year)
+
+        # Filtrer par semestre
+        semester = self.request.query_params.get('semester')
+        if semester:
+            queryset = queryset.filter(semester=semester)
+
+        # Filtrer par période courante
+        is_current = self.request.query_params.get('is_current')
+        if is_current is not None:
+            is_current_bool = is_current.lower() == 'true'
+            queryset = queryset.filter(is_current=is_current_bool)
+
+        return queryset.order_by('-start_date')
+
     @action(detail=True, methods=['post'])
     def set_current(self, request, pk=None):
         """Définit une période comme courante"""
         period = self.get_object()
-        
+
         with transaction.atomic():
             # Désactiver toutes les autres périodes
             AcademicPeriod.objects.filter(is_current=True).update(is_current=False)
             # Activer la période sélectionnée
             period.is_current = True
             period.save()
-        
+
         return Response({
             'message': f'Période {period.name} définie comme courante'
         }, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'])
+    def current(self, request):
+        """Récupère la période académique courante"""
+        current_period = AcademicPeriod.objects.filter(is_current=True).first()
 
-class TimeSlotViewSet(viewsets.ModelViewSet):
+        if not current_period:
+            return Response({
+                'error': 'Aucune période académique courante définie'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(current_period)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def available_years(self, request):
+        """Liste toutes les années académiques disponibles"""
+        years = AcademicPeriod.objects.values_list('academic_year', flat=True).distinct().order_by('-academic_year')
+
+        return Response({
+            'academic_years': list(years),
+            'count': len(years)
+        })
+
+    @action(detail=False, methods=['get'])
+    def by_year_and_semester(self, request):
+        """Récupère une période par année académique et semestre"""
+        academic_year = request.query_params.get('academic_year')
+        semester = request.query_params.get('semester')
+
+        if not academic_year or not semester:
+            return Response({
+                'error': 'academic_year et semester sont requis'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        period = AcademicPeriod.objects.filter(
+            academic_year=academic_year,
+            semester=semester
+        ).first()
+
+        if not period:
+            return Response({
+                'error': f'Aucune période trouvée pour {academic_year} - {semester}',
+                'suggestion': 'Vous pouvez créer cette période en utilisant generate_for_period avec ces paramètres'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(period)
+        return Response(serializer.data)
+
+
+class TimeSlotViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des créneaux horaires"""
     queryset = TimeSlot.objects.all()
     serializer_class = TimeSlotSerializer
     permission_classes = [IsAuthenticated]
+
+    export_fields = ['id', 'day_of_week', 'start_time', 'end_time', 'is_active']
+    import_fields = ['day_of_week', 'start_time', 'end_time']
     
     def get_queryset(self):
         queryset = super().get_queryset().filter(is_active=True)
@@ -58,10 +137,13 @@ class TimeSlotViewSet(viewsets.ModelViewSet):
         return queryset.order_by('day_of_week', 'start_time')
 
 
-class ScheduleViewSet(viewsets.ModelViewSet):
+class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des emplois du temps"""
     queryset = Schedule.objects.all()
     permission_classes = [IsAuthenticated]
+
+    export_fields = ['id', 'name', 'academic_period', 'curriculum', 'schedule_type', 'start_date', 'end_date', 'status', 'is_published']
+    import_fields = ['name', 'academic_period', 'curriculum', 'schedule_type', 'start_date', 'end_date', 'status']
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -124,11 +206,35 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         schedule = self.get_object()
         schedule.is_published = False
         schedule.save()
-        
+
         return Response({
             'message': 'Emploi du temps dépublié avec succès'
         }, status=status.HTTP_200_OK)
-    
+
+    @action(detail=True, methods=['delete'])
+    def delete_schedule(self, request, pk=None):
+        """Supprime un emploi du temps et toutes ses sessions"""
+        schedule = self.get_object()
+
+        # Vérifier que l'emploi du temps n'est pas publié
+        if schedule.is_published:
+            return Response({
+                'error': 'Impossible de supprimer un emploi du temps publié',
+                'hint': 'Veuillez d\'abord dépublier l\'emploi du temps'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        schedule_name = schedule.name
+        sessions_count = schedule.sessions.count()
+
+        # Supprimer l'emploi du temps (cascade supprimera les sessions)
+        with transaction.atomic():
+            schedule.delete()
+
+        return Response({
+            'message': f'Emploi du temps "{schedule_name}" supprimé avec succès',
+            'sessions_deleted': sessions_count
+        }, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['post'])
     def generate_for_period(self, request):
         """Génère les emplois du temps pour une période (semestre, année, personnalisée)"""
@@ -137,70 +243,131 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
         period_type = request.data.get('period_type')  # 'semester', 'year', 'custom'
         academic_period_id = request.data.get('academic_period_id')
+        academic_year = request.data.get('academic_year')  # Ex: "2024-2025"
+        semester = request.data.get('semester')  # Ex: "S1" ou "S2"
         start_date = request.data.get('start_date')
         end_date = request.data.get('end_date')
         curriculum_ids = request.data.get('curriculum_ids', [])
 
         try:
-            # Récupérer la période académique
-            academic_period = AcademicPeriod.objects.get(id=academic_period_id)
+            # Vérifier que l'utilisateur est authentifié
+            if not request.user or not request.user.is_authenticated:
+                return Response({
+                    'error': 'Authentification requise'
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
+            # Récupérer ou créer la période académique
+            if academic_period_id:
+                # Si un ID est fourni, l'utiliser
+                academic_period = AcademicPeriod.objects.get(id=academic_period_id)
+            elif academic_year and semester:
+                # Sinon, chercher par année et semestre, ou créer si n'existe pas
+                period_name = f"{academic_year} - {semester}"
+
+                # Validation: les dates sont obligatoires
+                if not start_date or not end_date:
+                    return Response({
+                        'error': 'Les dates de début et de fin sont obligatoires',
+                        'hint': 'Veuillez fournir start_date et end_date au format YYYY-MM-DD'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # Calculer les dates par défaut selon le semestre
+                year_parts = academic_year.split('-')
+                start_year = int(year_parts[0])
+
+                # Utiliser les dates fournies (obligatoires maintenant)
+                default_start = datetime.strptime(start_date, '%Y-%m-%d').date()
+                default_end = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+                # Chercher ou créer la période
+                academic_period, created = AcademicPeriod.objects.get_or_create(
+                    academic_year=academic_year,
+                    semester=semester,
+                    defaults={
+                        'name': period_name,
+                        'start_date': default_start,
+                        'end_date': default_end,
+                        'is_current': True
+                    }
+                )
+
+                if created:
+                    logger.info(f"Période académique créée: {period_name}")
+            else:
+                return Response({
+                    'error': 'Vous devez fournir soit academic_period_id, soit academic_year et semester'
+                }, status=status.HTTP_400_BAD_REQUEST)
 
             # Déterminer les dates selon le type de période
-            if period_type == 'semester':
-                # Utiliser les dates de la période académique
-                period_start = academic_period.start_date
-                period_end = academic_period.end_date
-            elif period_type == 'year':
-                # Année académique complète
-                period_start = academic_period.start_date
-                # Calculer la fin de l'année (2 semestres)
-                period_end = period_start + timedelta(days=365)
-            else:  # custom
-                period_start = datetime.strptime(start_date, '%Y-%m-%d').date()
-                period_end = datetime.strptime(end_date, '%Y-%m-%d').date()
+            period_start = academic_period.start_date
+            period_end = academic_period.end_date
 
             generated_schedules = []
 
             with transaction.atomic():
                 # Générer pour chaque curriculum sélectionné
                 for curriculum_id in curriculum_ids:
+                    # Vérifier que le curriculum existe (accepter ID ou code)
+                    try:
+                        from courses.models import Curriculum
+                        # Si c'est un nombre, chercher par ID, sinon par code
+                        if str(curriculum_id).isdigit():
+                            curriculum = Curriculum.objects.get(id=curriculum_id)
+                        else:
+                            curriculum = Curriculum.objects.get(code=curriculum_id)
+                    except Curriculum.DoesNotExist:
+                        logger.error(f"Curriculum {curriculum_id} n'existe pas")
+                        continue
+
                     # Créer l'emploi du temps
                     schedule = Schedule.objects.create(
-                        name=f"Emploi du temps {academic_period.name} - {period_type}",
+                        name=f"Emploi du temps {academic_period.name} - {curriculum.name}",
                         academic_period=academic_period,
-                        curriculum_id=curriculum_id,
+                        curriculum=curriculum,
                         schedule_type='curriculum',
-                        start_date=period_start,
-                        end_date=period_end,
                         status='draft',
                         created_by=request.user
                     )
 
-                    # Récupérer les cours du curriculum
-                    courses = Course.objects.filter(curriculum_id=curriculum_id)
+                    # Récupérer les cours du curriculum via CurriculumCourse
+                    from courses.models import CurriculumCourse
+                    curriculum_courses = CurriculumCourse.objects.filter(
+                        curriculum_id=curriculum_id
+                    ).select_related('course')
+                    courses = [cc.course for cc in curriculum_courses]
 
                     # Générer les sessions (algorithme simplifié)
                     time_slots = TimeSlot.objects.filter(is_active=True)
                     current_date = period_start
                     course_index = 0
 
-                    while current_date <= period_end and courses.exists():
+                    if not courses:
+                        logger.warning(f"Aucun cours trouvé pour le curriculum {curriculum_id}")
+                        continue
+
+                    while current_date <= period_end:
                         # Pour chaque jour de la semaine
                         day_name = current_date.strftime('%A').lower()
                         day_slots = time_slots.filter(day_of_week=day_name)
 
                         for slot in day_slots:
-                            if course_index >= courses.count():
+                            if course_index >= len(courses):
                                 course_index = 0
 
                             course = courses[course_index]
 
-                            # Trouver une salle disponible
+                            # Trouver une salle disponible pour ce créneau
                             from rooms.models import Room
+                            # Exclure les salles déjà utilisées pour ce créneau dans ce schedule
+                            used_rooms = ScheduleSession.objects.filter(
+                                schedule=schedule,
+                                time_slot=slot
+                            ).values_list('room_id', flat=True)
+
                             available_room = Room.objects.filter(
                                 is_active=True,
                                 capacity__gte=30
-                            ).first()
+                            ).exclude(id__in=used_rooms).first()
 
                             if available_room and course.teacher:
                                 # Créer la session
@@ -210,10 +377,10 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                                     teacher=course.teacher,
                                     room=available_room,
                                     time_slot=slot,
-                                    date=current_date,
-                                    start_time=slot.start_time,
-                                    end_time=slot.end_time,
-                                    session_type='lecture'
+                                    specific_date=current_date,
+                                    specific_start_time=slot.start_time,
+                                    specific_end_time=slot.end_time,
+                                    session_type='CM'
                                 )
 
                             course_index += 1
@@ -237,7 +404,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 'period': {
                     'start': period_start,
                     'end': period_end,
-                    'type': period_type
+                    'name': academic_period.name
                 }
             }, status=status.HTTP_201_CREATED)
 
@@ -246,8 +413,12 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 'error': 'Période académique non trouvée'
             }, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            logger.error(f"Erreur lors de la génération: {error_trace}")
             return Response({
-                'error': f'Erreur lors de la génération: {str(e)}'
+                'error': f'Erreur lors de la génération: {str(e)}',
+                'details': error_trace if request.user.is_staff else None
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get'])
@@ -520,11 +691,14 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         })
 
 
-class ScheduleSessionViewSet(viewsets.ModelViewSet):
+class ScheduleSessionViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des sessions d'emploi du temps"""
     queryset = ScheduleSession.objects.all()
     serializer_class = ScheduleSessionSerializer
     permission_classes = []  # Temporairement désactivé pour les tests
+
+    export_fields = ['id', 'schedule', 'course', 'teacher', 'room', 'time_slot', 'specific_date', 'session_type', 'is_cancelled']
+    import_fields = ['schedule', 'course', 'teacher', 'room', 'time_slot', 'specific_date', 'session_type']
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -631,11 +805,14 @@ class ScheduleOptimizationViewSet(viewsets.ModelViewSet):
         serializer.save(started_by=self.request.user)
 
 
-class ScheduleTemplateViewSet(viewsets.ModelViewSet):
+class ScheduleTemplateViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des templates"""
     queryset = ScheduleTemplate.objects.all()
     serializer_class = ScheduleTemplateSerializer
     permission_classes = [IsAuthenticated]
+
+    export_fields = ['id', 'name', 'curriculum', 'level', 'template_data', 'is_active']
+    import_fields = ['name', 'curriculum', 'level', 'template_data']
     
     def get_queryset(self):
         queryset = super().get_queryset().filter(is_active=True)
@@ -654,11 +831,14 @@ class ScheduleTemplateViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
 
-class ScheduleConstraintViewSet(viewsets.ModelViewSet):
+class ScheduleConstraintViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des contraintes"""
     queryset = ScheduleConstraint.objects.all()
     serializer_class = ScheduleConstraintSerializer
     permission_classes = [IsAuthenticated]
+
+    export_fields = ['id', 'schedule', 'name', 'constraint_type', 'priority', 'description', 'is_active']
+    import_fields = ['schedule', 'name', 'constraint_type', 'priority', 'description']
     
     def get_queryset(self):
         queryset = super().get_queryset().filter(is_active=True)
