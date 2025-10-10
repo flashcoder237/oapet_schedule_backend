@@ -7972,3 +7972,496 @@ INFO 2025-10-09 13:09:04,455 autoreload 25128 27824 C:\Users\tefba\Desktop\OverB
 INFO 2025-10-09 13:09:05,183 autoreload 14160 2788 Watching for file changes with StatReloader
 INFO 2025-10-09 13:09:22,874 autoreload 14160 2788 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\courses\admin.py changed, reloading.
 INFO 2025-10-09 13:09:23,610 autoreload 20348 25088 Watching for file changes with StatReloader
+INFO 2025-10-09 13:15:15,682 basehttp 20348 9500 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 201 256
+INFO 2025-10-09 13:15:22,835 basehttp 20348 9500 "GET /api/schedules/sessions/ HTTP/1.1" 200 53909
+INFO 2025-10-09 13:15:23,263 basehttp 20348 9500 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 13:15:23,291 basehttp 20348 9500 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+WARNING 2025-10-09 13:15:32,651 log 20348 9500 Not Found: /api/courses/curricula/BIO-L2/
+WARNING 2025-10-09 13:15:32,652 basehttp 20348 9500 "GET /api/courses/curricula/BIO-L2/ HTTP/1.1" 404 25
+INFO 2025-10-09 13:16:19,514 basehttp 20348 9500 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 13:16:19,962 basehttp 20348 9500 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:16:20,241 basehttp 20348 6096 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 13:16:20,294 basehttp 20348 24912 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 13:16:20,306 basehttp 20348 9500 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 13:16:20,420 basehttp 20348 16552 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:16:55,771 basehttp 20348 16552 "GET /api/schedules/sessions/ HTTP/1.1" 200 53909
+INFO 2025-10-09 13:16:56,400 basehttp 20348 16552 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 13:16:56,428 basehttp 20348 16552 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 13:18:23,328 basehttp 20348 16552 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 13:18:24,083 basehttp 20348 24912 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 13:18:24,131 basehttp 20348 6096 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 13:18:24,271 basehttp 20348 9500 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 13:18:24,285 basehttp 20348 16552 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:18:24,401 basehttp 20348 9500 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:22:06,908 basehttp 20348 9500 "GET /api/chatbot/active/ HTTP/1.1" 200 17405
+INFO 2025-10-09 13:22:12,224 basehttp 20348 9500 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:22:27,879 basehttp 20348 9500 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 13:22:28,239 basehttp 20348 6096 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 13:22:28,263 basehttp 20348 24912 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 13:22:28,454 basehttp 20348 9500 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:22:28,465 basehttp 20348 16552 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 13:22:28,711 basehttp 20348 24912 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:22:34,045 basehttp 20348 24912 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:24:35,499 basehttp 20348 24912 "GET /api/schedules/sessions/ HTTP/1.1" 200 53909
+INFO 2025-10-09 13:24:35,876 basehttp 20348 24912 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 13:24:35,899 basehttp 20348 24912 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 13:24:58,842 basehttp 20348 24912 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 13:24:59,129 basehttp 20348 9500 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 13:24:59,136 basehttp 20348 6096 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 13:24:59,233 basehttp 20348 16552 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 13:24:59,249 basehttp 20348 24912 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:24:59,316 basehttp 20348 16552 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:25:07,330 basehttp 20348 16552 "OPTIONS /api/schedules/sessions/?date=2025-10-09 HTTP/1.1" 200 0
+INFO 2025-10-09 13:25:07,358 basehttp 20348 16552 "GET /api/schedules/sessions/?date=2025-10-09 HTTP/1.1" 200 5433
+INFO 2025-10-09 13:25:07,612 basehttp 20348 16552 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 13:25:15,821 basehttp 20348 16552 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 13:27:17,986 basehttp 20348 19356 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 13:27:18,845 basehttp 20348 3796 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 13:27:18,895 basehttp 20348 19356 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:27:18,908 basehttp 20348 3796 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 13:27:18,963 basehttp 20348 19356 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 13:27:18,997 basehttp 20348 3796 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:32:39,954 basehttp 20348 28640 "GET /api/schedules/sessions/ HTTP/1.1" 200 53909
+INFO 2025-10-09 13:32:40,289 basehttp 20348 28640 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 13:32:40,314 basehttp 20348 28640 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 13:32:56,061 basehttp 20348 28640 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 13:32:56,791 basehttp 20348 28640 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:32:56,816 basehttp 20348 26444 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 13:32:56,855 basehttp 20348 28640 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 13:32:56,914 basehttp 20348 26444 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 13:32:56,971 basehttp 20348 28640 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:33:00,416 basehttp 20348 28640 "GET /api/schedules/sessions/ HTTP/1.1" 200 53909
+INFO 2025-10-09 13:33:00,893 basehttp 20348 28640 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 13:33:00,931 basehttp 20348 28640 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 13:34:06,564 basehttp 20348 28640 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 13:34:06,995 basehttp 20348 26444 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 13:34:07,036 basehttp 20348 28640 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:34:07,121 basehttp 20348 26444 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 13:34:07,256 basehttp 20348 28640 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 13:34:07,457 basehttp 20348 26036 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:34:13,291 basehttp 20348 26036 "GET /api/schedules/sessions/ HTTP/1.1" 200 53909
+INFO 2025-10-09 13:34:13,642 basehttp 20348 26036 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 13:34:13,672 basehttp 20348 26036 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 13:35:35,586 basehttp 20348 26036 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 13:35:36,185 basehttp 20348 26444 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 13:35:36,308 basehttp 20348 26444 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 13:35:36,317 basehttp 20348 28640 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 13:35:36,317 basehttp 20348 26036 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:35:36,378 basehttp 20348 28640 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 13:35:56,135 basehttp 20348 28640 "GET /api/schedules/sessions/ HTTP/1.1" 200 53909
+INFO 2025-10-09 13:35:56,515 basehttp 20348 28640 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 13:35:56,552 basehttp 20348 28640 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 14:35:45,766 basehttp 20348 29876 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 14:35:46,053 basehttp 20348 29876 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 14:35:46,133 basehttp 20348 29876 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 14:35:46,193 basehttp 20348 29876 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 14:35:46,236 basehttp 20348 29896 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 14:35:46,431 basehttp 20348 29876 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 14:35:51,649 basehttp 20348 29876 "GET /api/schedules/sessions/ HTTP/1.1" 200 53909
+INFO 2025-10-09 14:35:51,953 basehttp 20348 29876 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 14:35:51,975 basehttp 20348 29876 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 14:36:05,577 basehttp 20348 29876 "OPTIONS /api/chatbot/active/ HTTP/1.1" 200 0
+INFO 2025-10-09 14:36:05,631 basehttp 20348 29876 "GET /api/chatbot/active/ HTTP/1.1" 200 17405
+INFO 2025-10-09 14:36:21,741 basehttp 20348 29876 "OPTIONS /api/schedules/sessions/1395/ HTTP/1.1" 200 0
+INFO 2025-10-09 14:36:21,805 basehttp 20348 29876 "PATCH /api/schedules/sessions/1395/ HTTP/1.1" 200 2691
+INFO 2025-10-09 14:36:23,563 basehttp 20348 29876 "PATCH /api/schedules/sessions/1395/ HTTP/1.1" 200 2691
+INFO 2025-10-09 14:36:25,245 basehttp 20348 29876 "PATCH /api/schedules/sessions/1395/ HTTP/1.1" 200 2691
+INFO 2025-10-09 14:36:38,480 basehttp 20348 29876 "OPTIONS /api/chatbot/send/ HTTP/1.1" 200 0
+INFO 2025-10-09 14:36:38,564 basehttp 20348 29876 "POST /api/chatbot/send/ HTTP/1.1" 200 772
+INFO 2025-10-09 14:43:50,763 basehttp 20348 30392 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 14:43:50,820 basehttp 20348 29628 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 14:43:51,026 basehttp 20348 11176 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 14:43:51,058 basehttp 20348 27372 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 14:43:51,276 basehttp 20348 29628 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 14:44:06,406 basehttp 20348 29628 "OPTIONS /api/courses/courses/stats/ HTTP/1.1" 200 0
+INFO 2025-10-09 14:44:06,434 basehttp 20348 29628 "GET /api/courses/courses/stats/ HTTP/1.1" 200 610
+INFO 2025-10-09 14:44:06,592 basehttp 20348 29628 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 14:44:06,593 basehttp 20348 27372 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 14:44:06,600 basehttp 20348 11176 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 14:44:06,601 basehttp 20348 30392 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 14:44:06,617 basehttp 20348 30288 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 14:44:06,617 basehttp 20348 29628 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+ERROR 2025-10-09 14:44:06,720 log 20348 30392 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:06,723 basehttp 20348 30392 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:06,799 log 20348 27372 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:06,806 basehttp 20348 27372 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:06,895 log 20348 30288 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:06,899 basehttp 20348 30288 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:06,954 log 20348 30392 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:06,957 basehttp 20348 30392 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,015 log 20348 27372 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,017 basehttp 20348 27372 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,096 log 20348 11176 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,098 basehttp 20348 11176 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,172 log 20348 25572 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,174 basehttp 20348 25572 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,241 log 20348 30392 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,243 basehttp 20348 30392 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,295 log 20348 27372 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,297 basehttp 20348 27372 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,364 log 20348 25572 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,367 basehttp 20348 25572 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,508 log 20348 29628 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,512 basehttp 20348 29628 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,551 log 20348 30288 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,555 basehttp 20348 30288 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,611 log 20348 27372 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,614 basehttp 20348 27372 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,688 log 20348 30392 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,690 basehttp 20348 30392 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,769 log 20348 29628 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,771 basehttp 20348 29628 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,903 log 20348 30288 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,904 basehttp 20348 30288 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:07,969 log 20348 27372 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:07,973 basehttp 20348 27372 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,085 log 20348 30288 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,088 basehttp 20348 30288 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,133 log 20348 29628 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,136 basehttp 20348 29628 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,227 log 20348 27372 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,230 basehttp 20348 27372 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,322 log 20348 30288 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,323 basehttp 20348 30288 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,383 log 20348 29628 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,386 basehttp 20348 29628 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,479 log 20348 11176 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,480 basehttp 20348 11176 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,527 log 20348 30392 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,538 basehttp 20348 30392 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,618 log 20348 11176 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,621 basehttp 20348 11176 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,677 log 20348 27372 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,678 basehttp 20348 27372 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,728 log 20348 29628 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,729 basehttp 20348 29628 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,769 log 20348 30392 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,771 basehttp 20348 30392 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,818 log 20348 30288 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,820 basehttp 20348 30288 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 14:44:08,878 log 20348 25572 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 14:44:08,880 basehttp 20348 25572 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+INFO 2025-10-09 19:53:15,545 basehttp 20348 28604 "OPTIONS /api/users/auth/me/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:15,564 basehttp 20348 28604 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 19:53:15,725 basehttp 20348 28604 "OPTIONS /api/courses/courses/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:15,729 basehttp 20348 28604 "OPTIONS /api/courses/courses/stats/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:15,829 basehttp 20348 27664 "GET /api/courses/courses/stats/ HTTP/1.1" 200 610
+INFO 2025-10-09 19:53:15,830 basehttp 20348 28604 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 19:53:16,116 basehttp 20348 28604 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,117 basehttp 20348 27664 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,121 basehttp 20348 22508 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,124 basehttp 20348 22808 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,124 basehttp 20348 30868 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,136 basehttp 20348 28604 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,144 basehttp 20348 30868 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,152 basehttp 20348 27664 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,154 basehttp 20348 22508 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,158 basehttp 20348 22808 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,159 basehttp 20348 28604 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,163 basehttp 20348 30868 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,167 basehttp 20348 27664 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,175 basehttp 20348 22508 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,179 basehttp 20348 28604 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,180 basehttp 20348 22808 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,187 basehttp 20348 27664 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,190 basehttp 20348 30868 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,190 basehttp 20348 22508 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,193 basehttp 20348 28604 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,199 basehttp 20348 22808 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,201 basehttp 20348 27664 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,213 basehttp 20348 22808 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,217 basehttp 20348 30868 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,221 basehttp 20348 22508 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,221 basehttp 20348 28604 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,222 basehttp 20348 22808 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,222 basehttp 20348 27664 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,228 basehttp 20348 30868 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:16,230 basehttp 20348 22508 "OPTIONS /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 200 0
+ERROR 2025-10-09 19:53:16,368 log 20348 22808 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,369 basehttp 20348 22808 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:16,385 log 20348 27664 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,390 basehttp 20348 27664 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:16,440 log 20348 30868 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,443 basehttp 20348 30868 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:16,476 log 20348 22508 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,477 basehttp 20348 22508 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:16,533 log 20348 28604 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,537 basehttp 20348 28604 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:16,640 log 20348 22808 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,644 basehttp 20348 22808 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:16,703 log 20348 28604 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,705 basehttp 20348 28604 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:16,799 log 20348 27664 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,802 basehttp 20348 27664 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:16,882 log 20348 28604 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,883 basehttp 20348 28604 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:16,955 log 20348 27664 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:16,957 basehttp 20348 27664 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,031 log 20348 22808 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,032 basehttp 20348 22808 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,082 log 20348 28604 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,086 basehttp 20348 28604 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,121 log 20348 22508 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,122 basehttp 20348 22508 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,192 log 20348 30868 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,194 basehttp 20348 30868 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,221 log 20348 28604 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,223 basehttp 20348 28604 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,275 log 20348 22808 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,275 basehttp 20348 22808 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,341 log 20348 28604 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,342 basehttp 20348 28604 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,357 log 20348 27664 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,358 basehttp 20348 27664 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,413 log 20348 30868 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,414 basehttp 20348 30868 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,470 log 20348 22808 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,471 basehttp 20348 22808 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,557 log 20348 28604 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,559 basehttp 20348 28604 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,587 log 20348 30868 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,588 basehttp 20348 30868 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,633 log 20348 22508 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,634 basehttp 20348 22508 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,689 log 20348 22808 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,692 basehttp 20348 22808 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,754 log 20348 30868 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,755 basehttp 20348 30868 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,792 log 20348 28604 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,794 basehttp 20348 28604 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,872 log 20348 24528 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,874 basehttp 20348 24528 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,887 log 20348 22808 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,889 basehttp 20348 22808 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,928 log 20348 22508 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,929 basehttp 20348 22508 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+ERROR 2025-10-09 19:53:17,996 log 20348 27664 Internal Server Error: /api/ml/predictions/predict_course_difficulty/
+ERROR 2025-10-09 19:53:17,999 basehttp 20348 27664 "POST /api/ml/predictions/predict_course_difficulty/ HTTP/1.1" 500 325
+INFO 2025-10-09 19:53:30,883 basehttp 20348 27664 "OPTIONS /api/courses/teachers/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:30,883 basehttp 20348 22508 "OPTIONS /api/rooms/rooms/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:30,980 basehttp 20348 22508 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 19:53:31,014 basehttp 20348 27664 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 19:53:31,067 basehttp 20348 22808 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 19:53:31,188 basehttp 20348 27664 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 19:53:34,555 basehttp 20348 27664 "OPTIONS /api/schedules/sessions/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:35,299 basehttp 20348 27664 "GET /api/schedules/sessions/ HTTP/1.1" 200 53909
+INFO 2025-10-09 19:53:35,313 basehttp 20348 27664 "OPTIONS /api/schedules/schedules/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:35,672 basehttp 20348 27664 "GET /api/schedules/schedules/ HTTP/1.1" 200 22424
+INFO 2025-10-09 19:53:35,684 basehttp 20348 27664 "OPTIONS /api/schedules/conflicts/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:53:35,703 basehttp 20348 27664 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 19:53:48,521 basehttp 20348 27664 "OPTIONS /api/courses/curricula/BIO-L2/ HTTP/1.1" 200 0
+WARNING 2025-10-09 19:53:48,528 log 20348 27664 Not Found: /api/courses/curricula/BIO-L2/
+WARNING 2025-10-09 19:53:48,530 basehttp 20348 27664 "GET /api/courses/curricula/BIO-L2/ HTTP/1.1" 404 25
+INFO 2025-10-09 19:54:04,881 basehttp 20348 27664 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 19:54:05,158 basehttp 20348 22508 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 19:54:05,217 basehttp 20348 24528 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 19:54:05,300 basehttp 20348 22808 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 19:54:05,315 basehttp 20348 27664 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 19:54:05,427 basehttp 20348 22808 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 19:54:09,101 basehttp 20348 22808 "OPTIONS /api/courses/curricula/ HTTP/1.1" 200 0
+INFO 2025-10-09 19:54:09,225 basehttp 20348 22808 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 19:54:18,757 basehttp 20348 22808 "OPTIONS /api/schedules/schedules/generate_for_period/ HTTP/1.1" 200 0
+WARNING 2025-10-09 19:54:18,774 log 20348 22808 Bad Request: /api/schedules/schedules/generate_for_period/
+WARNING 2025-10-09 19:54:18,780 basehttp 20348 22808 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 400 129
+WARNING 2025-10-09 19:54:38,673 log 20348 22808 Bad Request: /api/schedules/schedules/generate_for_period/
+WARNING 2025-10-09 19:54:38,675 basehttp 20348 22808 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 400 129
+WARNING 2025-10-09 19:54:49,742 log 20348 22808 Bad Request: /api/schedules/schedules/generate_for_period/
+WARNING 2025-10-09 19:54:49,744 basehttp 20348 22808 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 400 129
+INFO 2025-10-09 19:55:18,774 autoreload 27112 984 Watching for file changes with StatReloader
+INFO 2025-10-09 19:56:18,461 basehttp 27112 25228 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 19:56:18,969 basehttp 27112 25228 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 19:56:18,983 basehttp 27112 18352 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 19:56:19,049 basehttp 27112 25228 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 19:56:19,059 basehttp 27112 18352 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 19:56:21,945 basehttp 27112 18352 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 19:56:30,497 basehttp 27112 18352 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 201 256
+INFO 2025-10-09 19:56:36,153 basehttp 27112 18352 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-09 19:56:36,345 basehttp 27112 18352 "GET /api/schedules/schedules/ HTTP/1.1" 200 23618
+INFO 2025-10-09 19:56:36,370 basehttp 27112 18352 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 19:57:24,065 basehttp 27112 18352 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 19:57:24,722 basehttp 27112 18352 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 19:57:24,723 basehttp 27112 25228 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 19:57:24,790 basehttp 27112 18352 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 19:57:24,793 basehttp 27112 25228 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 19:57:27,837 basehttp 27112 25228 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-09 19:57:28,237 basehttp 27112 25228 "GET /api/schedules/schedules/ HTTP/1.1" 200 23618
+INFO 2025-10-09 19:57:28,267 basehttp 27112 25228 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 20:01:33,600 basehttp 27112 25228 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 20:01:34,865 basehttp 27112 25228 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 20:01:34,865 basehttp 27112 18352 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 20:01:34,937 basehttp 27112 25228 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 20:01:34,944 basehttp 27112 18352 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 20:01:38,310 basehttp 27112 18352 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-09 20:01:38,617 basehttp 27112 18352 "GET /api/schedules/schedules/ HTTP/1.1" 200 23618
+INFO 2025-10-09 20:01:38,641 basehttp 27112 18352 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 20:01:51,303 basehttp 27112 18352 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 20:01:51,456 basehttp 27112 15844 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 20:01:51,464 basehttp 27112 15880 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 20:01:51,583 basehttp 27112 25228 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 20:01:51,625 basehttp 27112 18352 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 20:01:57,382 basehttp 27112 18352 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-09 20:01:57,717 basehttp 27112 18352 "GET /api/schedules/schedules/ HTTP/1.1" 200 23618
+INFO 2025-10-09 20:01:57,738 basehttp 27112 18352 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 20:14:04,403 basehttp 27112 404 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 20:14:04,801 basehttp 27112 404 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 20:14:04,832 basehttp 27112 29436 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 20:14:04,880 basehttp 27112 404 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 20:14:04,906 basehttp 27112 29436 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 20:14:16,859 basehttp 27112 29436 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-09 20:14:17,187 basehttp 27112 29436 "GET /api/schedules/schedules/ HTTP/1.1" 200 23618
+INFO 2025-10-09 20:14:17,206 basehttp 27112 29436 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 20:15:22,846 basehttp 27112 29436 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 20:15:23,747 basehttp 27112 404 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 20:15:23,754 basehttp 27112 29436 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 20:15:23,833 basehttp 27112 404 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 20:15:23,847 basehttp 27112 29436 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 20:15:27,401 basehttp 27112 29436 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-09 20:15:27,673 basehttp 27112 29436 "GET /api/schedules/schedules/ HTTP/1.1" 200 23618
+INFO 2025-10-09 20:15:27,697 basehttp 27112 29436 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 20:22:43,978 basehttp 27112 19520 "OPTIONS /api/users/auth/login/ HTTP/1.1" 200 0
+INFO 2025-10-09 20:23:22,772 basehttp 27112 19520 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 20:23:23,112 basehttp 27112 19520 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 20:23:23,116 basehttp 27112 20660 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 20:23:23,197 basehttp 27112 19520 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 20:23:23,207 basehttp 27112 20660 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 20:23:23,265 basehttp 27112 19520 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 20:23:26,616 basehttp 27112 19520 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-09 20:23:26,888 basehttp 27112 19520 "GET /api/schedules/schedules/ HTTP/1.1" 200 23618
+INFO 2025-10-09 20:23:26,908 basehttp 27112 19520 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-09 21:01:22,471 autoreload 9944 1904 Watching for file changes with StatReloader
+INFO 2025-10-09 21:01:44,839 basehttp 9944 18836 "OPTIONS /api/users/auth/me/ HTTP/1.1" 200 0
+INFO 2025-10-09 21:01:44,854 basehttp 9944 18836 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-09 21:01:45,114 basehttp 9944 19280 "OPTIONS /api/courses/courses/ HTTP/1.1" 200 0
+INFO 2025-10-09 21:01:45,118 basehttp 9944 19280 "OPTIONS /api/courses/teachers/ HTTP/1.1" 200 0
+INFO 2025-10-09 21:01:45,121 basehttp 9944 19280 "OPTIONS /api/rooms/rooms/ HTTP/1.1" 200 0
+INFO 2025-10-09 21:01:45,270 basehttp 9944 19280 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-09 21:01:45,277 basehttp 9944 18836 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 21:01:45,340 basehttp 9944 19280 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-09 21:01:45,379 basehttp 9944 18836 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-09 21:01:45,474 basehttp 9944 19280 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 21:01:57,066 basehttp 9944 19280 "OPTIONS /api/users/settings/ HTTP/1.1" 200 0
+WARNING 2025-10-09 21:01:57,076 log 9944 19280 Not Found: /api/users/settings/
+WARNING 2025-10-09 21:01:57,077 basehttp 9944 19280 "GET /api/users/settings/ HTTP/1.1" 404 12738
+INFO 2025-10-09 21:03:15,352 basehttp 9944 10008 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 21:03:15,518 basehttp 9944 10008 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-09 21:03:56,062 basehttp 9944 10008 "OPTIONS /api/courses/curricula/ HTTP/1.1" 200 0
+INFO 2025-10-09 21:03:56,235 basehttp 9944 10008 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 06:52:42,276 basehttp 9944 21880 "OPTIONS /api/users/auth/me/ HTTP/1.1" 200 0
+INFO 2025-10-10 06:52:42,286 basehttp 9944 21880 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 06:52:42,531 basehttp 9944 24352 "OPTIONS /api/courses/courses/ HTTP/1.1" 200 0
+INFO 2025-10-10 06:52:42,535 basehttp 9944 24352 "OPTIONS /api/courses/teachers/ HTTP/1.1" 200 0
+INFO 2025-10-10 06:52:42,549 basehttp 9944 24352 "OPTIONS /api/rooms/rooms/ HTTP/1.1" 200 0
+INFO 2025-10-10 06:52:42,607 basehttp 9944 21880 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 06:52:42,670 basehttp 9944 21880 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 06:52:42,678 basehttp 9944 24352 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 06:52:42,698 basehttp 9944 21880 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 06:53:02,019 basehttp 9944 21880 "OPTIONS /api/courses/curricula/ HTTP/1.1" 200 0
+INFO 2025-10-10 06:53:02,134 basehttp 9944 21880 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 06:53:11,061 basehttp 9944 21880 "OPTIONS /api/schedules/schedules/generate_for_period/ HTTP/1.1" 200 0
+INFO 2025-10-10 06:53:13,676 basehttp 9944 21880 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 201 256
+INFO 2025-10-10 06:53:18,411 basehttp 9944 21880 "OPTIONS /api/schedules/sessions/ HTTP/1.1" 200 0
+INFO 2025-10-10 06:53:18,974 basehttp 9944 21880 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-10 06:53:18,983 basehttp 9944 21880 "OPTIONS /api/schedules/schedules/ HTTP/1.1" 200 0
+INFO 2025-10-10 06:53:19,389 basehttp 9944 21880 "GET /api/schedules/schedules/ HTTP/1.1" 200 24812
+INFO 2025-10-10 06:53:19,399 basehttp 9944 21880 "OPTIONS /api/schedules/conflicts/ HTTP/1.1" 200 0
+INFO 2025-10-10 06:53:19,414 basehttp 9944 21880 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-10 06:53:47,850 basehttp 9944 21880 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 06:53:48,500 basehttp 9944 24352 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 06:53:48,501 basehttp 9944 21880 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 06:53:48,588 basehttp 9944 24352 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 06:53:48,589 basehttp 9944 21880 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 06:53:51,557 basehttp 9944 21880 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 06:53:59,524 basehttp 9944 21880 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 201 256
+INFO 2025-10-10 06:54:03,729 basehttp 9944 21880 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-10 06:54:04,098 basehttp 9944 21880 "GET /api/schedules/schedules/ HTTP/1.1" 200 24786
+INFO 2025-10-10 06:54:04,117 basehttp 9944 21880 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-10 06:54:17,619 basehttp 9944 21880 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 06:54:17,787 basehttp 9944 20220 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 06:54:17,803 basehttp 9944 748 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 06:54:17,910 basehttp 9944 24352 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 06:54:17,918 basehttp 9944 21880 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 06:54:20,315 basehttp 9944 21880 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 06:54:29,338 basehttp 9944 21880 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 201 254
+INFO 2025-10-10 06:54:34,166 basehttp 9944 21880 "GET /api/schedules/sessions/ HTTP/1.1" 200 53910
+INFO 2025-10-10 06:54:34,573 basehttp 9944 21880 "GET /api/schedules/schedules/ HTTP/1.1" 200 24704
+INFO 2025-10-10 06:54:34,592 basehttp 9944 21880 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-10 06:54:45,865 basehttp 9944 21880 "OPTIONS /api/users/settings/ HTTP/1.1" 200 0
+WARNING 2025-10-10 06:54:45,879 log 9944 21880 Not Found: /api/users/settings/
+WARNING 2025-10-10 06:54:45,880 basehttp 9944 21880 "GET /api/users/settings/ HTTP/1.1" 404 12738
+INFO 2025-10-10 06:54:59,816 basehttp 9944 21880 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:03:48,397 basehttp 9944 18524 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 07:03:48,752 basehttp 9944 18524 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:03:48,805 basehttp 9944 18524 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 07:03:48,822 basehttp 9944 20328 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 07:03:48,841 basehttp 9944 18524 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 07:04:03,842 basehttp 9944 18524 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 07:04:04,089 basehttp 9944 21140 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 07:04:04,111 basehttp 9944 24180 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 07:04:04,190 basehttp 9944 18524 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:04:04,194 basehttp 9944 20328 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+WARNING 2025-10-10 07:04:08,293 log 9944 20328 Not Found: /api/users/settings/
+WARNING 2025-10-10 07:04:08,294 basehttp 9944 20328 "GET /api/users/settings/ HTTP/1.1" 404 12738
+INFO 2025-10-10 07:04:15,916 basehttp 9944 18712 "OPTIONS /api/ml/suggestions/analyze_workload/ HTTP/1.1" 200 0
+INFO 2025-10-10 07:04:16,035 basehttp 9944 18712 "GET /api/ml/suggestions/analyze_workload/ HTTP/1.1" 200 1380
+INFO 2025-10-10 07:04:16,645 basehttp 9944 18712 "OPTIONS /api/courses/departments/ HTTP/1.1" 200 0
+INFO 2025-10-10 07:04:16,645 basehttp 9944 1632 "OPTIONS /api/courses/departments/? HTTP/1.1" 200 0
+INFO 2025-10-10 07:04:16,648 basehttp 9944 18712 "OPTIONS /api/courses/departments/stats/ HTTP/1.1" 200 0
+INFO 2025-10-10 07:04:16,700 basehttp 9944 18712 "GET /api/courses/departments/ HTTP/1.1" 200 1233
+INFO 2025-10-10 07:04:16,700 basehttp 9944 1632 "GET /api/courses/departments/? HTTP/1.1" 200 1233
+WARNING 2025-10-10 07:04:16,716 log 9944 18712 Not Found: /api/courses/departments/stats/
+WARNING 2025-10-10 07:04:16,718 basehttp 9944 18712 "GET /api/courses/departments/stats/ HTTP/1.1" 404 25
+INFO 2025-10-10 07:04:18,921 basehttp 9944 18712 "OPTIONS /api/users/? HTTP/1.1" 200 0
+INFO 2025-10-10 07:04:19,094 basehttp 9944 18712 "GET /api/users/? HTTP/1.1" 200 178
+INFO 2025-10-10 07:04:20,065 basehttp 9944 18712 "OPTIONS /api/rooms/rooms/?search= HTTP/1.1" 200 0
+INFO 2025-10-10 07:04:20,065 basehttp 9944 1632 "OPTIONS /api/rooms/rooms/stats/ HTTP/1.1" 200 0
+INFO 2025-10-10 07:04:20,122 basehttp 9944 18712 "GET /api/rooms/rooms/stats/ HTTP/1.1" 200 667
+INFO 2025-10-10 07:04:20,124 basehttp 9944 1632 "GET /api/rooms/rooms/?search= HTTP/1.1" 200 9468
+INFO 2025-10-10 07:04:35,095 basehttp 9944 1632 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:04:38,403 basehttp 9944 1632 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:07:17,153 basehttp 9944 1632 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 07:07:17,419 basehttp 9944 1632 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:07:17,461 basehttp 9944 18712 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 07:07:17,479 basehttp 9944 1632 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 07:07:17,536 basehttp 9944 18712 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 07:07:17,591 basehttp 9944 1632 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:08:07,404 basehttp 9944 1632 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:08:07,507 basehttp 9944 18712 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:08:55,711 basehttp 9944 18712 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 07:08:57,751 basehttp 9944 18712 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:08:57,751 basehttp 9944 1632 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 07:08:57,793 basehttp 9944 18712 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 07:08:57,818 basehttp 9944 1632 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 07:08:57,860 basehttp 9944 18712 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:09:40,007 basehttp 9944 18712 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 07:09:41,316 basehttp 9944 19028 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 07:09:41,345 basehttp 9944 13692 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 07:09:41,411 basehttp 9944 1632 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 07:09:41,474 basehttp 9944 18712 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:09:41,713 basehttp 9944 1632 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+WARNING 2025-10-10 07:10:24,962 log 9944 1632 Not Found: /api/users/settings/
+WARNING 2025-10-10 07:10:24,963 basehttp 9944 1632 "GET /api/users/settings/ HTTP/1.1" 404 12738
+INFO 2025-10-10 07:10:34,370 basehttp 9944 1632 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:10:34,464 basehttp 9944 18712 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:12:27,835 basehttp 9944 18712 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 07:12:32,597 basehttp 9944 13692 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 07:12:32,619 basehttp 9944 19028 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 07:12:32,661 basehttp 9944 1632 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 07:12:32,706 basehttp 9944 18712 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:14:39,761 basehttp 9944 18712 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 07:14:40,129 basehttp 9944 19028 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 07:14:40,173 basehttp 9944 1632 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 07:14:40,222 basehttp 9944 13692 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 07:14:40,295 basehttp 9944 18712 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:14:40,661 basehttp 9944 13692 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:19:44,351 basehttp 9944 16120 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 07:19:44,609 basehttp 9944 16120 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:19:44,713 basehttp 9944 16120 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 07:19:44,743 basehttp 9944 16320 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 07:19:44,897 basehttp 9944 16120 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 07:19:45,026 basehttp 9944 16320 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:28:59,362 basehttp 9944 3428 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-10 07:28:59,942 basehttp 9944 3428 "GET /api/courses/curricula/ HTTP/1.1" 200 5412
+INFO 2025-10-10 07:28:59,973 basehttp 9944 24180 "GET /api/courses/courses/ HTTP/1.1" 200 9734
+INFO 2025-10-10 07:29:00,058 basehttp 9944 3428 "GET /api/courses/teachers/ HTTP/1.1" 200 3328
+INFO 2025-10-10 07:29:00,277 basehttp 9944 23948 "GET /api/rooms/rooms/ HTTP/1.1" 200 9468
+INFO 2025-10-10 07:29:00,441 basehttp 9944 22852 "GET /api/courses/curricula/ HTTP/1.1" 200 5412

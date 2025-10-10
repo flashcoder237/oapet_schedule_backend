@@ -413,3 +413,230 @@ class ScheduleExport(models.Model):
 
     class Meta:
         ordering = ['-exported_at']
+
+
+class ScheduleGenerationConfig(models.Model):
+    """Configuration pour la génération dynamique d'emploi du temps"""
+    RECURRENCE_TYPES = [
+        ('weekly', 'Hebdomadaire'),
+        ('biweekly', 'Bihebdomadaire'),
+        ('monthly', 'Mensuel'),
+        ('custom', 'Personnalisé'),
+    ]
+
+    OPTIMIZATION_PRIORITIES = [
+        ('teacher', 'Enseignant'),
+        ('room', 'Salle'),
+        ('balanced', 'Équilibré'),
+    ]
+
+    FLEXIBILITY_LEVELS = [
+        ('rigid', 'Rigide'),
+        ('balanced', 'Équilibré'),
+        ('flexible', 'Flexible'),
+    ]
+
+    schedule = models.OneToOneField(Schedule, on_delete=models.CASCADE, related_name='generation_config')
+
+    # Période de génération
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    # Paramètres de récurrence
+    recurrence_type = models.CharField(max_length=15, choices=RECURRENCE_TYPES, default='weekly')
+    recurrence_pattern = models.CharField(max_length=200, blank=True)  # Format iCalendar RRULE
+
+    # Paramètres de génération
+    flexibility_level = models.CharField(max_length=15, choices=FLEXIBILITY_LEVELS, default='balanced')
+    allow_conflicts = models.BooleanField(default=False)
+    max_sessions_per_day = models.IntegerField(default=4)
+    respect_teacher_preferences = models.BooleanField(default=True)
+    respect_room_preferences = models.BooleanField(default=True)
+    optimization_priority = models.CharField(max_length=15, choices=OPTIMIZATION_PRIORITIES, default='balanced')
+
+    # Jours exclus (jours fériés, etc.)
+    excluded_dates = models.JSONField(default=list)  # Liste de dates au format YYYY-MM-DD
+
+    # Semaines spéciales (examens, etc.)
+    special_weeks = models.JSONField(default=list)  # [{start_date, end_date, type, suspend_classes}]
+
+    # Métadonnées
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='generation_configs')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Config {self.schedule.name} - {self.start_date} à {self.end_date}"
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Configuration de génération'
+        verbose_name_plural = 'Configurations de génération'
+
+    def is_date_excluded(self, date):
+        """Vérifie si une date est exclue"""
+        date_str = date.strftime('%Y-%m-%d')
+        return date_str in self.excluded_dates
+
+    def get_special_week(self, date):
+        """Retourne les infos de la semaine spéciale si la date est dans une semaine spéciale"""
+        from datetime import datetime
+        for week in self.special_weeks:
+            start = datetime.strptime(week['start_date'], '%Y-%m-%d').date()
+            end = datetime.strptime(week['end_date'], '%Y-%m-%d').date()
+            if start <= date <= end:
+                return week
+        return None
+
+
+class SessionOccurrence(models.Model):
+    """Occurrence individuelle d'une session planifiée (instance concrète d'un cours)"""
+    SESSION_STATUS = [
+        ('scheduled', 'Planifié'),
+        ('in_progress', 'En cours'),
+        ('completed', 'Terminé'),
+        ('cancelled', 'Annulé'),
+        ('rescheduled', 'Reprogrammé'),
+    ]
+
+    # Référence au template de session
+    session_template = models.ForeignKey(
+        ScheduleSession,
+        on_delete=models.CASCADE,
+        related_name='occurrences'
+    )
+
+    # Date et heure concrètes
+    actual_date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    # Ressources (peuvent être différentes du template)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+
+    # Statut et suivi
+    status = models.CharField(max_length=15, choices=SESSION_STATUS, default='scheduled')
+    attendance_count = models.IntegerField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    # Modifications par rapport au template
+    is_room_modified = models.BooleanField(default=False)
+    is_teacher_modified = models.BooleanField(default=False)
+    is_time_modified = models.BooleanField(default=False)
+
+    # Annulation / Reprogrammation
+    is_cancelled = models.BooleanField(default=False)
+    cancellation_reason = models.TextField(blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancelled_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cancelled_sessions'
+    )
+
+    # Reprogrammation
+    rescheduled_from = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rescheduled_to'
+    )
+
+    # Métadonnées
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.session_template.course.code} - {self.actual_date} {self.start_time}"
+
+    class Meta:
+        ordering = ['actual_date', 'start_time']
+        unique_together = ['session_template', 'actual_date', 'start_time']
+        indexes = [
+            models.Index(fields=['actual_date', 'status']),
+            models.Index(fields=['room', 'actual_date']),
+            models.Index(fields=['teacher', 'actual_date']),
+            models.Index(fields=['session_template', 'actual_date']),
+        ]
+        verbose_name = 'Occurrence de session'
+        verbose_name_plural = 'Occurrences de sessions'
+
+    def get_duration_hours(self):
+        """Retourne la durée en heures de l'occurrence"""
+        duration = timezone.datetime.combine(timezone.datetime.today(), self.end_time) - \
+                  timezone.datetime.combine(timezone.datetime.today(), self.start_time)
+        return duration.total_seconds() / 3600
+
+    def cancel(self, reason, cancelled_by):
+        """Annule l'occurrence"""
+        self.status = 'cancelled'
+        self.is_cancelled = True
+        self.cancellation_reason = reason
+        self.cancelled_at = timezone.now()
+        self.cancelled_by = cancelled_by
+        self.save()
+
+    def reschedule(self, new_date, new_start_time, new_end_time, new_room=None, new_teacher=None):
+        """Reprogramme l'occurrence en créant une nouvelle occurrence"""
+        new_occurrence = SessionOccurrence.objects.create(
+            session_template=self.session_template,
+            actual_date=new_date,
+            start_time=new_start_time,
+            end_time=new_end_time,
+            room=new_room or self.room,
+            teacher=new_teacher or self.teacher,
+            status='scheduled',
+            rescheduled_from=self,
+            is_room_modified=new_room is not None and new_room != self.room,
+            is_teacher_modified=new_teacher is not None and new_teacher != self.teacher,
+            is_time_modified=True,
+        )
+
+        # Marque l'occurrence actuelle comme reprogrammée
+        self.status = 'rescheduled'
+        self.save()
+
+        return new_occurrence
+
+    def check_conflicts(self):
+        """Vérifie les conflits pour cette occurrence"""
+        conflicts = []
+
+        # Conflit de salle
+        room_conflicts = SessionOccurrence.objects.filter(
+            room=self.room,
+            actual_date=self.actual_date,
+            status='scheduled'
+        ).exclude(id=self.id).filter(
+            models.Q(start_time__lt=self.end_time, end_time__gt=self.start_time)
+        )
+
+        if room_conflicts.exists():
+            conflicts.append({
+                'type': 'room_double_booking',
+                'severity': 'high',
+                'description': f"La salle {self.room.code} est déjà occupée"
+            })
+
+        # Conflit d'enseignant
+        teacher_conflicts = SessionOccurrence.objects.filter(
+            teacher=self.teacher,
+            actual_date=self.actual_date,
+            status='scheduled'
+        ).exclude(id=self.id).filter(
+            models.Q(start_time__lt=self.end_time, end_time__gt=self.start_time)
+        )
+
+        if teacher_conflicts.exists():
+            conflicts.append({
+                'type': 'teacher_double_booking',
+                'severity': 'critical',
+                'description': f"L'enseignant {self.teacher.user.get_full_name()} est déjà occupé"
+            })
+
+        return conflicts

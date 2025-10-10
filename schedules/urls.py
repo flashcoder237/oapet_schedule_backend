@@ -6,6 +6,10 @@ from .views import (
     ConflictViewSet, ScheduleOptimizationViewSet, ScheduleTemplateViewSet,
     ScheduleConstraintViewSet, ScheduleExportViewSet
 )
+from .views_generation import (
+    ScheduleGenerationConfigViewSet, SessionOccurrenceViewSet,
+    ScheduleGenerationViewSet
+)
 
 router = DefaultRouter()
 router.register(r'academic-periods', AcademicPeriodViewSet)
@@ -17,6 +21,11 @@ router.register(r'optimizations', ScheduleOptimizationViewSet)
 router.register(r'templates', ScheduleTemplateViewSet)
 router.register(r'constraints', ScheduleConstraintViewSet)
 router.register(r'exports', ScheduleExportViewSet)
+
+# Nouvelles routes pour la génération dynamique
+router.register(r'generation-configs', ScheduleGenerationConfigViewSet, basename='generation-config')
+router.register(r'occurrences', SessionOccurrenceViewSet, basename='occurrence')
+router.register(r'generation', ScheduleGenerationViewSet, basename='generation')
 
 urlpatterns = [
     path('', include(router.urls)),

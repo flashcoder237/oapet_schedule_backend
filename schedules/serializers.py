@@ -2,7 +2,8 @@
 from rest_framework import serializers
 from .models import (
     AcademicPeriod, TimeSlot, Schedule, ScheduleSession, Conflict,
-    ScheduleOptimization, ScheduleTemplate, ScheduleConstraint, ScheduleExport
+    ScheduleOptimization, ScheduleTemplate, ScheduleConstraint, ScheduleExport,
+    ScheduleGenerationConfig, SessionOccurrence
 )
 from courses.serializers import CourseSerializer, TeacherSerializer, CurriculumSerializer
 from rooms.serializers import RoomSerializer
@@ -235,3 +236,211 @@ class BulkScheduleActionSerializer(serializers.Serializer):
         ('delete', 'Supprimer')
     ])
     parameters = serializers.DictField(required=False)
+
+
+class ScheduleGenerationConfigSerializer(serializers.ModelSerializer):
+    """Serializer pour la configuration de génération d'emploi du temps"""
+    schedule_name = serializers.CharField(source='schedule.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+    recurrence_type_display = serializers.CharField(source='get_recurrence_type_display', read_only=True)
+    flexibility_level_display = serializers.CharField(source='get_flexibility_level_display', read_only=True)
+    optimization_priority_display = serializers.CharField(source='get_optimization_priority_display', read_only=True)
+    duration_days = serializers.SerializerMethodField()
+    excluded_dates_count = serializers.SerializerMethodField()
+    special_weeks_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ScheduleGenerationConfig
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at')
+
+    def get_duration_days(self, obj):
+        """Calcule la durée de génération en jours"""
+        if obj.start_date and obj.end_date:
+            return (obj.end_date - obj.start_date).days
+        return 0
+
+    def get_excluded_dates_count(self, obj):
+        """Compte le nombre de dates exclues"""
+        return len(obj.excluded_dates) if obj.excluded_dates else 0
+
+    def get_special_weeks_count(self, obj):
+        """Compte le nombre de semaines spéciales"""
+        return len(obj.special_weeks) if obj.special_weeks else 0
+
+
+class ScheduleGenerationConfigCreateSerializer(serializers.ModelSerializer):
+    """Serializer simplifié pour créer une configuration de génération"""
+    class Meta:
+        model = ScheduleGenerationConfig
+        fields = [
+            'schedule', 'start_date', 'end_date', 'recurrence_type', 'recurrence_pattern',
+            'flexibility_level', 'allow_conflicts', 'max_sessions_per_day',
+            'respect_teacher_preferences', 'respect_room_preferences',
+            'optimization_priority', 'excluded_dates', 'special_weeks'
+        ]
+
+    def validate(self, data):
+        """Valide les données de configuration"""
+        if data['start_date'] >= data['end_date']:
+            raise serializers.ValidationError("La date de fin doit être après la date de début")
+
+        # Valide les dates exclues
+        if 'excluded_dates' in data and data['excluded_dates']:
+            from datetime import datetime
+            for date_str in data['excluded_dates']:
+                try:
+                    datetime.strptime(date_str, '%Y-%m-%d')
+                except ValueError:
+                    raise serializers.ValidationError(f"Format de date invalide: {date_str}")
+
+        # Valide les semaines spéciales
+        if 'special_weeks' in data and data['special_weeks']:
+            for week in data['special_weeks']:
+                if 'start_date' not in week or 'end_date' not in week:
+                    raise serializers.ValidationError("Chaque semaine spéciale doit avoir start_date et end_date")
+
+        return data
+
+
+class SessionOccurrenceSerializer(serializers.ModelSerializer):
+    """Serializer pour les occurrences de sessions"""
+    session_template_details = ScheduleSessionSerializer(source='session_template', read_only=True)
+    room_details = RoomSerializer(source='room', read_only=True)
+    teacher_details = TeacherSerializer(source='teacher', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    course_code = serializers.CharField(source='session_template.course.code', read_only=True)
+    course_name = serializers.CharField(source='session_template.course.name', read_only=True)
+    duration_hours = serializers.SerializerMethodField()
+    has_conflicts = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SessionOccurrence
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'cancelled_at')
+
+    def get_duration_hours(self, obj):
+        """Retourne la durée en heures"""
+        return obj.get_duration_hours()
+
+    def get_has_conflicts(self, obj):
+        """Vérifie s'il y a des conflits"""
+        return len(obj.check_conflicts()) > 0
+
+
+class SessionOccurrenceListSerializer(serializers.ModelSerializer):
+    """Serializer simplifié pour les listes d'occurrences"""
+    course_code = serializers.CharField(source='session_template.course.code', read_only=True)
+    course_name = serializers.CharField(source='session_template.course.name', read_only=True)
+    room_code = serializers.CharField(source='room.code', read_only=True)
+    teacher_name = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = SessionOccurrence
+        fields = [
+            'id', 'actual_date', 'start_time', 'end_time', 'status',
+            'course_code', 'course_name', 'room_code', 'teacher_name',
+            'status_display', 'is_cancelled', 'is_room_modified',
+            'is_teacher_modified', 'is_time_modified'
+        ]
+
+    def get_teacher_name(self, obj):
+        """Retourne le nom complet de l'enseignant"""
+        return obj.teacher.user.get_full_name()
+
+
+class SessionOccurrenceCreateSerializer(serializers.ModelSerializer):
+    """Serializer pour créer une occurrence de session"""
+    class Meta:
+        model = SessionOccurrence
+        fields = [
+            'session_template', 'actual_date', 'start_time', 'end_time',
+            'room', 'teacher', 'notes'
+        ]
+
+    def validate(self, data):
+        """Valide les données de l'occurrence"""
+        if data['start_time'] >= data['end_time']:
+            raise serializers.ValidationError("L'heure de fin doit être après l'heure de début")
+
+        # Vérifie si le template de session existe
+        if 'session_template' not in data:
+            raise serializers.ValidationError("Le template de session est obligatoire")
+
+        return data
+
+
+class SessionOccurrenceCancelSerializer(serializers.Serializer):
+    """Serializer pour annuler une occurrence de session"""
+    reason = serializers.CharField(required=True)
+    notify_students = serializers.BooleanField(default=True)
+    notify_teacher = serializers.BooleanField(default=True)
+
+
+class SessionOccurrenceRescheduleSerializer(serializers.Serializer):
+    """Serializer pour reprogrammer une occurrence de session"""
+    new_date = serializers.DateField(required=True)
+    new_start_time = serializers.TimeField(required=True)
+    new_end_time = serializers.TimeField(required=True)
+    new_room = serializers.IntegerField(required=False, allow_null=True)
+    new_teacher = serializers.IntegerField(required=False, allow_null=True)
+    reason = serializers.CharField(required=False)
+    notify_students = serializers.BooleanField(default=True)
+    notify_teacher = serializers.BooleanField(default=True)
+
+    def validate(self, data):
+        """Valide les données de reprogrammation"""
+        if data['new_start_time'] >= data['new_end_time']:
+            raise serializers.ValidationError("L'heure de fin doit être après l'heure de début")
+        return data
+
+
+class SessionOccurrenceModifySerializer(serializers.Serializer):
+    """Serializer pour modifier une occurrence de session"""
+    room = serializers.IntegerField(required=False, allow_null=True)
+    teacher = serializers.IntegerField(required=False, allow_null=True)
+    start_time = serializers.TimeField(required=False)
+    end_time = serializers.TimeField(required=False)
+    notes = serializers.CharField(required=False, allow_blank=True)
+    notify_students = serializers.BooleanField(default=False)
+    notify_teacher = serializers.BooleanField(default=False)
+
+
+class DailyScheduleSerializer(serializers.Serializer):
+    """Serializer pour l'affichage journalier des occurrences"""
+    date = serializers.DateField()
+    occurrences = SessionOccurrenceListSerializer(many=True)
+    total_sessions = serializers.IntegerField()
+    cancelled_sessions = serializers.IntegerField()
+    conflicts_count = serializers.IntegerField()
+
+
+class WeeklyOccurrencesSerializer(serializers.Serializer):
+    """Serializer pour l'affichage hebdomadaire des occurrences"""
+    week_start = serializers.DateField()
+    week_end = serializers.DateField()
+    days = serializers.DictField(child=DailyScheduleSerializer())
+    total_sessions = serializers.IntegerField()
+    total_hours = serializers.FloatField()
+
+
+class ScheduleGenerationRequestSerializer(serializers.Serializer):
+    """Serializer pour les requêtes de génération d'emploi du temps"""
+    schedule_id = serializers.IntegerField()
+    preview_mode = serializers.BooleanField(default=False)
+    force_regenerate = serializers.BooleanField(default=False)
+    preserve_modifications = serializers.BooleanField(default=True)
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
+
+
+class ScheduleGenerationResponseSerializer(serializers.Serializer):
+    """Serializer pour les réponses de génération d'emploi du temps"""
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    occurrences_created = serializers.IntegerField()
+    conflicts_detected = serializers.IntegerField()
+    conflicts = serializers.ListField(child=serializers.DictField(), required=False)
+    preview_data = serializers.DictField(required=False)
+    generation_time = serializers.FloatField()
