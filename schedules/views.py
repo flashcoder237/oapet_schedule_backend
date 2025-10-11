@@ -174,7 +174,45 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
-    
+
+    @action(detail=False, methods=['get'])
+    def by_curriculum(self, request):
+        """Récupère le schedule actif pour un curriculum donné"""
+        curriculum_code = request.query_params.get('curriculum')
+
+        if not curriculum_code:
+            return Response({
+                'error': 'Le paramètre curriculum est requis'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        from courses.models import Curriculum
+        try:
+            # Chercher le curriculum par code ou ID
+            if curriculum_code.isdigit():
+                curriculum = Curriculum.objects.get(id=curriculum_code)
+            else:
+                curriculum = Curriculum.objects.get(code=curriculum_code)
+        except Curriculum.DoesNotExist:
+            return Response({
+                'error': f'Curriculum {curriculum_code} non trouvé'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Chercher le schedule le plus récent pour ce curriculum
+        schedule = Schedule.objects.filter(curriculum=curriculum).order_by('-created_at').first()
+
+        if not schedule:
+            return Response({
+                'error': f'Aucun emploi du temps trouvé pour le curriculum {curriculum.code}',
+                'curriculum': {
+                    'id': curriculum.id,
+                    'code': curriculum.code,
+                    'name': curriculum.name
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(schedule)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['post'])
     def publish(self, request, pk=None):
         """Publie un emploi du temps"""
@@ -332,7 +370,7 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                     # Récupérer les cours du curriculum via CurriculumCourse
                     from courses.models import CurriculumCourse
                     curriculum_courses = CurriculumCourse.objects.filter(
-                        curriculum_id=curriculum_id
+                        curriculum=curriculum
                     ).select_related('course')
                     courses = [cc.course for cc in curriculum_courses]
 
@@ -356,12 +394,14 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
                             course = courses[course_index]
 
-                            # Trouver une salle disponible pour ce créneau
+                            # Trouver une salle disponible pour ce créneau ET cette date spécifique
                             from rooms.models import Room
-                            # Exclure les salles déjà utilisées pour ce créneau dans ce schedule
+                            # Exclure les salles déjà utilisées pour CETTE DATE SPÉCIFIQUE et ce créneau horaire
                             used_rooms = ScheduleSession.objects.filter(
                                 schedule=schedule,
-                                time_slot=slot
+                                specific_date=current_date,
+                                specific_start_time=slot.start_time,
+                                specific_end_time=slot.end_time
                             ).values_list('room_id', flat=True)
 
                             available_room = Room.objects.filter(
@@ -370,8 +410,8 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                             ).exclude(id__in=used_rooms).first()
 
                             if available_room and course.teacher:
-                                # Créer la session
-                                ScheduleSession.objects.create(
+                                # Créer la session template
+                                session = ScheduleSession.objects.create(
                                     schedule=schedule,
                                     course=course,
                                     teacher=course.teacher,
@@ -381,6 +421,22 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                     specific_start_time=slot.start_time,
                                     specific_end_time=slot.end_time,
                                     session_type='CM'
+                                )
+
+                                # Créer l'occurrence correspondante (nouveau système)
+                                from .models import SessionOccurrence
+                                SessionOccurrence.objects.create(
+                                    session_template=session,
+                                    actual_date=current_date,
+                                    start_time=slot.start_time,
+                                    end_time=slot.end_time,
+                                    room=available_room,
+                                    teacher=course.teacher,
+                                    status='scheduled',
+                                    is_room_modified=False,
+                                    is_teacher_modified=False,
+                                    is_time_modified=False,
+                                    is_cancelled=False
                                 )
 
                             course_index += 1

@@ -165,11 +165,29 @@ class ScheduleGenerationService:
         start_date: datetime,
         end_date: datetime
     ) -> List[SessionOccurrence]:
-        """Génère les occurrences pour une session template"""
+        """Génère les occurrences pour une session template en tenant compte du volume horaire"""
         occurrences = []
 
         # Récupère le créneau horaire
         time_slot = session_template.time_slot
+
+        # Calcule la durée de chaque session en heures
+        session_start = session_template.specific_start_time or time_slot.start_time
+        session_end = session_template.specific_end_time or time_slot.end_time
+        session_duration_hours = (
+            timezone.datetime.combine(timezone.datetime.today(), session_end) -
+            timezone.datetime.combine(timezone.datetime.today(), session_start)
+        ).total_seconds() / 3600
+
+        # Détermine le nombre total d'occurrences nécessaires basé sur total_hours du cours
+        course_total_hours = session_template.course.total_hours or 0
+
+        # Si total_hours est défini, calcule le nombre d'occurrences nécessaires
+        if course_total_hours > 0 and session_duration_hours > 0:
+            max_occurrences = int(course_total_hours / session_duration_hours)
+        else:
+            # Sinon, génère sur toute la période (comportement par défaut)
+            max_occurrences = None
 
         # Mappe les jours de la semaine
         day_mapping = {
@@ -194,7 +212,12 @@ class ScheduleGenerationService:
                 return occurrences
 
         # Génère les occurrences selon la récurrence
+        occurrence_count = 0
         while current_date <= end_date:
+            # Si max_occurrences est défini, vérifie qu'on ne dépasse pas
+            if max_occurrences is not None and occurrence_count >= max_occurrences:
+                break
+
             # Vérifie si la date est exclue
             if not self.config.is_date_excluded(current_date):
                 # Vérifie s'il y a une semaine spéciale
@@ -209,8 +232,8 @@ class ScheduleGenerationService:
                 occurrence = SessionOccurrence(
                     session_template=session_template,
                     actual_date=current_date,
-                    start_time=session_template.specific_start_time or time_slot.start_time,
-                    end_time=session_template.specific_end_time or time_slot.end_time,
+                    start_time=session_start,
+                    end_time=session_end,
                     room=session_template.room,
                     teacher=session_template.teacher,
                     status='scheduled',
@@ -219,6 +242,7 @@ class ScheduleGenerationService:
                     is_time_modified=False
                 )
                 occurrences.append(occurrence)
+                occurrence_count += 1
 
             # Passe à la semaine suivante selon le type de récurrence
             if self.config.recurrence_type == 'weekly':

@@ -185,13 +185,16 @@ class ScheduleSession(models.Model):
         return f"{self.course.code} - {self.time_slot} - {self.room.code}"
 
     class Meta:
-        unique_together = ['schedule', 'time_slot', 'room']
+        # Modifié: la contrainte unique doit inclure specific_date pour permettre
+        # d'utiliser la même salle et le même time_slot à des dates différentes
+        unique_together = ['schedule', 'time_slot', 'room', 'specific_date']
         ordering = ['time_slot__day_of_week', 'time_slot__start_time']
         indexes = [
             models.Index(fields=['schedule', 'time_slot']),
             models.Index(fields=['teacher', 'time_slot']),
             models.Index(fields=['room', 'time_slot']),
             models.Index(fields=['course', 'session_type']),
+            models.Index(fields=['specific_date']),
         ]
     
     def get_duration_hours(self):

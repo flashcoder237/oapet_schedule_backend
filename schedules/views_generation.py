@@ -330,13 +330,29 @@ class SessionOccurrenceViewSet(viewsets.ModelViewSet):
             actual_date__lte=week_end
         )
 
-        # Groupe par jour
-        days = {}
+        # Groupe par jour de la semaine avec noms anglais
+        occurrences_by_day = {
+            'monday': [],
+            'tuesday': [],
+            'wednesday': [],
+            'thursday': [],
+            'friday': [],
+            'saturday': [],
+            'sunday': []
+        }
+
+        day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+
         for occurrence in occurrences:
-            day_key = occurrence.actual_date.strftime('%Y-%m-%d')
-            if day_key not in days:
-                days[day_key] = []
-            days[day_key].append(occurrence)
+            # 0 = lundi, 1 = mardi, etc.
+            day_index = occurrence.actual_date.weekday()
+            day_name = day_names[day_index]
+            occurrences_by_day[day_name].append(occurrence)
+
+        # Sérialiser les occurrences par jour
+        serialized_occurrences = {}
+        for day_name, day_occurrences in occurrences_by_day.items():
+            serialized_occurrences[day_name] = SessionOccurrenceListSerializer(day_occurrences, many=True).data
 
         # Calcule les statistiques
         total_sessions = occurrences.count()
@@ -345,11 +361,8 @@ class SessionOccurrenceViewSet(viewsets.ModelViewSet):
         data = {
             'week_start': week_start,
             'week_end': week_end,
-            'days': {
-                day: SessionOccurrenceListSerializer(occs, many=True).data
-                for day, occs in days.items()
-            },
-            'total_sessions': total_sessions,
+            'occurrences_by_day': serialized_occurrences,  # Format attendu par le frontend
+            'total': total_sessions,
             'total_hours': total_hours
         }
 
