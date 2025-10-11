@@ -9578,3 +9578,461 @@ INFO 2025-10-11 02:59:04,988 basehttp 17292 25228 "GET /api/schedules/conflicts/
 INFO 2025-10-11 02:59:11,507 basehttp 17292 25228 "GET /api/schedules/occurrences/weekly/?date=2026-06-08&schedule=245 HTTP/1.1" 200 9463
 INFO 2025-10-11 03:01:03,939 autoreload 17292 17440 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\generation_service.py changed, reloading.
 INFO 2025-10-11 03:01:04,623 autoreload 24004 1044 Watching for file changes with StatReloader
+INFO 2025-10-11 03:02:15,716 basehttp 24004 27916 "OPTIONS /api/schedules/schedules/by_curriculum/?curriculum=L1-INFO HTTP/1.1" 200 0
+INFO 2025-10-11 03:02:15,794 basehttp 24004 27916 "GET /api/schedules/schedules/by_curriculum/?curriculum=L1-INFO HTTP/1.1" 200 1298
+INFO 2025-10-11 03:02:15,801 basehttp 24004 27916 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-06-08&schedule=239 HTTP/1.1" 200 0
+INFO 2025-10-11 03:02:15,832 basehttp 24004 27916 "GET /api/schedules/occurrences/weekly/?date=2026-06-08&schedule=239 HTTP/1.1" 200 192
+INFO 2025-10-11 03:03:53,110 basehttp 24004 27916 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-06-01&schedule=239 HTTP/1.1" 200 0
+INFO 2025-10-11 03:03:53,127 basehttp 24004 27916 "GET /api/schedules/occurrences/weekly/?date=2026-06-01&schedule=239 HTTP/1.1" 200 192
+INFO 2025-10-11 03:03:53,617 basehttp 24004 27916 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-05-25&schedule=239 HTTP/1.1" 200 0
+INFO 2025-10-11 03:03:53,643 basehttp 24004 27916 "GET /api/schedules/occurrences/weekly/?date=2026-05-25&schedule=239 HTTP/1.1" 200 192
+INFO 2025-10-11 03:03:56,798 basehttp 24004 27916 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:04:09,662 basehttp 24004 27916 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 201 255
+INFO 2025-10-11 03:04:09,695 basehttp 24004 27916 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 03:04:24,969 basehttp 24004 27916 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 201 243
+INFO 2025-10-11 03:04:30,315 basehttp 24004 27916 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-05-18&schedule=239 HTTP/1.1" 200 0
+INFO 2025-10-11 03:04:30,346 basehttp 24004 27916 "GET /api/schedules/occurrences/weekly/?date=2026-05-18&schedule=239 HTTP/1.1" 200 192
+INFO 2025-10-11 03:04:39,008 basehttp 24004 27916 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=239 HTTP/1.1" 200 0
+INFO 2025-10-11 03:04:39,029 basehttp 24004 27916 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=239 HTTP/1.1" 200 192
+INFO 2025-10-11 03:04:43,404 basehttp 24004 27916 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 03:04:43,552 basehttp 24004 27916 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:04:43,771 basehttp 24004 27916 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 03:04:43,936 basehttp 24004 27916 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 03:04:43,951 basehttp 24004 6332 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:04:43,972 basehttp 24004 29976 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 03:04:51,954 basehttp 24004 29976 "GET /api/schedules/schedules/by_curriculum/?curriculum=L1-INFO HTTP/1.1" 200 1286
+INFO 2025-10-11 03:04:51,983 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:04:52,042 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=247 HTTP/1.1" 200 8792
+INFO 2025-10-11 03:04:52,058 basehttp 24004 29976 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 03:05:09,172 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-13&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:09,269 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-10-13&schedule=247 HTTP/1.1" 200 8802
+INFO 2025-10-11 03:05:09,585 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-20&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:09,690 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-10-20&schedule=247 HTTP/1.1" 200 8795
+INFO 2025-10-11 03:05:10,290 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-27&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:10,348 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-10-27&schedule=247 HTTP/1.1" 200 8796
+INFO 2025-10-11 03:05:10,723 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-11-03&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:10,791 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-11-03&schedule=247 HTTP/1.1" 200 8785
+INFO 2025-10-11 03:05:11,163 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-11-10&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:11,219 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-11-10&schedule=247 HTTP/1.1" 200 8806
+INFO 2025-10-11 03:05:11,607 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-11-17&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:11,662 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-11-17&schedule=247 HTTP/1.1" 200 8794
+INFO 2025-10-11 03:05:11,926 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-11-24&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:12,001 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-11-24&schedule=247 HTTP/1.1" 200 8796
+INFO 2025-10-11 03:05:12,319 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-01&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:12,381 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-12-01&schedule=247 HTTP/1.1" 200 8787
+INFO 2025-10-11 03:05:12,711 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-08&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:12,780 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-12-08&schedule=247 HTTP/1.1" 200 8782
+INFO 2025-10-11 03:05:13,139 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-15&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:13,194 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-12-15&schedule=247 HTTP/1.1" 200 8785
+INFO 2025-10-11 03:05:13,552 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-22&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:13,617 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-12-22&schedule=247 HTTP/1.1" 200 8790
+INFO 2025-10-11 03:05:13,909 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-29&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:13,960 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-12-29&schedule=247 HTTP/1.1" 200 8781
+INFO 2025-10-11 03:05:14,262 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-01-05&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:14,319 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-01-05&schedule=247 HTTP/1.1" 200 8780
+INFO 2025-10-11 03:05:14,652 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-01-12&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:14,713 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-01-12&schedule=247 HTTP/1.1" 200 8783
+INFO 2025-10-11 03:05:15,168 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-01-19&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:15,242 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-01-19&schedule=247 HTTP/1.1" 200 8790
+INFO 2025-10-11 03:05:15,648 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-01-26&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:15,711 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-01-26&schedule=247 HTTP/1.1" 200 8775
+INFO 2025-10-11 03:05:16,233 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-02-02&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:16,295 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-02-02&schedule=247 HTTP/1.1" 200 8786
+INFO 2025-10-11 03:05:16,952 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-02-09&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:17,019 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-02-09&schedule=247 HTTP/1.1" 200 8794
+INFO 2025-10-11 03:05:17,670 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-02-16&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:05:17,731 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-02-16&schedule=247 HTTP/1.1" 200 8797
+INFO 2025-10-11 03:05:32,315 basehttp 24004 29976 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:05:44,630 basehttp 24004 29976 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 201 243
+INFO 2025-10-11 03:06:00,214 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-02-23&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:00,262 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-02-23&schedule=247 HTTP/1.1" 200 8792
+INFO 2025-10-11 03:06:00,487 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-02&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:00,523 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-03-02&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:00,929 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-09&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:00,960 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-03-09&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:01,251 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-16&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:01,293 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-03-16&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:01,531 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-23&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:01,571 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-03-23&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:02,336 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-30&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:02,369 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-03-30&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:14,827 basehttp 24004 29976 "POST /api/schedules/schedules/generate_for_period/ HTTP/1.1" 201 243
+INFO 2025-10-11 03:06:18,744 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-06&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:18,780 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-04-06&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:19,531 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-13&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:19,571 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-04-13&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:19,897 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-20&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:19,927 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-04-20&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:21,102 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-27&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:21,137 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-04-27&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:21,327 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-05-04&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:21,357 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-05-04&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:21,517 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-05-11&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:21,555 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-05-11&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:21,720 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-05-18&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:21,757 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-05-18&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:21,933 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-05-25&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:21,979 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-05-25&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:22,187 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-06-01&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:22,222 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-06-01&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:22,427 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-06-08&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:22,474 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-06-08&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:22,647 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-06-15&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:22,674 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-06-15&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:22,877 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-06-22&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:22,921 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-06-22&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:23,115 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-06-29&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:23,155 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-06-29&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:23,391 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-07-06&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:23,429 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-07-06&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:23,668 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-07-13&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:23,696 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-07-13&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:23,904 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-07-20&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:23,939 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-07-20&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:24,133 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-07-27&schedule=247 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:24,169 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2026-07-27&schedule=247 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:27,542 basehttp 24004 29976 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 03:06:27,779 basehttp 24004 29976 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:06:27,802 basehttp 24004 27916 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 03:06:27,927 basehttp 24004 27916 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:06:27,983 basehttp 24004 29976 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 03:06:28,039 basehttp 24004 6332 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 03:06:31,195 basehttp 24004 6332 "GET /api/schedules/schedules/by_curriculum/?curriculum=L1-INFO HTTP/1.1" 200 1286
+INFO 2025-10-11 03:06:31,224 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:31,262 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:31,286 basehttp 24004 6332 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 03:06:33,049 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-13&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:33,095 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-10-13&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:33,278 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-20&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:33,304 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-10-20&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:33,468 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-27&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:33,504 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-10-27&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:33,647 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-11-03&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:33,677 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-11-03&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:33,870 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-11-10&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:33,898 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-11-10&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:34,116 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-11-17&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:34,149 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-11-17&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:34,325 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-11-24&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:34,474 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-11-24&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:34,499 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-01&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:34,519 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-12-01&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:34,722 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-08&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:34,756 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-12-08&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:34,938 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-15&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:34,962 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-12-15&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:35,162 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-22&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:35,198 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-12-22&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:35,353 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-12-29&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:35,384 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2025-12-29&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:35,569 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-01-05&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:35,604 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-01-05&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:35,790 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-01-12&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:35,820 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-01-12&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:36,018 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-01-19&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:36,058 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-01-19&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:36,273 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-01-26&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:36,314 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-01-26&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:36,517 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-02-02&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:36,552 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-02-02&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:36,707 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-02-09&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:36,733 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-02-09&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:38,413 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-02-16&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:38,443 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-02-16&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:38,944 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-02-23&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:38,971 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-02-23&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:39,287 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-02&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:39,349 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-03-02&schedule=249 HTTP/1.1" 200 8790
+INFO 2025-10-11 03:06:39,626 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-09&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:39,689 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-03-09&schedule=249 HTTP/1.1" 200 8775
+INFO 2025-10-11 03:06:40,456 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-16&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:40,525 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-03-16&schedule=249 HTTP/1.1" 200 8786
+INFO 2025-10-11 03:06:41,002 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-23&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:41,065 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-03-23&schedule=249 HTTP/1.1" 200 8794
+INFO 2025-10-11 03:06:41,543 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-03-30&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:41,595 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-03-30&schedule=249 HTTP/1.1" 200 8797
+INFO 2025-10-11 03:06:41,925 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-06&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:41,983 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-06&schedule=249 HTTP/1.1" 200 8792
+INFO 2025-10-11 03:06:42,405 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-13&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:42,469 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-13&schedule=249 HTTP/1.1" 200 8802
+INFO 2025-10-11 03:06:46,087 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-20&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:46,139 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-20&schedule=249 HTTP/1.1" 200 8794
+INFO 2025-10-11 03:06:46,810 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-27&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:46,862 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-27&schedule=249 HTTP/1.1" 200 8792
+INFO 2025-10-11 03:06:48,558 basehttp 24004 6332 "GET /api/schedules/schedules/by_curriculum/?curriculum=L2-INFO HTTP/1.1" 200 1262
+INFO 2025-10-11 03:06:48,583 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-27&schedule=244 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:48,611 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-27&schedule=244 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:50,667 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-20&schedule=244 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:50,702 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-20&schedule=244 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:50,895 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-13&schedule=244 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:50,959 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-13&schedule=244 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:51,058 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/weekly/?date=2026-04-06&schedule=244 HTTP/1.1" 200 0
+INFO 2025-10-11 03:06:51,077 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-06&schedule=244 HTTP/1.1" 200 192
+INFO 2025-10-11 03:06:52,871 basehttp 24004 6332 "GET /api/schedules/schedules/by_curriculum/?curriculum=L3-INFO HTTP/1.1" 200 1327
+INFO 2025-10-11 03:06:52,956 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-06&schedule=245 HTTP/1.1" 200 8768
+INFO 2025-10-11 03:07:24,414 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/2612/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 03:07:24,577 basehttp 24004 6332 "POST /api/schedules/occurrences/2612/reschedule/ HTTP/1.1" 200 9040
+INFO 2025-10-11 03:07:27,818 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-03-30&schedule=245 HTTP/1.1" 200 8780
+INFO 2025-10-11 03:07:34,292 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-03-23&schedule=245 HTTP/1.1" 200 8771
+INFO 2025-10-11 03:07:36,424 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-13&schedule=245 HTTP/1.1" 200 8801
+INFO 2025-10-11 03:07:40,648 basehttp 24004 6332 "OPTIONS /api/schedules/occurrences/2637/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 03:07:40,793 basehttp 24004 6332 "POST /api/schedules/occurrences/2637/reschedule/ HTTP/1.1" 200 9088
+INFO 2025-10-11 03:07:45,424 basehttp 24004 6332 "GET /api/schedules/occurrences/weekly/?date=2026-04-20&schedule=245 HTTP/1.1" 200 8784
+INFO 2025-10-11 03:08:03,245 basehttp 24004 6332 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 03:08:03,420 basehttp 24004 6332 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:08:03,482 basehttp 24004 27916 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 03:08:03,589 basehttp 24004 6332 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 03:08:03,592 basehttp 24004 27916 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:08:03,618 basehttp 24004 29976 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 03:08:06,543 basehttp 24004 29976 "GET /api/schedules/schedules/by_curriculum/?curriculum=L3-INFO HTTP/1.1" 200 1327
+INFO 2025-10-11 03:08:06,604 basehttp 24004 29976 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=245 HTTP/1.1" 200 8771
+INFO 2025-10-11 03:08:06,626 basehttp 24004 29976 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 03:08:17,746 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/1947/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 03:08:17,887 basehttp 24004 29976 "POST /api/schedules/occurrences/1947/reschedule/ HTTP/1.1" 200 9100
+INFO 2025-10-11 03:08:19,910 basehttp 24004 29976 "OPTIONS /api/schedules/occurrences/1957/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 03:08:20,075 basehttp 24004 29976 "POST /api/schedules/occurrences/1957/reschedule/ HTTP/1.1" 200 9086
+INFO 2025-10-11 03:08:27,012 basehttp 24004 29976 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 03:08:27,365 basehttp 24004 25496 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 03:08:27,381 basehttp 24004 29976 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:08:27,498 basehttp 24004 6332 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 03:08:27,533 basehttp 24004 25496 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:08:27,546 basehttp 24004 27916 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 03:08:30,302 basehttp 24004 27916 "GET /api/schedules/schedules/by_curriculum/?curriculum=L3-INFO HTTP/1.1" 200 1327
+INFO 2025-10-11 03:08:30,369 basehttp 24004 27916 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=245 HTTP/1.1" 200 9470
+INFO 2025-10-11 03:08:30,386 basehttp 24004 27916 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 03:08:42,188 basehttp 24004 27916 "OPTIONS /api/schedules/occurrences/5111/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 03:08:42,339 basehttp 24004 27916 "POST /api/schedules/occurrences/5111/reschedule/ HTTP/1.1" 200 9085
+INFO 2025-10-11 03:08:43,660 basehttp 24004 27916 "POST /api/schedules/occurrences/5111/reschedule/ HTTP/1.1" 200 9293
+INFO 2025-10-11 03:08:46,832 basehttp 24004 27916 "POST /api/schedules/occurrences/5111/reschedule/ HTTP/1.1" 200 9293
+INFO 2025-10-11 03:13:29,490 autoreload 24004 1044 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\views_generation.py changed, reloading.
+INFO 2025-10-11 03:13:30,279 autoreload 14240 29632 Watching for file changes with StatReloader
+INFO 2025-10-11 03:15:54,908 autoreload 14240 29632 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\generation_service.py changed, reloading.
+INFO 2025-10-11 03:15:55,707 autoreload 8136 26856 Watching for file changes with StatReloader
+INFO 2025-10-11 03:22:26,593 basehttp 8136 5692 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 03:22:26,734 basehttp 8136 5692 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:22:26,845 basehttp 8136 5692 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 03:22:26,931 basehttp 8136 31596 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 03:22:26,932 basehttp 8136 5692 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 03:22:26,952 basehttp 8136 31596 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:22:31,155 basehttp 8136 31596 "GET /api/schedules/schedules/by_curriculum/?curriculum=L3-INFO HTTP/1.1" 200 1327
+INFO 2025-10-11 03:22:31,237 basehttp 8136 31596 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=245 HTTP/1.1" 200 10501
+INFO 2025-10-11 03:22:31,258 basehttp 8136 31596 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 03:22:42,995 basehttp 8136 31596 "POST /api/schedules/occurrences/5111/reschedule/ HTTP/1.1" 200 9085
+INFO 2025-10-11 03:22:46,940 basehttp 8136 31596 "OPTIONS /api/schedules/occurrences/5112/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 03:22:47,102 basehttp 8136 31596 "POST /api/schedules/occurrences/5112/reschedule/ HTTP/1.1" 200 9085
+INFO 2025-10-11 03:24:25,095 basehttp 8136 31596 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 03:24:25,261 basehttp 8136 31596 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:24:25,433 basehttp 8136 31596 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 03:24:25,564 basehttp 8136 5692 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 03:24:25,630 basehttp 8136 24412 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:24:25,643 basehttp 8136 31596 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 03:24:28,777 basehttp 8136 31596 "GET /api/schedules/schedules/by_curriculum/?curriculum=L3-INFO HTTP/1.1" 200 1327
+INFO 2025-10-11 03:24:28,834 basehttp 8136 31596 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=245 HTTP/1.1" 200 11190
+INFO 2025-10-11 03:24:28,849 basehttp 8136 31596 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 03:25:55,893 basehttp 8136 31596 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 03:26:00,549 basehttp 8136 31596 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:26:00,567 basehttp 8136 5692 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 03:26:00,726 basehttp 8136 5692 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 03:26:00,751 basehttp 8136 31596 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 03:26:00,771 basehttp 8136 24412 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 03:26:06,521 basehttp 8136 24412 "OPTIONS /api/schedules/generation-configs/?schedule=1 HTTP/1.1" 200 0
+INFO 2025-10-11 03:26:06,531 basehttp 8136 24412 "GET /api/schedules/generation-configs/?schedule=1 HTTP/1.1" 200 52
+INFO 2025-10-11 03:27:25,328 basehttp 8136 24412 "OPTIONS /api/schedules/generation/generate/ HTTP/1.1" 200 0
+WARNING 2025-10-11 03:27:25,348 log 8136 24412 Not Found: /api/schedules/generation/generate/
+WARNING 2025-10-11 03:27:25,349 basehttp 8136 24412 "POST /api/schedules/generation/generate/ HTTP/1.1" 404 49
+WARNING 2025-10-11 03:27:26,718 log 8136 24412 Not Found: /api/schedules/generation/generate/
+WARNING 2025-10-11 03:27:26,720 basehttp 8136 24412 "POST /api/schedules/generation/generate/ HTTP/1.1" 404 49
+WARNING 2025-10-11 03:27:27,467 log 8136 24412 Not Found: /api/schedules/generation/generate/
+WARNING 2025-10-11 03:27:27,471 basehttp 8136 24412 "POST /api/schedules/generation/generate/ HTTP/1.1" 404 49
+WARNING 2025-10-11 03:27:28,203 log 8136 24412 Not Found: /api/schedules/generation/generate/
+WARNING 2025-10-11 03:27:28,204 basehttp 8136 24412 "POST /api/schedules/generation/generate/ HTTP/1.1" 404 49
+INFO 2025-10-11 03:27:31,889 basehttp 8136 24412 "OPTIONS /api/schedules/generation-configs/ HTTP/1.1" 200 0
+WARNING 2025-10-11 03:27:31,914 log 8136 24412 Bad Request: /api/schedules/generation-configs/
+WARNING 2025-10-11 03:27:31,916 basehttp 8136 24412 "POST /api/schedules/generation-configs/ HTTP/1.1" 400 75
+WARNING 2025-10-11 03:27:33,688 log 8136 24412 Bad Request: /api/schedules/generation-configs/
+WARNING 2025-10-11 03:27:33,690 basehttp 8136 24412 "POST /api/schedules/generation-configs/ HTTP/1.1" 400 75
+WARNING 2025-10-11 03:27:34,513 log 8136 24412 Not Found: /api/schedules/generation/generate/
+WARNING 2025-10-11 03:27:34,514 basehttp 8136 24412 "POST /api/schedules/generation/generate/ HTTP/1.1" 404 49
+WARNING 2025-10-11 03:27:35,353 log 8136 24412 Not Found: /api/schedules/generation/generate/
+WARNING 2025-10-11 03:27:35,355 basehttp 8136 24412 "POST /api/schedules/generation/generate/ HTTP/1.1" 404 49
+WARNING 2025-10-11 03:27:35,836 log 8136 24412 Not Found: /api/schedules/generation/generate/
+WARNING 2025-10-11 03:27:35,838 basehttp 8136 24412 "POST /api/schedules/generation/generate/ HTTP/1.1" 404 49
+WARNING 2025-10-11 03:27:36,204 log 8136 24412 Not Found: /api/schedules/generation/generate/
+WARNING 2025-10-11 03:27:36,208 basehttp 8136 24412 "POST /api/schedules/generation/generate/ HTTP/1.1" 404 49
+WARNING 2025-10-11 03:27:36,518 log 8136 24412 Not Found: /api/schedules/generation/generate/
+WARNING 2025-10-11 03:27:36,520 basehttp 8136 24412 "POST /api/schedules/generation/generate/ HTTP/1.1" 404 49
+WARNING 2025-10-11 03:27:44,663 log 8136 24412 Bad Request: /api/schedules/generation-configs/
+WARNING 2025-10-11 03:27:44,670 basehttp 8136 24412 "POST /api/schedules/generation-configs/ HTTP/1.1" 400 75
+WARNING 2025-10-11 03:28:02,877 log 8136 24412 Bad Request: /api/schedules/generation-configs/
+WARNING 2025-10-11 03:28:02,878 basehttp 8136 24412 "POST /api/schedules/generation-configs/ HTTP/1.1" 400 75
+INFO 2025-10-11 09:21:07,623 basehttp 8136 34620 "OPTIONS /api/schedules/schedules/by_curriculum/?curriculum=L1-INFO HTTP/1.1" 200 0
+INFO 2025-10-11 09:21:07,690 basehttp 8136 34620 "GET /api/schedules/schedules/by_curriculum/?curriculum=L1-INFO HTTP/1.1" 200 1286
+INFO 2025-10-11 09:21:07,702 basehttp 8136 34620 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=249 HTTP/1.1" 200 0
+INFO 2025-10-11 09:21:07,729 basehttp 8136 34620 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=249 HTTP/1.1" 200 192
+INFO 2025-10-11 09:21:07,736 basehttp 8136 34620 "OPTIONS /api/schedules/conflicts/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:21:07,751 basehttp 8136 34620 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 09:21:09,490 basehttp 8136 34620 "OPTIONS /api/schedules/schedules/by_curriculum/?curriculum=L3-INFO HTTP/1.1" 200 0
+INFO 2025-10-11 09:21:09,546 basehttp 8136 34620 "GET /api/schedules/schedules/by_curriculum/?curriculum=L3-INFO HTTP/1.1" 200 1327
+INFO 2025-10-11 09:21:09,598 basehttp 8136 34620 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=245 HTTP/1.1" 200 0
+INFO 2025-10-11 09:21:09,662 basehttp 8136 34620 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=245 HTTP/1.1" 200 11190
+INFO 2025-10-11 09:21:29,501 basehttp 8136 34620 "OPTIONS /api/schedules/occurrences/1948/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:21:29,669 basehttp 8136 34620 "POST /api/schedules/occurrences/1948/reschedule/ HTTP/1.1" 200 9175
+ERROR 2025-10-11 09:21:35,152 log 8136 34620 Internal Server Error: /api/schedules/occurrences/1948/reschedule/
+Traceback (most recent call last):
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: UNIQUE constraint failed: schedules_sessionoccurrence.session_template_id, schedules_sessionoccurrence.actual_date, schedules_sessionoccurrence.start_time
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\views_generation.py", line 196, in reschedule
+    new_occurrence = occurrence.reschedule(
+        new_date=data['new_date'],
+    ...<3 lines>...
+        new_teacher=new_teacher
+    )
+  File "C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\models.py", line 589, in reschedule
+    new_occurrence = SessionOccurrence.objects.create(
+        session_template=self.session_template,
+    ...<9 lines>...
+        is_time_modified=True,
+    )
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\models\base.py", line 892, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\models\base.py", line 998, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\models\base.py", line 1161, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\models\base.py", line 1202, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\models\sql\compiler.py", line 1836, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\tefba\AppData\Roaming\Python\Python313\site-packages\django\db\backends\sqlite3\base.py", line 354, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: UNIQUE constraint failed: schedules_sessionoccurrence.session_template_id, schedules_sessionoccurrence.actual_date, schedules_sessionoccurrence.start_time
+ERROR 2025-10-11 09:21:35,199 basehttp 8136 34620 "POST /api/schedules/occurrences/1948/reschedule/ HTTP/1.1" 500 216458
+INFO 2025-10-11 09:21:46,558 basehttp 8136 34620 "OPTIONS /api/schedules/occurrences/1947/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:21:46,719 basehttp 8136 34620 "POST /api/schedules/occurrences/1947/reschedule/ HTTP/1.1" 200 9100
+INFO 2025-10-11 09:21:48,471 basehttp 8136 34620 "POST /api/schedules/occurrences/1947/reschedule/ HTTP/1.1" 200 9197
+INFO 2025-10-11 09:21:55,006 basehttp 8136 34620 "OPTIONS /api/schedules/occurrences/1946/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:21:55,146 basehttp 8136 34620 "POST /api/schedules/occurrences/1946/reschedule/ HTTP/1.1" 200 9310
+INFO 2025-10-11 09:21:59,958 basehttp 8136 34620 "OPTIONS /api/schedules/occurrences/1945/reschedule/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:22:00,108 basehttp 8136 34620 "POST /api/schedules/occurrences/1945/reschedule/ HTTP/1.1" 200 9155
+INFO 2025-10-11 09:22:05,572 basehttp 8136 34620 "OPTIONS /api/schedules/occurrences/weekly/?date=2025-10-13&schedule=245 HTTP/1.1" 200 0
+INFO 2025-10-11 09:22:05,633 basehttp 8136 34620 "GET /api/schedules/occurrences/weekly/?date=2025-10-13&schedule=245 HTTP/1.1" 200 8774
+INFO 2025-10-11 09:22:24,924 basehttp 8136 34620 "OPTIONS /api/users/auth/me/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:22:24,951 basehttp 8136 34620 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 09:22:25,499 basehttp 8136 34620 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 09:22:25,503 basehttp 8136 34620 "OPTIONS /api/courses/courses/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:22:25,506 basehttp 8136 34620 "OPTIONS /api/courses/teachers/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:22:25,509 basehttp 8136 34620 "OPTIONS /api/rooms/rooms/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:22:25,599 basehttp 8136 34620 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 09:22:25,895 basehttp 8136 34620 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 09:22:25,941 basehttp 8136 34152 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 09:22:25,962 basehttp 8136 24560 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 09:26:06,180 basehttp 8136 24560 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 09:26:06,425 basehttp 8136 34620 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 09:26:06,438 basehttp 8136 24560 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 09:26:06,524 basehttp 8136 34152 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 09:26:06,535 basehttp 8136 34620 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 09:26:09,092 basehttp 8136 34620 "GET /api/schedules/schedules/by_curriculum/?curriculum=L3-INFO HTTP/1.1" 200 1327
+INFO 2025-10-11 09:26:09,149 basehttp 8136 34620 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=245 HTTP/1.1" 200 12928
+INFO 2025-10-11 09:26:09,168 basehttp 8136 34620 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 09:26:48,522 basehttp 8136 34620 "OPTIONS /api/schedules/occurrences/1950/cancel/ HTTP/1.1" 200 0
+INFO 2025-10-11 09:26:48,631 basehttp 8136 34620 "POST /api/schedules/occurrences/1950/cancel/ HTTP/1.1" 200 4561
+INFO 2025-10-11 09:26:55,219 basehttp 8136 34620 "POST /api/schedules/occurrences/1950/cancel/ HTTP/1.1" 200 4560
+INFO 2025-10-11 09:27:00,633 basehttp 8136 34620 "GET /api/users/auth/me/ HTTP/1.1" 200 214
+INFO 2025-10-11 09:27:00,963 basehttp 8136 34620 "GET /api/courses/curricula/ HTTP/1.1" 200 1448
+INFO 2025-10-11 09:27:01,034 basehttp 8136 24560 "GET /api/courses/teachers/ HTTP/1.1" 200 4750
+INFO 2025-10-11 09:27:01,052 basehttp 8136 24712 "GET /api/rooms/rooms/ HTTP/1.1" 200 13369
+INFO 2025-10-11 09:27:01,116 basehttp 8136 34152 "GET /api/courses/courses/ HTTP/1.1" 200 13974
+INFO 2025-10-11 09:27:04,151 basehttp 8136 34152 "GET /api/schedules/schedules/by_curriculum/?curriculum=L3-INFO HTTP/1.1" 200 1327
+INFO 2025-10-11 09:27:04,202 basehttp 8136 34152 "GET /api/schedules/occurrences/weekly/?date=2025-10-06&schedule=245 HTTP/1.1" 200 12925
+INFO 2025-10-11 09:27:04,223 basehttp 8136 34152 "GET /api/schedules/conflicts/ HTTP/1.1" 200 52
+INFO 2025-10-11 09:34:18,734 autoreload 8136 26856 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\views_generation.py changed, reloading.
+INFO 2025-10-11 09:34:19,788 autoreload 19636 32920 Watching for file changes with StatReloader
+INFO 2025-10-11 09:34:55,456 autoreload 19636 32920 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\generation_service.py changed, reloading.
+INFO 2025-10-11 09:34:56,100 autoreload 26324 29716 Watching for file changes with StatReloader
+INFO 2025-10-11 09:35:30,433 autoreload 26324 29716 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\generation_service.py changed, reloading.
+INFO 2025-10-11 09:35:31,087 autoreload 33576 19424 Watching for file changes with StatReloader
+INFO 2025-10-11 09:35:58,126 autoreload 33576 19424 C:\Users\tefba\Desktop\OverBrand\Oapet\oapet_schedule_backend\schedules\generation_service.py changed, reloading.
+INFO 2025-10-11 09:35:58,773 autoreload 32488 33372 Watching for file changes with StatReloader

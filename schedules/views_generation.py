@@ -79,6 +79,58 @@ class SessionOccurrenceViewSet(viewsets.ModelViewSet):
             return SessionOccurrenceCreateSerializer
         return SessionOccurrenceSerializer
 
+    def perform_update(self, serializer):
+        """Marque automatiquement les champs modifiés lors d'un UPDATE/PATCH"""
+        from rest_framework.exceptions import ValidationError
+
+        instance = self.get_object()
+
+        # Récupère les données validées
+        validated_data = serializer.validated_data
+
+        # Vérifie les conflits AVANT de sauvegarder si des champs critiques sont modifiés
+        if any(field in validated_data for field in ['actual_date', 'start_time', 'end_time', 'room', 'teacher']):
+            # Créer une copie temporaire de l'instance avec les nouvelles valeurs
+            temp_occurrence = SessionOccurrence(
+                id=instance.id,
+                session_template=instance.session_template,
+                actual_date=validated_data.get('actual_date', instance.actual_date),
+                start_time=validated_data.get('start_time', instance.start_time),
+                end_time=validated_data.get('end_time', instance.end_time),
+                room=validated_data.get('room', instance.room),
+                teacher=validated_data.get('teacher', instance.teacher),
+            )
+
+            # Vérifie les conflits avec les autres occurrences
+            conflicts = temp_occurrence.check_conflicts()
+            if conflicts:
+                raise ValidationError({
+                    'conflicts': conflicts,
+                    'message': 'Cette modification crée des conflits avec d\'autres séances'
+                })
+
+        # Vérifie si la date a été modifiée
+        if 'actual_date' in validated_data and validated_data['actual_date'] != instance.actual_date:
+            serializer.validated_data['is_time_modified'] = True
+
+        # Vérifie si les horaires ont été modifiés
+        if 'start_time' in validated_data and validated_data['start_time'] != instance.start_time:
+            serializer.validated_data['is_time_modified'] = True
+
+        if 'end_time' in validated_data and validated_data['end_time'] != instance.end_time:
+            serializer.validated_data['is_time_modified'] = True
+
+        # Vérifie si la salle a été modifiée
+        if 'room' in validated_data and validated_data['room'] != instance.room:
+            serializer.validated_data['is_room_modified'] = True
+
+        # Vérifie si l'enseignant a été modifié
+        if 'teacher' in validated_data and validated_data['teacher'] != instance.teacher:
+            serializer.validated_data['is_teacher_modified'] = True
+
+        # Sauvegarde les modifications
+        serializer.save()
+
     def get_queryset(self):
         """Filtre les occurrences selon les paramètres de requête"""
         queryset = SessionOccurrence.objects.select_related(

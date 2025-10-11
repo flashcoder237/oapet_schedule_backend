@@ -1,6 +1,7 @@
 # schedules/generation_service.py
 from datetime import datetime, timedelta, time
 from typing import List, Dict, Tuple
+import math
 from django.db import transaction
 from django.utils import timezone
 from .models import (
@@ -184,7 +185,9 @@ class ScheduleGenerationService:
 
         # Si total_hours est défini, calcule le nombre d'occurrences nécessaires
         if course_total_hours > 0 and session_duration_hours > 0:
-            max_occurrences = int(course_total_hours / session_duration_hours)
+            # Arrondir au supérieur pour ne pas perdre d'heures
+            # Exemple: 30h / 1.75h = 17.14 → 18 occurrences au lieu de 17
+            max_occurrences = math.ceil(course_total_hours / session_duration_hours)
         else:
             # Sinon, génère sur toute la période (comportement par défaut)
             max_occurrences = None
@@ -228,16 +231,25 @@ class ScheduleGenerationService:
                     current_date += timedelta(days=7)
                     continue
 
+                # Sélectionne la meilleure salle disponible si la configuration le permet
+                selected_room = self._select_best_room(
+                    session_template,
+                    current_date,
+                    session_start,
+                    session_end,
+                    occurrences
+                )
+
                 # Crée l'occurrence
                 occurrence = SessionOccurrence(
                     session_template=session_template,
                     actual_date=current_date,
                     start_time=session_start,
                     end_time=session_end,
-                    room=session_template.room,
+                    room=selected_room or session_template.room,
                     teacher=session_template.teacher,
                     status='scheduled',
-                    is_room_modified=False,
+                    is_room_modified=selected_room is not None and selected_room != session_template.room,
                     is_teacher_modified=False,
                     is_time_modified=False
                 )
@@ -256,6 +268,77 @@ class ScheduleGenerationService:
                 current_date += timedelta(days=7)
 
         return occurrences
+
+    def _select_best_room(
+        self,
+        session_template: ScheduleSession,
+        date: datetime,
+        start_time: time,
+        end_time: time,
+        existing_occurrences: List[SessionOccurrence]
+    ):
+        """Sélectionne la meilleure salle disponible pour une occurrence"""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # Si on doit respecter les préférences de salles, garder la salle du template
+        if self.config.respect_room_preferences:
+            return None
+
+        course = session_template.course
+
+        # Cherche les salles disponibles qui correspondent aux besoins du cours
+        available_rooms = Room.objects.filter(
+            is_active=True,
+            capacity__gte=session_template.expected_students
+        )
+
+        # Filtre selon les équipements requis
+        if course.requires_projector:
+            available_rooms = available_rooms.filter(has_projector=True)
+        if course.requires_computer:
+            available_rooms = available_rooms.filter(has_computer=True)
+        if course.requires_laboratory:
+            available_rooms = available_rooms.filter(is_laboratory=True)
+
+        # Exclut les salles déjà occupées à ce créneau et cette date
+        for occ in existing_occurrences:
+            if (occ.actual_date == date and
+                not (occ.end_time <= start_time or occ.start_time >= end_time)):
+                # Il y a chevauchement horaire, exclure cette salle
+                available_rooms = available_rooms.exclude(id=occ.room.id)
+
+        # Si aucune salle disponible, retourner None (utilisera la salle du template)
+        if not available_rooms.exists():
+            # Logger un avertissement pour traçabilité
+            logger.warning(
+                f"Aucune salle disponible pour {session_template.course.code} "
+                f"le {date.strftime('%Y-%m-%d')} à {start_time}. "
+                f"Utilisation de la salle par défaut {session_template.room.code}. "
+                f"Risque de conflit potentiel."
+            )
+
+            # Ajouter un conflit dans les stats pour notification
+            self.stats['conflicts'].append({
+                'type': 'no_room_available',
+                'severity': 'warning',
+                'date': str(date),
+                'time': f"{start_time} - {end_time}",
+                'course': session_template.course.code,
+                'default_room': session_template.room.code,
+                'message': 'Aucune salle disponible, utilisation de la salle par défaut'
+            })
+
+            return None
+
+        # Sélectionne la salle la plus adaptée (capacité proche du besoin)
+        available_rooms_list = list(available_rooms)
+        best_room = min(
+            available_rooms_list,
+            key=lambda r: abs(r.capacity - session_template.expected_students)
+        )
+
+        return best_room
 
     def _check_conflicts(self, occurrences: List[SessionOccurrence]):
         """Vérifie les conflits entre les occurrences"""
