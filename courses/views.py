@@ -3,7 +3,11 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Q
+from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 from core.mixins import ImportExportMixin
 from .models import (
@@ -199,6 +203,86 @@ class TeacherViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
         return Response(dashboard_data)
 
+    @action(detail=True, methods=['get'])
+    def ml_insights(self, request, pk=None):
+        """
+        🤖 INSIGHTS ML pour l'enseignant
+        Analyse ML complète de la charge de travail et recommandations personnalisées
+        """
+        teacher = self.get_object()
+
+        try:
+            from ml_engine.simple_ml_service import ml_service
+
+            logger.info(f"🤖 Génération d'insights ML pour l'enseignant {teacher.user.get_full_name()}")
+
+            # 1. Analyse de la charge de travail
+            workload_analysis = ml_service.analyze_workload_balance()
+            teacher_workload = next(
+                (t for t in workload_analysis.get('teachers', [])
+                 if t.get('teacher_id') == teacher.id),
+                None
+            )
+
+            # 2. Recommandations personnalisées
+            recommendations = ml_service.generate_personalized_recommendations({
+                'type': 'teacher',
+                'teacher_id': teacher.id,
+                'name': teacher.user.get_full_name()
+            })
+
+            # 3. Suggestions de planification
+            scheduling_tips = ml_service.generate_schedule_suggestions(
+                context=f"teacher_{teacher.id}"
+            )
+
+            # 4. Analyse des cours de l'enseignant
+            courses = teacher.courses.filter(is_active=True)
+            courses_ml_analysis = []
+
+            for course in courses[:10]:  # Limiter à 10 cours
+                if course.ml_difficulty_score:
+                    courses_ml_analysis.append({
+                        'code': course.code,
+                        'name': course.name,
+                        'difficulty_score': course.ml_difficulty_score,
+                        'complexity_level': course.ml_complexity_level,
+                        'priority': course.ml_scheduling_priority,
+                        'last_updated': course.ml_last_updated
+                    })
+
+            # 5. Assembler la réponse
+            ml_insights = {
+                'teacher': {
+                    'id': teacher.id,
+                    'name': teacher.user.get_full_name(),
+                    'employee_id': teacher.employee_id
+                },
+                'workload_analysis': teacher_workload or {
+                    'message': 'Aucune session planifiée actuellement'
+                },
+                'personalized_recommendations': recommendations,
+                'scheduling_tips': scheduling_tips,
+                'courses_ml_analysis': courses_ml_analysis,
+                'summary': {
+                    'total_courses': courses.count(),
+                    'analyzed_courses': len(courses_ml_analysis),
+                    'avg_difficulty': round(sum(c['difficulty_score'] for c in courses_ml_analysis) / len(courses_ml_analysis), 2) if courses_ml_analysis else 0,
+                    'high_priority_courses': len([c for c in courses_ml_analysis if c['priority'] == 1])
+                },
+                'generated_at': timezone.now().isoformat()
+            }
+
+            logger.info(f"✅ Insights ML générés avec succès pour {teacher.user.get_full_name()}")
+            return Response(ml_insights)
+
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de la génération d'insights ML: {e}")
+            return Response({
+                'error': 'Erreur lors de la génération des insights ML',
+                'details': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class CourseViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des cours"""
@@ -233,15 +317,98 @@ class CourseViewSet(ImportExportMixin, viewsets.ModelViewSet):
         search = self.request.query_params.get('search')
         if search:
             queryset = queryset.filter(
-                models.Q(name__icontains=search) |
-                models.Q(code__icontains=search) |
-                models.Q(description__icontains=search) |
-                models.Q(teacher__user__first_name__icontains=search) |
-                models.Q(teacher__user__last_name__icontains=search)
+                Q(name__icontains=search) |
+                Q(code__icontains=search) |
+                Q(description__icontains=search) |
+                Q(teacher__user__first_name__icontains=search) |
+                Q(teacher__user__last_name__icontains=search)
             )
-        
+
         return queryset.filter(is_active=True)
-    
+
+    def perform_create(self, serializer):
+        """
+        ✨ AUTO-PRÉDICTION ML lors de la création d'un cours
+        """
+        course = serializer.save()
+
+        # Lancer la prédiction ML en arrière-plan
+        try:
+            logger.info(f"🤖 Déclenchement de l'auto-prédiction ML pour le cours {course.code}")
+            prediction = course.update_ml_predictions(force=True)
+
+            if prediction:
+                logger.info(f"✅ Prédiction ML réussie pour {course.code}: {course.ml_complexity_level}")
+            else:
+                logger.warning(f"⚠️ Prédiction ML échouée pour {course.code}")
+
+        except Exception as e:
+            # Ne pas bloquer la création du cours si la prédiction échoue
+            logger.error(f"❌ Erreur lors de la prédiction ML pour {course.code}: {e}")
+
+        return course
+
+    def perform_update(self, serializer):
+        """
+        ✨ AUTO-PRÉDICTION ML lors de la mise à jour d'un cours
+        """
+        course = serializer.save()
+
+        # Mettre à jour les prédictions si les champs impactants sont modifiés
+        impactful_fields = [
+            'requires_computer', 'requires_laboratory', 'requires_projector',
+            'max_students', 'min_room_capacity', 'level', 'teacher',
+            'hours_per_week', 'course_type'
+        ]
+
+        # Vérifier si un champ impactant a été modifié
+        should_update = any(
+            field in serializer.validated_data for field in impactful_fields
+        )
+
+        if should_update:
+            try:
+                logger.info(f"🤖 Mise à jour des prédictions ML pour {course.code}")
+                course.update_ml_predictions(force=True)
+            except Exception as e:
+                logger.error(f"❌ Erreur lors de la mise à jour ML pour {course.code}: {e}")
+
+        return course
+
+    @action(detail=True, methods=['post'])
+    def refresh_ml_predictions(self, request, pk=None):
+        """
+        🔄 Force le rafraîchissement des prédictions ML
+        """
+        course = self.get_object()
+
+        try:
+            prediction = course.update_ml_predictions(force=True)
+
+            if prediction:
+                return Response({
+                    'success': True,
+                    'message': f'Prédictions ML mises à jour pour {course.code}',
+                    'prediction': {
+                        'difficulty_score': course.ml_difficulty_score,
+                        'complexity_level': course.ml_complexity_level,
+                        'priority': course.ml_scheduling_priority,
+                        'last_updated': course.ml_last_updated,
+                        'metadata': course.ml_prediction_metadata
+                    }
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'message': 'Échec de la mise à jour des prédictions ML'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Statistiques générales des cours"""

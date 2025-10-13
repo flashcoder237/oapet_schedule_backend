@@ -91,11 +91,112 @@ class Course(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
+    # ============= CHAMPS ML PRÉDICTIFS =============
+    ml_difficulty_score = models.FloatField(
+        null=True, blank=True,
+        help_text="Score de difficulté de planification ML (0-1)"
+    )
+    ml_complexity_level = models.CharField(
+        max_length=20, blank=True,
+        choices=[
+            ('Facile', 'Facile'),
+            ('Moyenne', 'Moyenne'),
+            ('Difficile', 'Difficile')
+        ],
+        help_text="Niveau de complexité prédit par ML"
+    )
+    ml_scheduling_priority = models.IntegerField(
+        default=2,
+        help_text="Priorité de planification ML: 1=haute, 2=moyenne, 3=basse"
+    )
+    ml_last_updated = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Dernière mise à jour des prédictions ML"
+    )
+    ml_prediction_metadata = models.JSONField(
+        default=dict, blank=True,
+        help_text="Métadonnées supplémentaires des prédictions ML"
+    )
+
     def __str__(self):
         return f"{self.code} - {self.name}"
 
     class Meta:
         ordering = ['code']
+
+    def update_ml_predictions(self, force=False):
+        """
+        Met à jour les prédictions ML du cours
+
+        Args:
+            force (bool): Force la mise à jour même si le cache est valide
+
+        Returns:
+            dict: Les prédictions ML mises à jour
+        """
+        from datetime import timedelta
+        from django.utils import timezone
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        # Éviter les recalculs fréquents (cache 24h)
+        if not force and self.ml_last_updated:
+            age = timezone.now() - self.ml_last_updated
+            if age < timedelta(hours=24):
+                logger.info(f"ML cache still valid for course {self.code}")
+                return {
+                    'difficulty_score': self.ml_difficulty_score,
+                    'complexity_level': self.ml_complexity_level,
+                    'priority': self.ml_scheduling_priority,
+                    'cached': True
+                }
+
+        try:
+            from ml_engine.simple_ml_service import ml_service
+
+            logger.info(f"Updating ML predictions for course {self.code}")
+            prediction = ml_service.predict_schedule_difficulty(self)
+
+            # Mise à jour des champs
+            self.ml_difficulty_score = prediction['difficulty_score']
+            self.ml_complexity_level = prediction['complexity_level']
+            self.ml_scheduling_priority = prediction['priority']
+            self.ml_last_updated = timezone.now()
+
+            # Stocker les métadonnées additionnelles
+            self.ml_prediction_metadata = {
+                'factors': prediction.get('factors', []),
+                'confidence': prediction.get('confidence', 0),
+                'model_used': prediction.get('model_used', 'unknown'),
+                'suitable_rooms_count': prediction.get('suitable_rooms_count', 0),
+                'student_count': prediction.get('student_count', 0)
+            }
+
+            self.save(update_fields=[
+                'ml_difficulty_score',
+                'ml_complexity_level',
+                'ml_scheduling_priority',
+                'ml_last_updated',
+                'ml_prediction_metadata'
+            ])
+
+            logger.info(f"ML predictions updated for {self.code}: {self.ml_complexity_level}")
+            return prediction
+
+        except Exception as e:
+            logger.error(f"Failed to update ML predictions for course {self.code}: {e}")
+            return None
+
+    @property
+    def ml_difficulty_badge(self):
+        """Retourne un badge visuel pour l'interface"""
+        badges = {
+            'Facile': {'color': 'green', 'icon': '✓'},
+            'Moyenne': {'color': 'orange', 'icon': '○'},
+            'Difficile': {'color': 'red', 'icon': '!'}
+        }
+        return badges.get(self.ml_complexity_level, {'color': 'gray', 'icon': '?'})
 
 
 class Curriculum(models.Model):

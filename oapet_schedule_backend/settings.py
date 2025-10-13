@@ -48,6 +48,8 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 LOCAL_APPS = [
@@ -195,6 +197,46 @@ CORS_ALLOWED_HEADERS = [
 # ML Engine settings
 ML_MODELS_DIR = BASE_DIR / 'ml_models'
 ML_DATASETS_DIR = BASE_DIR / 'ml_datasets'
+
+# Celery Configuration
+# https://docs.celeryproject.org/en/stable/django/first-steps-with-django.html
+
+# Broker settings - Using Redis (for production) or filesystem (for development)
+# Pour le développement, on peut utiliser le broker de fichiers
+# Pour la production, il est recommandé d'utiliser Redis ou RabbitMQ
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'filesystem://')
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'data_folder_in': BASE_DIR / 'celery_data' / 'out',
+    'data_folder_out': BASE_DIR / 'celery_data' / 'out',
+    'data_folder_processed': BASE_DIR / 'celery_data' / 'processed',
+}
+
+# Result backend - Utiliser la base de données Django
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
+
+# Sérialisation des messages
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+# Timezone
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Paramètres de performance
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes max par tâche
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # Soft limit à 25 minutes
+
+# Logging
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_WORKER_LOG_FORMAT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
+CELERY_WORKER_TASK_LOG_FORMAT = '[%(asctime)s: %(levelname)s/%(processName)s] [%(task_name)s(%(task_id)s)] %(message)s'
+
+# Créer les répertoires Celery nécessaires
+os.makedirs(BASE_DIR / 'celery_data' / 'out', exist_ok=True)
+os.makedirs(BASE_DIR / 'celery_data' / 'processed', exist_ok=True)
 
 # Logging configuration
 LOGGING = {

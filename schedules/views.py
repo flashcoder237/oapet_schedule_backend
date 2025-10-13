@@ -10,6 +10,10 @@ from django.db.models import Count, Avg
 
 logger = logging.getLogger('schedules.views')
 
+# Import ML service for anomaly detection
+from ml_engine.simple_ml_service import SimpleMachineLearningService
+ml_service = SimpleMachineLearningService()
+
 from core.mixins import ImportExportMixin
 from .models import (
     AcademicPeriod, TimeSlot, Schedule, ScheduleSession, Conflict,
@@ -569,7 +573,97 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'conflicts_detected': len(conflicts_found),
             'conflicts': ConflictSerializer(conflicts_found, many=True).data
         }, status=status.HTTP_200_OK)
-    
+
+    @action(detail=True, methods=['get'])
+    def ml_anomalies(self, request, pk=None):
+        """🤖 Détection ML des anomalies dans l'emploi du temps"""
+        schedule = self.get_object()
+
+        try:
+            logger.info(f"🔍 Détection des anomalies ML pour le schedule {schedule.id}")
+
+            # Appeler le service ML pour détecter les anomalies
+            anomalies_result = ml_service.detect_schedule_anomalies(schedule_data={'schedule_id': schedule.id})
+
+            # Enrichir avec des statistiques du schedule
+            sessions_count = schedule.sessions.count()
+            unresolved_conflicts = Conflict.objects.filter(
+                schedule_session__schedule=schedule,
+                is_resolved=False
+            ).count()
+
+            # Calculer la sévérité globale
+            total_anomalies = len(anomalies_result.get('anomalies', []))
+            critical_anomalies = sum(1 for a in anomalies_result.get('anomalies', [])
+                                    if a.get('severity') == 'critical')
+            high_anomalies = sum(1 for a in anomalies_result.get('anomalies', [])
+                                if a.get('severity') == 'high')
+
+            # Déterminer le score de santé (0-100)
+            health_score = 100
+            if sessions_count > 0:
+                anomaly_ratio = total_anomalies / sessions_count
+                health_score = max(0, 100 - (anomaly_ratio * 100))
+                health_score -= (critical_anomalies * 10)
+                health_score -= (high_anomalies * 5)
+                health_score = max(0, min(100, health_score))
+
+            # Recommandations basées sur les anomalies
+            recommendations = []
+            if critical_anomalies > 0:
+                recommendations.append({
+                    'priority': 'critical',
+                    'message': f'{critical_anomalies} anomalie(s) critique(s) détectée(s)',
+                    'action': 'Résoudre immédiatement les conflits critiques avant publication'
+                })
+            if high_anomalies > 3:
+                recommendations.append({
+                    'priority': 'high',
+                    'message': f'{high_anomalies} anomalies de haute priorité',
+                    'action': 'Revoir les assignations de salles et enseignants'
+                })
+            if health_score < 70:
+                recommendations.append({
+                    'priority': 'medium',
+                    'message': f'Score de santé faible: {health_score:.1f}/100',
+                    'action': 'Utiliser l\'optimiseur ML pour améliorer l\'emploi du temps'
+                })
+
+            response_data = {
+                'schedule_id': schedule.id,
+                'schedule_name': schedule.name,
+                'analysis': {
+                    'total_sessions': sessions_count,
+                    'total_anomalies': total_anomalies,
+                    'anomalies_by_severity': {
+                        'critical': critical_anomalies,
+                        'high': high_anomalies,
+                        'medium': total_anomalies - critical_anomalies - high_anomalies
+                    },
+                    'health_score': round(health_score, 1),
+                    'status': 'critical' if health_score < 50 else 'warning' if health_score < 70 else 'good'
+                },
+                'anomalies': anomalies_result.get('anomalies', []),
+                'recommendations': recommendations,
+                'detection_metadata': {
+                    'detected_at': anomalies_result.get('detected_at', timezone.now().isoformat()),
+                    'model_version': anomalies_result.get('model_version', 'v1.0'),
+                    'detection_time': anomalies_result.get('detection_time', 0)
+                }
+            }
+
+            logger.info(f"✅ Détection ML terminée: {total_anomalies} anomalies trouvées, score de santé: {health_score:.1f}")
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de la détection ML des anomalies: {e}")
+            return Response({
+                'error': 'Erreur lors de la détection des anomalies',
+                'details': str(e),
+                'schedule_id': schedule.id
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Statistiques générales des emplois du temps"""
