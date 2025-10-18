@@ -55,6 +55,8 @@ reportlab==4.2.0
 # Tâches asynchrones (optionnel)
 celery==5.3.6
 redis==5.0.7
+django-celery-results==2.5.1
+django-celery-beat==2.8.1
 
 # Géolocalisation (optionnel)
 geopy==2.4.1

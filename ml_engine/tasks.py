@@ -577,3 +577,325 @@ class TaskMonitor:
                 })
         
         return tasks
+
+
+# ============================================================================
+# NOUVELLES TÂCHES SIMPLES POUR L'INTÉGRATION ML BASIQUE
+# ============================================================================
+
+@shared_task(name='ml_engine.tasks.update_all_course_predictions')
+def update_all_course_predictions():
+    """
+    Tâche périodique: Met à jour les prédictions ML pour tous les cours actifs
+    Planifié: Tous les jours à 2h du matin
+    """
+    from courses.models import Course
+    from django.db.models import Q
+
+    logger.info("🤖 Début de la mise à jour quotidienne des prédictions ML")
+
+    # Récupérer tous les cours actifs qui n'ont pas été mis à jour dans les 23 heures
+    cutoff_time = timezone.now() - timedelta(hours=23)
+    courses_to_update = Course.objects.filter(
+        Q(ml_last_updated__lt=cutoff_time) | Q(ml_last_updated__isnull=True)
+    )
+
+    total_courses = courses_to_update.count()
+    success_count = 0
+    error_count = 0
+
+    logger.info(f"📊 {total_courses} cours à mettre à jour")
+
+    for course in courses_to_update:
+        try:
+            prediction = course.update_ml_predictions(force=True)
+            if prediction and not prediction.get('error'):
+                success_count += 1
+                logger.debug(f"✅ Cours {course.code}: {course.ml_complexity_level}")
+            else:
+                error_count += 1
+                logger.warning(f"⚠️ Erreur pour le cours {course.code}")
+        except Exception as e:
+            error_count += 1
+            logger.error(f"❌ Erreur pour le cours {course.code}: {e}")
+
+    logger.info(f"✅ Mise à jour terminée: {success_count} succès, {error_count} erreurs sur {total_courses} cours")
+
+    return {
+        'total': total_courses,
+        'success': success_count,
+        'errors': error_count,
+        'timestamp': timezone.now().isoformat()
+    }
+
+
+@shared_task(name='ml_engine.tasks.detect_anomalies_for_published_schedules')
+def detect_anomalies_for_published_schedules():
+    """
+    Tâche périodique: Détecte les anomalies dans tous les emplois du temps publiés
+    Planifié: Toutes les heures
+    """
+    from schedules.models import Schedule
+    from ml_engine.simple_ml_service import SimpleMLService
+
+    logger.info("🔍 Début de la détection d'anomalies pour les schedules publiés")
+
+    ml_service = SimpleMLService()
+
+    # Récupérer tous les schedules publiés
+    published_schedules = Schedule.objects.filter(is_published=True)
+    total_schedules = published_schedules.count()
+
+    total_anomalies = 0
+    critical_anomalies = 0
+
+    logger.info(f"📊 {total_schedules} emplois du temps à analyser")
+
+    for schedule in published_schedules:
+        try:
+            anomalies_result = ml_service.detect_schedule_anomalies(
+                schedule_data={'schedule_id': schedule.id}
+            )
+
+            anomalies = anomalies_result.get('anomalies', [])
+            total_anomalies += len(anomalies)
+
+            # Compter les anomalies critiques
+            critical = sum(1 for a in anomalies if a.get('severity') == 'critical')
+            critical_anomalies += critical
+
+            if critical > 0:
+                logger.warning(
+                    f"⚠️ Schedule {schedule.id} ({schedule.name}): "
+                    f"{critical} anomalies critiques détectées"
+                )
+
+        except Exception as e:
+            logger.error(f"❌ Erreur pour le schedule {schedule.id}: {e}")
+
+    logger.info(
+        f"✅ Détection terminée: {total_anomalies} anomalies trouvées "
+        f"({critical_anomalies} critiques) dans {total_schedules} schedules"
+    )
+
+    return {
+        'total_schedules': total_schedules,
+        'total_anomalies': total_anomalies,
+        'critical_anomalies': critical_anomalies,
+        'timestamp': timezone.now().isoformat()
+    }
+
+
+@shared_task(name='ml_engine.tasks.cleanup_old_predictions')
+def cleanup_old_predictions():
+    """
+    Tâche périodique: Nettoie les anciennes prédictions ML (>30 jours)
+    Planifié: Chaque dimanche à 3h du matin
+    """
+    from courses.models import Course
+
+    logger.info("🧹 Début du nettoyage des anciennes prédictions ML")
+
+    cutoff_date = timezone.now() - timedelta(days=30)
+
+    # Trouver les cours avec de vieilles prédictions
+    old_predictions = Course.objects.filter(
+        ml_last_updated__lt=cutoff_date
+    ).exclude(ml_last_updated__isnull=True)
+
+    count = old_predictions.count()
+
+    if count > 0:
+        logger.info(f"📊 {count} anciennes prédictions à nettoyer")
+
+        # Réinitialiser les prédictions anciennes
+        updated = old_predictions.update(
+            ml_difficulty_score=None,
+            ml_complexity_level='',
+            ml_scheduling_priority=2,
+            ml_prediction_metadata={}
+        )
+
+        logger.info(f"✅ {updated} prédictions nettoyées")
+    else:
+        logger.info("✅ Aucune ancienne prédiction à nettoyer")
+
+    return {
+        'cleaned_count': count,
+        'cutoff_date': cutoff_date.isoformat(),
+        'timestamp': timezone.now().isoformat()
+    }
+
+
+@shared_task(name='ml_engine.tasks.generate_weekly_ml_report')
+def generate_weekly_ml_report():
+    """
+    Tâche périodique: Génère un rapport hebdomadaire des performances ML
+    Planifié: Chaque lundi à 6h du matin
+    """
+    from courses.models import Course
+    from schedules.models import Schedule
+
+    logger.info("📊 Génération du rapport hebdomadaire ML")
+
+    # Statistiques sur les cours
+    total_courses = Course.objects.count()
+    courses_with_predictions = Course.objects.exclude(ml_last_updated__isnull=True).count()
+
+    # Distribution de complexité
+    complexity_distribution = {
+        'facile': Course.objects.filter(ml_complexity_level='Facile').count(),
+        'moyenne': Course.objects.filter(ml_complexity_level='Moyenne').count(),
+        'difficile': Course.objects.filter(ml_complexity_level='Difficile').count(),
+    }
+
+    # Statistiques sur les schedules
+    total_schedules = Schedule.objects.count()
+    published_schedules = Schedule.objects.filter(is_published=True).count()
+
+    # Prédictions récentes (7 derniers jours)
+    week_ago = timezone.now() - timedelta(days=7)
+    recent_predictions = Course.objects.filter(ml_last_updated__gte=week_ago).count()
+
+    report = {
+        'period': {
+            'start': week_ago.isoformat(),
+            'end': timezone.now().isoformat(),
+        },
+        'courses': {
+            'total': total_courses,
+            'with_predictions': courses_with_predictions,
+            'prediction_coverage': round(
+                (courses_with_predictions / total_courses * 100) if total_courses > 0 else 0, 2
+            ),
+            'complexity_distribution': complexity_distribution,
+        },
+        'schedules': {
+            'total': total_schedules,
+            'published': published_schedules,
+        },
+        'activity': {
+            'recent_predictions': recent_predictions,
+            'predictions_per_day': round(recent_predictions / 7, 1),
+        },
+        'timestamp': timezone.now().isoformat()
+    }
+
+    logger.info(f"✅ Rapport généré: {courses_with_predictions}/{total_courses} cours avec prédictions")
+    logger.info(f"   Distribution: Facile={complexity_distribution['facile']}, "
+                f"Moyenne={complexity_distribution['moyenne']}, "
+                f"Difficile={complexity_distribution['difficile']}")
+
+    return report
+
+
+@shared_task(name='ml_engine.tasks.update_course_prediction')
+def update_course_prediction(course_id):
+    """
+    Tâche asynchrone: Met à jour les prédictions ML pour un cours spécifique
+    Utilisé pour les mises à jour à la demande
+
+    Args:
+        course_id: ID du cours à mettre à jour
+    """
+    from courses.models import Course
+
+    try:
+        course = Course.objects.get(id=course_id)
+        logger.info(f"🤖 Mise à jour ML pour le cours {course.code}")
+
+        prediction = course.update_ml_predictions(force=True)
+
+        if prediction and not prediction.get('error'):
+            logger.info(f"✅ Prédiction ML réussie pour {course.code}: {course.ml_complexity_level}")
+            return {
+                'success': True,
+                'course_id': course_id,
+                'course_code': course.code,
+                'complexity': course.ml_complexity_level,
+                'difficulty_score': course.ml_difficulty_score,
+                'timestamp': timezone.now().isoformat()
+            }
+        else:
+            logger.error(f"❌ Erreur lors de la prédiction ML pour {course.code}")
+            return {
+                'success': False,
+                'course_id': course_id,
+                'error': prediction.get('error', 'Unknown error'),
+                'timestamp': timezone.now().isoformat()
+            }
+
+    except Course.DoesNotExist:
+        logger.error(f"❌ Cours {course_id} introuvable")
+        return {
+            'success': False,
+            'course_id': course_id,
+            'error': 'Course not found',
+            'timestamp': timezone.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"❌ Erreur lors de la mise à jour ML pour le cours {course_id}: {e}")
+        return {
+            'success': False,
+            'course_id': course_id,
+            'error': str(e),
+            'timestamp': timezone.now().isoformat()
+        }
+
+
+@shared_task(name='ml_engine.tasks.analyze_schedule_async')
+def analyze_schedule_async(schedule_id):
+    """
+    Tâche asynchrone: Analyse complète d'un emploi du temps avec détection d'anomalies
+
+    Args:
+        schedule_id: ID du schedule à analyser
+    """
+    from schedules.models import Schedule
+    from ml_engine.simple_ml_service import SimpleMLService
+
+    try:
+        schedule = Schedule.objects.get(id=schedule_id)
+        logger.info(f"🔍 Analyse ML asynchrone du schedule {schedule.id} ({schedule.name})")
+
+        ml_service = SimpleMLService()
+
+        # Détection des anomalies
+        anomalies_result = ml_service.detect_schedule_anomalies(
+            schedule_data={'schedule_id': schedule.id}
+        )
+
+        anomalies = anomalies_result.get('anomalies', [])
+        critical_count = sum(1 for a in anomalies if a.get('severity') == 'critical')
+
+        logger.info(
+            f"✅ Analyse terminée pour {schedule.name}: "
+            f"{len(anomalies)} anomalies ({critical_count} critiques)"
+        )
+
+        return {
+            'success': True,
+            'schedule_id': schedule_id,
+            'schedule_name': schedule.name,
+            'total_anomalies': len(anomalies),
+            'critical_anomalies': critical_count,
+            'anomalies': anomalies[:10],  # Limiter à 10 pour ne pas surcharger
+            'timestamp': timezone.now().isoformat()
+        }
+
+    except Schedule.DoesNotExist:
+        logger.error(f"❌ Schedule {schedule_id} introuvable")
+        return {
+            'success': False,
+            'schedule_id': schedule_id,
+            'error': 'Schedule not found',
+            'timestamp': timezone.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"❌ Erreur lors de l'analyse ML du schedule {schedule_id}: {e}")
+        return {
+            'success': False,
+            'schedule_id': schedule_id,
+            'error': str(e),
+            'timestamp': timezone.now().isoformat()
+        }

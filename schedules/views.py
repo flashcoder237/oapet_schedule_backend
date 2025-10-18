@@ -11,8 +11,8 @@ from django.db.models import Count, Avg
 logger = logging.getLogger('schedules.views')
 
 # Import ML service for anomaly detection
-from ml_engine.simple_ml_service import SimpleMachineLearningService
-ml_service = SimpleMachineLearningService()
+from ml_engine.simple_ml_service import SimpleMLService
+ml_service = SimpleMLService()
 
 from core.mixins import ImportExportMixin
 from .models import (

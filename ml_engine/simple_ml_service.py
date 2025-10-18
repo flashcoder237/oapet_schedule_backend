@@ -949,6 +949,10 @@ class SimpleMLService:
             logger.error(f"Erreur lors de la prédiction d'occupation: {str(e)}")
             return {
                 'predictions': [],
+                'total_rooms_analyzed': 0,
+                'date_range': date_range or 'Semaine type',
+                'model_used': 'default',
+                'predicted_at': datetime.now().isoformat(),
                 'error': str(e)
             }
     
