@@ -7,6 +7,7 @@ from .views import (
     TeacherPreferenceViewSet, TeacherUnavailabilityViewSet,
     TeacherScheduleRequestViewSet, SessionFeedbackViewSet
 )
+from .views_class import StudentClassViewSet, ClassCourseViewSet
 
 router = DefaultRouter()
 router.register(r'departments', DepartmentViewSet)
@@ -20,6 +21,10 @@ router.register(r'teacher-preferences', TeacherPreferenceViewSet, basename='teac
 router.register(r'teacher-unavailabilities', TeacherUnavailabilityViewSet, basename='teacher-unavailability')
 router.register(r'teacher-schedule-requests', TeacherScheduleRequestViewSet, basename='teacher-schedule-request')
 router.register(r'session-feedbacks', SessionFeedbackViewSet, basename='session-feedback')
+
+# Routes pour les classes
+router.register(r'classes', StudentClassViewSet, basename='class')
+router.register(r'class-courses', ClassCourseViewSet, basename='class-course')
 
 urlpatterns = [
     path('', include(router.urls)),

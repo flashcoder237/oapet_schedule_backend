@@ -92,7 +92,7 @@ def send_message(request):
 
     # Traiter le message avec le service chatbot
     chatbot_service = ChatbotService()
-    bot_response = chatbot_service.process_message(user_message, request.user)
+    bot_response = chatbot_service.process_message(user_message, request.user, conversation)
 
     # Sauvegarder la réponse du bot
     bot_msg = Message.objects.create(

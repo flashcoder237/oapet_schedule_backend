@@ -5,7 +5,8 @@ from .models import (
     ScheduleOptimization, ScheduleTemplate, ScheduleConstraint, ScheduleExport,
     ScheduleGenerationConfig, SessionOccurrence
 )
-from courses.serializers import CourseSerializer, TeacherSerializer, CurriculumSerializer
+from courses.serializers import CourseSerializer, TeacherSerializer
+from courses.serializers_class import StudentClassListSerializer
 from rooms.serializers import RoomSerializer
 
 
@@ -77,17 +78,17 @@ class ConflictSerializer(serializers.ModelSerializer):
 
 class ScheduleSerializer(serializers.ModelSerializer):
     academic_period_details = AcademicPeriodSerializer(source='academic_period', read_only=True)
-    curriculum_details = CurriculumSerializer(source='curriculum', read_only=True)
+    student_class_details = StudentClassListSerializer(source='student_class', read_only=True)
     teacher_details = TeacherSerializer(source='teacher', read_only=True)
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
     sessions_count = serializers.IntegerField(source='sessions.count', read_only=True)
     conflicts_count = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Schedule
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'published_at')
-    
+
     def get_conflicts_count(self, obj):
         """Compte les conflits non résolus dans l'emploi du temps"""
         return Conflict.objects.filter(
@@ -142,10 +143,10 @@ class ScheduleOptimizationSerializer(serializers.ModelSerializer):
 
 
 class ScheduleTemplateSerializer(serializers.ModelSerializer):
-    curriculum_details = CurriculumSerializer(source='curriculum', read_only=True)
+    student_class_details = StudentClassListSerializer(source='student_class', read_only=True)
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
     level_display = serializers.CharField(source='get_level_display', read_only=True)
-    
+
     class Meta:
         model = ScheduleTemplate
         fields = '__all__'
@@ -184,7 +185,7 @@ class ScheduleCreateSerializer(serializers.Serializer):
     """Serializer pour la création d'emplois du temps avec paramètres"""
     name = serializers.CharField(max_length=200)
     academic_period = serializers.IntegerField()
-    curriculum = serializers.IntegerField(required=False)
+    student_class = serializers.IntegerField(required=False)
     teacher = serializers.IntegerField(required=False)
     level = serializers.CharField(max_length=5, required=False)
     description = serializers.CharField(required=False)
@@ -198,7 +199,7 @@ class ScheduleStatsSerializer(serializers.Serializer):
     total_schedules = serializers.IntegerField()
     published_schedules = serializers.IntegerField()
     schedules_by_level = serializers.DictField()
-    schedules_by_curriculum = serializers.DictField()
+    schedules_by_class = serializers.DictField()
     average_sessions_per_schedule = serializers.FloatField()
     total_conflicts = serializers.IntegerField()
     unresolved_conflicts = serializers.IntegerField()
@@ -277,7 +278,18 @@ class ScheduleGenerationConfigCreateSerializer(serializers.ModelSerializer):
             'schedule', 'start_date', 'end_date', 'recurrence_type', 'recurrence_pattern',
             'flexibility_level', 'allow_conflicts', 'max_sessions_per_day',
             'respect_teacher_preferences', 'respect_room_preferences',
-            'optimization_priority', 'excluded_dates', 'special_weeks'
+            'optimization_priority', 'excluded_dates', 'special_weeks',
+            # Nouvelles contraintes horaires
+            'min_break_between_sessions', 'max_consecutive_sessions',
+            'preferred_start_time', 'preferred_end_time',
+            # Contraintes de charge de travail
+            'max_hours_per_day_students', 'max_hours_per_week_students',
+            # Contraintes enseignants
+            'max_hours_per_day_teachers', 'min_rest_time_teachers',
+            # Distribution des cours
+            'distribute_evenly', 'avoid_single_sessions', 'group_same_subject',
+            # Préférences de jours
+            'preferred_days', 'excluded_days'
         ]
 
     def validate(self, data):

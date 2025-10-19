@@ -100,8 +100,27 @@ class ScheduleGenerationService:
                 )
                 occurrences.extend(session_occurrences)
 
-        # Vérifie les conflits
+        # Vérifie les conflits AVANT la sauvegarde
         self._check_conflicts(occurrences)
+
+        # Compte les conflits critiques
+        critical_conflicts = [
+            c for c in self.stats['conflicts']
+            if c.get('severity') in ['critical', 'high'] and c.get('type') in [
+                'room_double_booking', 'teacher_double_booking', 'teacher_overload'
+            ]
+        ]
+
+        # Si des conflits critiques existent et que allow_conflicts est False, annuler
+        if critical_conflicts and not self.config.allow_conflicts and not preview_mode:
+            return {
+                'success': False,
+                'message': f"{len(critical_conflicts)} conflit(s) critique(s) détecté(s). Génération annulée.",
+                'occurrences_created': 0,
+                'conflicts_detected': len(critical_conflicts),
+                'conflicts': critical_conflicts,
+                'generation_time': 0
+            }
 
         # Sauvegarde en base si pas en mode preview
         if not preview_mode:
@@ -109,15 +128,16 @@ class ScheduleGenerationService:
                 # Supprime les anciennes occurrences si force_regenerate
                 if force_regenerate:
                     if preserve_modifications:
-                        # Conserve les occurrences modifiées
+                        # Conserve les occurrences modifiées OU annulées
                         SessionOccurrence.objects.filter(
                             session_template__schedule=self.schedule,
                             actual_date__gte=start_date,
                             actual_date__lte=end_date,
                             is_room_modified=False,
                             is_teacher_modified=False,
-                            is_time_modified=False,
-                            is_cancelled=False
+                            is_time_modified=False
+                        ).exclude(
+                            is_cancelled=True  # Garde aussi les annulées
                         ).delete()
                     else:
                         # Supprime toutes les occurrences
@@ -182,11 +202,35 @@ class ScheduleGenerationService:
 
         # Détermine le nombre total d'occurrences nécessaires basé sur total_hours du cours
         course_total_hours = session_template.course.total_hours or 0
+        course_hours_per_week = session_template.course.hours_per_week or 0
 
         # Si total_hours est défini, calcule le nombre d'occurrences nécessaires
         if course_total_hours > 0 and session_duration_hours > 0:
-            # Arrondir au supérieur pour ne pas perdre d'heures
-            # Exemple: 30h / 1.75h = 17.14 → 18 occurrences au lieu de 17
+            # Calcule le nombre de semaines de cours
+            weeks_count = ((end_date - start_date).days // 7) + 1
+
+            # Vérifie la cohérence entre total_hours et hours_per_week
+            if course_hours_per_week > 0:
+                expected_total_hours = course_hours_per_week * weeks_count
+                # Tolère une différence de 10% pour flexibilité
+                if abs(expected_total_hours - course_total_hours) > (expected_total_hours * 0.1):
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(
+                        f"Incohérence volume horaire pour {session_template.course.code}: "
+                        f"total_hours={course_total_hours}h mais hours_per_week={course_hours_per_week}h "
+                        f"× {weeks_count} semaines = {expected_total_hours}h attendu"
+                    )
+                    self.stats['conflicts'].append({
+                        'type': 'volume_inconsistency',
+                        'severity': 'warning',
+                        'course': session_template.course.code,
+                        'total_hours': course_total_hours,
+                        'expected_hours': expected_total_hours,
+                        'message': f'Incohérence volume horaire: {course_total_hours}h défini mais {expected_total_hours}h attendu'
+                    })
+
+            # Utilise total_hours comme référence principale
             max_occurrences = math.ceil(course_total_hours / session_duration_hours)
         else:
             # Sinon, génère sur toute la période (comportement par défaut)
@@ -240,6 +284,29 @@ class ScheduleGenerationService:
                     occurrences
                 )
 
+                # Si un conflit critique a été détecté, ne pas créer l'occurrence
+                if selected_room == 'CONFLICT':
+                    # Le conflit a déjà été ajouté aux stats par _select_best_room
+                    current_date += self._get_recurrence_delta()
+                    continue
+
+                # Vérifie aussi les conflits d'enseignant
+                teacher_conflict = self._check_teacher_availability(
+                    session_template.teacher,
+                    current_date,
+                    session_start,
+                    session_end,
+                    occurrences
+                )
+
+                if teacher_conflict:
+                    self.stats['conflicts'].append(teacher_conflict)
+                    self.stats['conflicts_detected'] += 1
+                    # Ne pas créer cette occurrence si allow_conflicts est False
+                    if not self.config.allow_conflicts:
+                        current_date += self._get_recurrence_delta()
+                        continue
+
                 # Crée l'occurrence
                 occurrence = SessionOccurrence(
                     session_template=session_template,
@@ -257,17 +324,137 @@ class ScheduleGenerationService:
                 occurrence_count += 1
 
             # Passe à la semaine suivante selon le type de récurrence
-            if self.config.recurrence_type == 'weekly':
-                current_date += timedelta(days=7)
-            elif self.config.recurrence_type == 'biweekly':
-                current_date += timedelta(days=14)
-            elif self.config.recurrence_type == 'monthly':
-                # Approximation mensuelle (4 semaines)
-                current_date += timedelta(days=28)
-            else:
-                current_date += timedelta(days=7)
+            current_date += self._get_recurrence_delta()
 
         return occurrences
+
+    def _get_recurrence_delta(self) -> timedelta:
+        """Retourne le delta de temps selon le type de récurrence"""
+        from dateutil.relativedelta import relativedelta
+
+        if self.config.recurrence_type == 'weekly':
+            return timedelta(days=7)
+        elif self.config.recurrence_type == 'biweekly':
+            return timedelta(days=14)
+        elif self.config.recurrence_type == 'monthly':
+            # Utilise relativedelta pour gérer correctement les mois
+            # Retourne 28 jours par défaut mais devrait être géré différemment
+            # Pour une vraie récurrence mensuelle, utiliser dateutil
+            return timedelta(days=30)  # Moyenne plus réaliste que 28
+        else:
+            return timedelta(days=7)
+
+    def _check_teacher_availability(
+        self,
+        teacher: Teacher,
+        date: datetime,
+        start_time: time,
+        end_time: time,
+        existing_occurrences: List[SessionOccurrence]
+    ):
+        """Vérifie si l'enseignant est disponible à ce créneau"""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # Vérifie les conflits avec les occurrences déjà générées
+        for occ in existing_occurrences:
+            if (occ.teacher.id == teacher.id and
+                occ.actual_date == date and
+                self._has_time_overlap(occ.start_time, occ.end_time, start_time, end_time)):
+
+                logger.error(
+                    f"CONFLIT ENSEIGNANT: {teacher.user.get_full_name()} "
+                    f"déjà occupé le {date.strftime('%Y-%m-%d')} à {start_time}"
+                )
+
+                return {
+                    'type': 'teacher_double_booking',
+                    'severity': 'critical',
+                    'date': str(date),
+                    'time': f"{start_time} - {end_time}",
+                    'teacher': teacher.user.get_full_name(),
+                    'conflicting_course': occ.session_template.course.code,
+                    'message': f"L'enseignant {teacher.user.get_full_name()} est déjà occupé"
+                }
+
+        # Vérifie aussi dans la base de données
+        existing_db_occurrences = SessionOccurrence.objects.filter(
+            teacher=teacher,
+            actual_date=date,
+            status='scheduled'
+        ).select_related('session_template__course')
+
+        for db_occ in existing_db_occurrences:
+            if self._has_time_overlap(db_occ.start_time, db_occ.end_time, start_time, end_time):
+                logger.error(
+                    f"CONFLIT ENSEIGNANT (BD): {teacher.user.get_full_name()} "
+                    f"déjà occupé le {date.strftime('%Y-%m-%d')} à {start_time}"
+                )
+
+                return {
+                    'type': 'teacher_double_booking',
+                    'severity': 'critical',
+                    'date': str(date),
+                    'time': f"{start_time} - {end_time}",
+                    'teacher': teacher.user.get_full_name(),
+                    'conflicting_course': db_occ.session_template.course.code,
+                    'message': f"L'enseignant {teacher.user.get_full_name()} est déjà occupé (BD)"
+                }
+
+        # Vérifie la charge horaire hebdomadaire
+        week_start = date - timedelta(days=date.weekday())
+        week_end = week_start + timedelta(days=6)
+
+        # Calcul des heures déjà planifiées cette semaine
+        weekly_hours = 0
+        for occ in existing_occurrences:
+            if (occ.teacher.id == teacher.id and
+                week_start <= occ.actual_date <= week_end):
+                duration = (
+                    timezone.datetime.combine(timezone.datetime.today(), occ.end_time) -
+                    timezone.datetime.combine(timezone.datetime.today(), occ.start_time)
+                ).total_seconds() / 3600
+                weekly_hours += duration
+
+        # Ajoute les heures de la BD
+        db_weekly_occurrences = SessionOccurrence.objects.filter(
+            teacher=teacher,
+            actual_date__gte=week_start,
+            actual_date__lte=week_end,
+            status='scheduled'
+        )
+
+        for db_occ in db_weekly_occurrences:
+            weekly_hours += db_occ.get_duration_hours()
+
+        # Ajoute la durée de cette nouvelle session
+        new_session_duration = (
+            timezone.datetime.combine(timezone.datetime.today(), end_time) -
+            timezone.datetime.combine(timezone.datetime.today(), start_time)
+        ).total_seconds() / 3600
+
+        total_hours = weekly_hours + new_session_duration
+
+        # Vérifie si cela dépasse la limite
+        if total_hours > teacher.max_hours_per_week:
+            logger.warning(
+                f"SURCHARGE ENSEIGNANT: {teacher.user.get_full_name()} "
+                f"dépasserait sa limite ({total_hours:.1f}h > {teacher.max_hours_per_week}h)"
+            )
+
+            return {
+                'type': 'teacher_overload',
+                'severity': 'high',
+                'date': str(date),
+                'week_start': str(week_start),
+                'week_end': str(week_end),
+                'teacher': teacher.user.get_full_name(),
+                'total_hours': round(total_hours, 1),
+                'max_hours': teacher.max_hours_per_week,
+                'message': f"Surcharge: {total_hours:.1f}h > {teacher.max_hours_per_week}h"
+            }
+
+        return None
 
     def _select_best_room(
         self,
@@ -281,16 +468,92 @@ class ScheduleGenerationService:
         import logging
         logger = logging.getLogger(__name__)
 
-        # Si on doit respecter les préférences de salles, garder la salle du template
+        # Si on doit respecter les préférences de salles, vérifier quand même la disponibilité
         if self.config.respect_room_preferences:
+            # Vérifie si la salle du template est disponible
+            default_room = session_template.room
+
+            # Vérifie les conflits avec les occurrences déjà générées
+            for occ in existing_occurrences:
+                if (occ.room.id == default_room.id and occ.actual_date == date and
+                    self._has_time_overlap(occ.start_time, occ.end_time, start_time, end_time)):
+
+                    logger.error(
+                        f"CONFLIT SALLE (respect_room_preferences): {default_room.code} "
+                        f"pour {session_template.course.code} le {date.strftime('%Y-%m-%d')} à {start_time} "
+                        f"est déjà occupée par {occ.session_template.course.code}"
+                    )
+
+                    self.stats['conflicts'].append({
+                        'type': 'room_double_booking',
+                        'severity': 'critical',
+                        'date': str(date),
+                        'time': f"{start_time} - {end_time}",
+                        'course': session_template.course.code,
+                        'room': default_room.code,
+                        'conflicting_course': occ.session_template.course.code,
+                        'message': f'Salle préférée {default_room.code} déjà occupée (respect_room_preferences=True)'
+                    })
+                    self.stats['conflicts_detected'] += 1
+
+                    return 'CONFLICT'
+
+            # Vérifie aussi en BD
+            existing_db_occurrences = SessionOccurrence.objects.filter(
+                room=default_room,
+                actual_date=date,
+                status='scheduled'
+            ).select_related('session_template__course')
+
+            for db_occ in existing_db_occurrences:
+                if self._has_time_overlap(db_occ.start_time, db_occ.end_time, start_time, end_time):
+                    logger.error(
+                        f"CONFLIT SALLE BD (respect_room_preferences): {default_room.code} "
+                        f"pour {session_template.course.code} le {date.strftime('%Y-%m-%d')} à {start_time} "
+                        f"est déjà occupée par {db_occ.session_template.course.code}"
+                    )
+
+                    self.stats['conflicts'].append({
+                        'type': 'room_double_booking',
+                        'severity': 'critical',
+                        'date': str(date),
+                        'time': f"{start_time} - {end_time}",
+                        'course': session_template.course.code,
+                        'room': default_room.code,
+                        'conflicting_course': db_occ.session_template.course.code,
+                        'message': f'Salle préférée {default_room.code} déjà occupée en BD (respect_room_preferences=True)'
+                    })
+                    self.stats['conflicts_detected'] += 1
+
+                    return 'CONFLICT'
+
+            # Salle disponible, retourner None pour utiliser la salle du template
             return None
 
         course = session_template.course
 
+        # Détermine l'effectif réel : priorise classes > expected_students > max_students
+        from django.db.models import Count, Sum
+        from courses.models_class import ClassCourse
+
+        # Cherche d'abord dans les classes assignées via ClassCourse
+        class_total_students = ClassCourse.objects.filter(
+            course=course,
+            is_active=True
+        ).aggregate(
+            total=Sum('student_class__student_count')
+        )['total'] or 0
+
+        # Si pas de classes assignées, utilise les valeurs par défaut du cours
+        if class_total_students == 0:
+            actual_students = session_template.expected_students or course.max_students or 30
+        else:
+            actual_students = class_total_students
+
         # Cherche les salles disponibles qui correspondent aux besoins du cours
         available_rooms = Room.objects.filter(
             is_active=True,
-            capacity__gte=session_template.expected_students
+            capacity__gte=actual_students
         )
 
         # Filtre selon les équipements requis
@@ -302,43 +565,138 @@ class ScheduleGenerationService:
             available_rooms = available_rooms.filter(is_laboratory=True)
 
         # Exclut les salles déjà occupées à ce créneau et cette date
+        occupied_room_ids = []
         for occ in existing_occurrences:
             if (occ.actual_date == date and
-                not (occ.end_time <= start_time or occ.start_time >= end_time)):
+                self._has_time_overlap(occ.start_time, occ.end_time, start_time, end_time)):
                 # Il y a chevauchement horaire, exclure cette salle
-                available_rooms = available_rooms.exclude(id=occ.room.id)
+                occupied_room_ids.append(occ.room.id)
 
-        # Si aucune salle disponible, retourner None (utilisera la salle du template)
+        if occupied_room_ids:
+            available_rooms = available_rooms.exclude(id__in=occupied_room_ids)
+
+        # Vérifie aussi les conflits dans la base de données pour cette session template
+        # (en cas de régénération partielle)
+        existing_db_occurrences = SessionOccurrence.objects.filter(
+            actual_date=date,
+            status='scheduled'
+        ).exclude(
+            session_template=session_template
+        ).select_related('room')
+
+        for db_occ in existing_db_occurrences:
+            if self._has_time_overlap(db_occ.start_time, db_occ.end_time, start_time, end_time):
+                available_rooms = available_rooms.exclude(id=db_occ.room.id)
+
+        # Si aucune salle disponible, lever une exception au lieu de créer un conflit
         if not available_rooms.exists():
-            # Logger un avertissement pour traçabilité
-            logger.warning(
-                f"Aucune salle disponible pour {session_template.course.code} "
-                f"le {date.strftime('%Y-%m-%d')} à {start_time}. "
-                f"Utilisation de la salle par défaut {session_template.room.code}. "
-                f"Risque de conflit potentiel."
-            )
+            # Vérifie si la salle du template est disponible
+            default_room = session_template.room
+            default_room_conflicts = []
 
-            # Ajouter un conflit dans les stats pour notification
-            self.stats['conflicts'].append({
-                'type': 'no_room_available',
-                'severity': 'warning',
-                'date': str(date),
-                'time': f"{start_time} - {end_time}",
-                'course': session_template.course.code,
-                'default_room': session_template.room.code,
-                'message': 'Aucune salle disponible, utilisation de la salle par défaut'
-            })
+            for occ in existing_occurrences:
+                if (occ.room.id == default_room.id and occ.actual_date == date and
+                    self._has_time_overlap(occ.start_time, occ.end_time, start_time, end_time)):
+                    default_room_conflicts.append(occ)
 
-            return None
+            # Vérifie aussi en BD
+            db_conflicts = existing_db_occurrences.filter(room=default_room)
 
-        # Sélectionne la salle la plus adaptée (capacité proche du besoin)
+            if default_room_conflicts or db_conflicts.exists():
+                # Ajouter un conflit CRITIQUE dans les stats
+                self.stats['conflicts'].append({
+                    'type': 'room_double_booking',
+                    'severity': 'critical',
+                    'date': str(date),
+                    'time': f"{start_time} - {end_time}",
+                    'course': session_template.course.code,
+                    'room': default_room.code,
+                    'message': f'Aucune salle disponible et conflit sur salle par défaut {default_room.code}'
+                })
+                self.stats['conflicts_detected'] += 1
+
+                logger.error(
+                    f"CONFLIT CRITIQUE: Aucune salle disponible pour {session_template.course.code} "
+                    f"le {date.strftime('%Y-%m-%d')} à {start_time}. "
+                    f"La salle par défaut {default_room.code} est déjà occupée."
+                )
+
+                # Retourne None pour signaler l'impossibilité (sera géré par l'appelant)
+                return 'CONFLICT'
+            else:
+                # La salle par défaut est libre, on peut l'utiliser
+                logger.warning(
+                    f"Aucune salle optimale disponible pour {session_template.course.code} "
+                    f"le {date.strftime('%Y-%m-%d')} à {start_time}. "
+                    f"Utilisation de la salle par défaut {default_room.code}."
+                )
+                return None
+
+        # Sélectionne la salle la plus adaptée en tenant compte de l'utilisation
         available_rooms_list = list(available_rooms)
+
+        # Compte combien de fois chaque salle a déjà été utilisée
+        room_usage_count = {}
+        for occ in existing_occurrences:
+            room_id = occ.room.id
+            room_usage_count[room_id] = room_usage_count.get(room_id, 0) + 1
+
+        # Compte aussi dans la BD
+        if existing_db_occurrences.exists():
+            from django.db.models import Count
+            db_usage = SessionOccurrence.objects.filter(
+                status='scheduled'
+            ).values('room_id').annotate(count=Count('id'))
+
+            for item in db_usage:
+                room_id = item['room_id']
+                count = item['count']
+                room_usage_count[room_id] = room_usage_count.get(room_id, 0) + count
+
+        # Calcule un score pour chaque salle disponible
+        def calculate_room_score(room):
+            # Score basé sur la capacité (plus proche de l'effectif réel = mieux)
+            capacity_diff = abs(room.capacity - actual_students)
+            capacity_score = capacity_diff
+
+            # Score basé sur l'utilisation (moins utilisé = mieux)
+            usage_count = room_usage_count.get(room.id, 0)
+            usage_score = usage_count * 100  # Pénalise fortement les salles déjà utilisées
+
+            # Score combiné (plus bas = mieux)
+            total_score = capacity_score + usage_score
+
+            return total_score
+
+        # Sélectionne la salle avec le meilleur score
         best_room = min(
             available_rooms_list,
-            key=lambda r: abs(r.capacity - session_template.expected_students)
+            key=calculate_room_score
         )
 
         return best_room
+
+    def _has_time_overlap(self, start1: time, end1: time, start2: time, end2: time) -> bool:
+        """
+        Vérifie s'il y a chevauchement entre deux plages horaires
+        Gère correctement les bornes en considérant un temps de transition de 5 minutes
+        """
+        from datetime import datetime, timedelta
+
+        # Convertit les times en datetime pour faciliter les calculs
+        today = datetime.today().date()
+        dt_start1 = datetime.combine(today, start1)
+        dt_end1 = datetime.combine(today, end1)
+        dt_start2 = datetime.combine(today, start2)
+        dt_end2 = datetime.combine(today, end2)
+
+        # Ajoute un buffer de 5 minutes pour le temps de transition
+        transition_buffer = timedelta(minutes=5)
+        dt_end1_with_buffer = dt_end1 + transition_buffer
+        dt_end2_with_buffer = dt_end2 + transition_buffer
+
+        # Vérifie le chevauchement avec buffer
+        return not (dt_end1_with_buffer <= dt_start2 or dt_end2_with_buffer <= dt_start1)
 
     def _check_conflicts(self, occurrences: List[SessionOccurrence]):
         """Vérifie les conflits entre les occurrences"""
@@ -367,22 +725,23 @@ class ScheduleGenerationService:
         """Vérifie les conflits entre deux occurrences"""
         conflicts = []
 
-        # Vérifie le chevauchement horaire
-        if not (occ1.end_time <= occ2.start_time or occ1.start_time >= occ2.end_time):
+        # Vérifie le chevauchement horaire avec la nouvelle méthode améliorée
+        if self._has_time_overlap(occ1.start_time, occ1.end_time, occ2.start_time, occ2.end_time):
             # Il y a chevauchement horaire
 
             # Conflit de salle
             if occ1.room == occ2.room:
                 conflicts.append({
                     'type': 'room_double_booking',
-                    'severity': 'high',
+                    'severity': 'critical',  # Changé de 'high' à 'critical'
                     'date': str(occ1.actual_date),
                     'time': f"{occ1.start_time} - {occ1.end_time}",
                     'resource': occ1.room.code,
                     'courses': [
                         occ1.session_template.course.code,
                         occ2.session_template.course.code
-                    ]
+                    ],
+                    'message': f"Conflit de salle {occ1.room.code}"
                 })
 
             # Conflit d'enseignant
@@ -396,7 +755,8 @@ class ScheduleGenerationService:
                     'courses': [
                         occ1.session_template.course.code,
                         occ2.session_template.course.code
-                    ]
+                    ],
+                    'message': f"Conflit enseignant {occ1.teacher.user.get_full_name()}"
                 })
 
         return conflicts

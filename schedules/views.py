@@ -146,8 +146,8 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
     queryset = Schedule.objects.all()
     permission_classes = [IsAuthenticated]
 
-    export_fields = ['id', 'name', 'academic_period', 'curriculum', 'schedule_type', 'start_date', 'end_date', 'status', 'is_published']
-    import_fields = ['name', 'academic_period', 'curriculum', 'schedule_type', 'start_date', 'end_date', 'status']
+    export_fields = ['id', 'name', 'academic_period', 'student_class', 'schedule_type', 'start_date', 'end_date', 'status', 'is_published']
+    import_fields = ['name', 'academic_period', 'student_class', 'schedule_type', 'start_date', 'end_date', 'status']
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -164,10 +164,10 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         if academic_period_id:
             queryset = queryset.filter(academic_period_id=academic_period_id)
         
-        # Filtrer par curriculum
-        curriculum_id = self.request.query_params.get('curriculum')
-        if curriculum_id:
-            queryset = queryset.filter(curriculum_id=curriculum_id)
+        # Filtrer par classe
+        student_class_id = self.request.query_params.get('student_class')
+        if student_class_id:
+            queryset = queryset.filter(student_class_id=student_class_id)
         
         # Filtrer par statut de publication
         published_only = self.request.query_params.get('published_only')
@@ -180,37 +180,37 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
-    def by_curriculum(self, request):
-        """Récupère le schedule actif pour un curriculum donné"""
-        curriculum_code = request.query_params.get('curriculum')
+    def by_class(self, request):
+        """Récupère le schedule actif pour une classe donnée"""
+        class_code = request.query_params.get('class')
 
-        if not curriculum_code:
+        if not class_code:
             return Response({
-                'error': 'Le paramètre curriculum est requis'
+                'error': 'Le paramètre class est requis'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        from courses.models import Curriculum
+        from courses.models_class import StudentClass
         try:
-            # Chercher le curriculum par code ou ID
-            if curriculum_code.isdigit():
-                curriculum = Curriculum.objects.get(id=curriculum_code)
+            # Chercher la classe par code ou ID
+            if class_code.isdigit():
+                student_class = StudentClass.objects.get(id=class_code)
             else:
-                curriculum = Curriculum.objects.get(code=curriculum_code)
-        except Curriculum.DoesNotExist:
+                student_class = StudentClass.objects.get(code=class_code)
+        except StudentClass.DoesNotExist:
             return Response({
-                'error': f'Curriculum {curriculum_code} non trouvé'
+                'error': f'Classe {class_code} non trouvée'
             }, status=status.HTTP_404_NOT_FOUND)
 
-        # Chercher le schedule le plus récent pour ce curriculum
-        schedule = Schedule.objects.filter(curriculum=curriculum).order_by('-created_at').first()
+        # Chercher le schedule le plus récent pour cette classe
+        schedule = Schedule.objects.filter(student_class=student_class).order_by('-created_at').first()
 
         if not schedule:
             return Response({
-                'error': f'Aucun emploi du temps trouvé pour le curriculum {curriculum.code}',
-                'curriculum': {
-                    'id': curriculum.id,
-                    'code': curriculum.code,
-                    'name': curriculum.name
+                'error': f'Aucun emploi du temps trouvé pour la classe {student_class.code}',
+                'student_class': {
+                    'id': student_class.id,
+                    'code': student_class.code,
+                    'name': student_class.name
                 }
             }, status=status.HTTP_404_NOT_FOUND)
 
@@ -277,6 +277,17 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'sessions_deleted': sessions_count
         }, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['get'])
+    def course_coverage(self, request, pk=None):
+        """
+        Retourne le rapport de couverture des heures de cours
+        Permet à l'admin de voir quels cours ne couvrent pas toutes les heures du semestre
+        """
+        schedule = self.get_object()
+        coverage_report = schedule.get_course_coverage()
+
+        return Response(coverage_report, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['post'])
     def generate_for_period(self, request):
         """Génère les emplois du temps pour une période (semestre, année, personnalisée)"""
@@ -289,7 +300,8 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         semester = request.data.get('semester')  # Ex: "S1" ou "S2"
         start_date = request.data.get('start_date')
         end_date = request.data.get('end_date')
-        curriculum_ids = request.data.get('curriculum_ids', [])
+        # Support both old curriculum_ids and new class_ids for backward compatibility
+        class_ids = request.data.get('class_ids') or request.data.get('curriculum_ids', [])
 
         try:
             # Vérifier que l'utilisateur est authentifié
@@ -347,36 +359,37 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
             generated_schedules = []
 
             with transaction.atomic():
-                # Générer pour chaque curriculum sélectionné
-                for curriculum_id in curriculum_ids:
-                    # Vérifier que le curriculum existe (accepter ID ou code)
+                # Générer pour chaque classe sélectionnée
+                for class_id in class_ids:
+                    # Vérifier que la classe existe (accepter ID ou code)
                     try:
-                        from courses.models import Curriculum
+                        from courses.models_class import StudentClass
                         # Si c'est un nombre, chercher par ID, sinon par code
-                        if str(curriculum_id).isdigit():
-                            curriculum = Curriculum.objects.get(id=curriculum_id)
+                        if str(class_id).isdigit():
+                            student_class = StudentClass.objects.get(id=class_id)
                         else:
-                            curriculum = Curriculum.objects.get(code=curriculum_id)
-                    except Curriculum.DoesNotExist:
-                        logger.error(f"Curriculum {curriculum_id} n'existe pas")
+                            student_class = StudentClass.objects.get(code=class_id)
+                    except StudentClass.DoesNotExist:
+                        logger.error(f"StudentClass {class_id} n'existe pas")
                         continue
 
                     # Créer l'emploi du temps
                     schedule = Schedule.objects.create(
-                        name=f"Emploi du temps {academic_period.name} - {curriculum.name}",
+                        name=f"Emploi du temps {academic_period.name} - {student_class.name}",
                         academic_period=academic_period,
-                        curriculum=curriculum,
-                        schedule_type='curriculum',
+                        student_class=student_class,
+                        level=student_class.level,
+                        schedule_type='class',
                         status='draft',
                         created_by=request.user
                     )
 
-                    # Récupérer les cours du curriculum via CurriculumCourse
-                    from courses.models import CurriculumCourse
-                    curriculum_courses = CurriculumCourse.objects.filter(
-                        curriculum=curriculum
+                    # Récupérer les cours de la classe via ClassCourse
+                    from courses.models_class import ClassCourse
+                    class_courses = ClassCourse.objects.filter(
+                        student_class=student_class
                     ).select_related('course')
-                    courses = [cc.course for cc in curriculum_courses]
+                    courses = [cc.course for cc in class_courses]
 
                     # Générer les sessions (algorithme simplifié)
                     time_slots = TimeSlot.objects.filter(is_active=True)
@@ -384,7 +397,7 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                     course_index = 0
 
                     if not courses:
-                        logger.warning(f"Aucun cours trouvé pour le curriculum {curriculum_id}")
+                        logger.warning(f"Aucun cours trouvé pour la classe {class_id}")
                         continue
 
                     while current_date <= period_end:
@@ -400,20 +413,95 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
                             # Trouver une salle disponible pour ce créneau ET cette date spécifique
                             from rooms.models import Room
+                            from .models import SessionOccurrence
+
+                            # Déterminer le nombre d'étudiants requis
+                            required_capacity = student_class.student_count if hasattr(student_class, 'student_count') else 30
+
                             # Exclure les salles déjà utilisées pour CETTE DATE SPÉCIFIQUE et ce créneau horaire
-                            used_rooms = ScheduleSession.objects.filter(
-                                schedule=schedule,
+                            # Vérifier dans TOUTES les sessions (pas seulement ce schedule)
+                            used_room_ids_sessions = ScheduleSession.objects.filter(
                                 specific_date=current_date,
                                 specific_start_time=slot.start_time,
                                 specific_end_time=slot.end_time
                             ).values_list('room_id', flat=True)
 
-                            available_room = Room.objects.filter(
-                                is_active=True,
-                                capacity__gte=30
-                            ).exclude(id__in=used_rooms).first()
+                            # Vérifier aussi dans les occurrences
+                            used_room_ids_occurrences = SessionOccurrence.objects.filter(
+                                actual_date=current_date,
+                                start_time=slot.start_time,
+                                end_time=slot.end_time,
+                                status='scheduled',
+                                is_cancelled=False
+                            ).values_list('room_id', flat=True)
 
-                            if available_room and course.teacher:
+                            # Combiner les deux listes
+                            all_used_room_ids = set(list(used_room_ids_sessions) + list(used_room_ids_occurrences))
+
+                            # Chercher une salle disponible avec la capacité suffisante
+                            available_rooms = Room.objects.filter(
+                                is_active=True,
+                                capacity__gte=required_capacity
+                            ).exclude(id__in=all_used_room_ids)
+
+                            # Vérifier les équipements requis par le cours
+                            if hasattr(course, 'requires_projector') and course.requires_projector:
+                                available_rooms = available_rooms.filter(has_projector=True)
+                            if hasattr(course, 'requires_computer') and course.requires_computer:
+                                available_rooms = available_rooms.filter(has_computer=True)
+                            if hasattr(course, 'requires_laboratory') and course.requires_laboratory:
+                                available_rooms = available_rooms.filter(is_laboratory=True)
+
+                            # Exclure les salles exclues par le cours
+                            if hasattr(course, 'excluded_rooms') and course.excluded_rooms:
+                                available_rooms = available_rooms.exclude(id__in=course.excluded_rooms)
+
+                            # Prioriser les salles préférées
+                            available_room = None
+                            if hasattr(course, 'preferred_rooms') and course.preferred_rooms:
+                                # Essayer d'abord les salles préférées
+                                preferred_available = available_rooms.filter(id__in=course.preferred_rooms).order_by('capacity')
+                                if preferred_available.exists():
+                                    available_room = preferred_available.first()
+                                    logger.info(f"Salle préférée allouée: {available_room.code} pour {course.code}")
+
+                            # Si aucune salle préférée disponible, prendre la plus proche en capacité
+                            if not available_room:
+                                available_room = available_rooms.order_by('capacity').first()
+
+                            # Vérifier que l'enseignant est disponible
+                            teacher_available = True
+                            if course.teacher:
+                                # Vérifier les sessions existantes
+                                teacher_conflicts_sessions = ScheduleSession.objects.filter(
+                                    teacher=course.teacher,
+                                    specific_date=current_date,
+                                    specific_start_time=slot.start_time,
+                                    specific_end_time=slot.end_time
+                                ).exists()
+
+                                # Vérifier les occurrences
+                                teacher_conflicts_occurrences = SessionOccurrence.objects.filter(
+                                    teacher=course.teacher,
+                                    actual_date=current_date,
+                                    start_time=slot.start_time,
+                                    end_time=slot.end_time,
+                                    status='scheduled',
+                                    is_cancelled=False
+                                ).exists()
+
+                                teacher_available = not (teacher_conflicts_sessions or teacher_conflicts_occurrences)
+
+                            # Logging pour debug
+                            if not available_room:
+                                logger.warning(f"Aucune salle disponible pour {course.code} le {current_date} à {slot.start_time} (capacité requise: {required_capacity})")
+                            elif not course.teacher:
+                                logger.warning(f"Aucun enseignant assigné pour le cours {course.code}")
+                            elif not teacher_available:
+                                logger.warning(f"Enseignant {course.teacher} non disponible pour {course.code} le {current_date} à {slot.start_time}")
+
+                            if available_room and course.teacher and teacher_available:
+                                logger.info(f"Salle allouée: {available_room.code} (capacité: {available_room.capacity}) pour {course.code} - {student_class.name}")
                                 # Créer la session template
                                 session = ScheduleSession.objects.create(
                                     schedule=schedule,

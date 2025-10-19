@@ -2,7 +2,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-from courses.models import Course, Teacher, Student, Curriculum
+from courses.models import Course, Teacher, Student
+from courses.models_class import StudentClass
 from rooms.models import Room
 
 
@@ -60,15 +61,15 @@ class Schedule(models.Model):
     ]
     
     SCHEDULE_TYPE_CHOICES = [
-        ('curriculum', 'Par cursus'),
+        ('class', 'Par classe'),
         ('teacher', 'Par enseignant'),
         ('room', 'Par salle'),
         ('global', 'Global'),
     ]
-    
+
     name = models.CharField(max_length=200)
     academic_period = models.ForeignKey(AcademicPeriod, on_delete=models.CASCADE)
-    curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, blank=True, null=True)
+    student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, blank=True, null=True, related_name='schedules')
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, blank=True, null=True)
     level = models.CharField(max_length=5, choices=[
         ('L1', 'Licence 1'),
@@ -77,7 +78,7 @@ class Schedule(models.Model):
         ('M1', 'Master 1'),
         ('M2', 'Master 2'),
     ], blank=True)
-    schedule_type = models.CharField(max_length=15, choices=SCHEDULE_TYPE_CHOICES, default='curriculum')
+    schedule_type = models.CharField(max_length=15, choices=SCHEDULE_TYPE_CHOICES, default='class')
     status = models.CharField(max_length=15, choices=SCHEDULE_STATUS_CHOICES, default='draft')
     description = models.TextField(blank=True)
     is_published = models.BooleanField(default=False)
@@ -100,7 +101,7 @@ class Schedule(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['academic_period', 'status']),
-            models.Index(fields=['curriculum', 'level']),
+            models.Index(fields=['student_class', 'level']),
             models.Index(fields=['schedule_type', 'is_published']),
         ]
     
@@ -145,6 +146,99 @@ class Schedule(models.Model):
         self.is_published = False
         self.save()
 
+    def get_course_coverage(self):
+        """
+        Calcule la couverture des heures de cours
+        Retourne un dictionnaire avec les cours et leur couverture
+        """
+        from datetime import timedelta
+        from django.db.models import Sum, F, ExpressionWrapper, DurationField
+        from courses.models_class import ClassCourse
+
+        coverage_report = {
+            'courses': [],
+            'total_courses': 0,
+            'fully_covered': 0,
+            'partially_covered': 0,
+            'not_covered': 0,
+            'summary': {}
+        }
+
+        # Récupérer tous les cours de la classe
+        if self.student_class:
+            class_courses = ClassCourse.objects.filter(
+                student_class=self.student_class,
+                is_active=True
+            ).select_related('course')
+
+            for class_course in class_courses:
+                course = class_course.course
+
+                # Calculer les heures planifiées dans l'emploi du temps
+                sessions = self.sessions.filter(course=course)
+
+                # Calculer la durée totale en minutes
+                total_minutes = 0
+                for session in sessions:
+                    if session.specific_start_time and session.specific_end_time:
+                        start = timedelta(
+                            hours=session.specific_start_time.hour,
+                            minutes=session.specific_start_time.minute
+                        )
+                        end = timedelta(
+                            hours=session.specific_end_time.hour,
+                            minutes=session.specific_end_time.minute
+                        )
+                        duration = end - start
+                        total_minutes += duration.total_seconds() / 60
+
+                # Convertir en heures
+                scheduled_hours = total_minutes / 60
+
+                # Heures requises (total_hours du cours)
+                required_hours = course.total_hours if course.total_hours else 0
+
+                # Calculer le pourcentage de couverture
+                coverage_percentage = (scheduled_hours / required_hours * 100) if required_hours > 0 else 0
+
+                # Déterminer le statut
+                if coverage_percentage >= 100:
+                    status = 'fully_covered'
+                    coverage_report['fully_covered'] += 1
+                elif coverage_percentage > 0:
+                    status = 'partially_covered'
+                    coverage_report['partially_covered'] += 1
+                else:
+                    status = 'not_covered'
+                    coverage_report['not_covered'] += 1
+
+                coverage_report['courses'].append({
+                    'course_code': course.code,
+                    'course_name': course.name,
+                    'required_hours': required_hours,
+                    'scheduled_hours': round(scheduled_hours, 2),
+                    'coverage_percentage': round(coverage_percentage, 2),
+                    'status': status,
+                    'missing_hours': max(0, required_hours - scheduled_hours),
+                    'sessions_count': sessions.count()
+                })
+
+            coverage_report['total_courses'] = class_courses.count()
+
+            # Résumé global
+            coverage_report['summary'] = {
+                'total_required_hours': sum(c['required_hours'] for c in coverage_report['courses']),
+                'total_scheduled_hours': sum(c['scheduled_hours'] for c in coverage_report['courses']),
+                'overall_coverage': round(
+                    (sum(c['scheduled_hours'] for c in coverage_report['courses']) /
+                     sum(c['required_hours'] for c in coverage_report['courses']) * 100)
+                    if sum(c['required_hours'] for c in coverage_report['courses']) > 0 else 0,
+                    2
+                )
+            }
+
+        return coverage_report
+
 
 class ScheduleSession(models.Model):
     """Modèle pour les sessions individuelles d'un emploi du temps"""
@@ -185,9 +279,8 @@ class ScheduleSession(models.Model):
         return f"{self.course.code} - {self.time_slot} - {self.room.code}"
 
     class Meta:
-        # Modifié: la contrainte unique doit inclure specific_date pour permettre
-        # d'utiliser la même salle et le même time_slot à des dates différentes
-        unique_together = ['schedule', 'time_slot', 'room', 'specific_date']
+        # Pas de unique_together car specific_date=NULL pose problème
+        # La validation des doublons se fait au niveau du service de génération
         ordering = ['time_slot__day_of_week', 'time_slot__start_time']
         indexes = [
             models.Index(fields=['schedule', 'time_slot']),
@@ -195,6 +288,15 @@ class ScheduleSession(models.Model):
             models.Index(fields=['room', 'time_slot']),
             models.Index(fields=['course', 'session_type']),
             models.Index(fields=['specific_date']),
+            models.Index(fields=['schedule', 'time_slot', 'room']),
+        ]
+        constraints = [
+            # Contrainte pour éviter les doublons quand specific_date est défini
+            models.UniqueConstraint(
+                fields=['schedule', 'time_slot', 'room', 'specific_date'],
+                name='unique_schedule_session_with_date',
+                condition=models.Q(specific_date__isnull=False)
+            ),
         ]
     
     def get_duration_hours(self):
@@ -330,7 +432,7 @@ class ScheduleTemplate(models.Model):
     """Modèle pour les modèles d'emploi du temps réutilisables"""
     name = models.CharField(max_length=200, unique=True)
     description = models.TextField(blank=True)
-    curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE)
+    student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name='templates', null=True, blank=True)
     level = models.CharField(max_length=5, choices=[
         ('L1', 'Licence 1'),
         ('L2', 'Licence 2'),
@@ -367,7 +469,7 @@ class ScheduleConstraint(models.Model):
         ('course_timing', 'Horaires de cours'),
         ('student_workload', 'Charge de travail étudiant'),
         ('resource_requirement', 'Exigence de ressource'),
-        ('curriculum_rule', 'Règle de curriculum'),
+        ('class_rule', 'Règle de classe'),
         ('custom', 'Personnalisée'),
     ]
 
@@ -456,6 +558,29 @@ class ScheduleGenerationConfig(models.Model):
     respect_teacher_preferences = models.BooleanField(default=True)
     respect_room_preferences = models.BooleanField(default=True)
     optimization_priority = models.CharField(max_length=15, choices=OPTIMIZATION_PRIORITIES, default='balanced')
+
+    # Nouvelles contraintes horaires
+    min_break_between_sessions = models.IntegerField(default=15, help_text="Minutes de pause minimale entre sessions")
+    max_consecutive_sessions = models.IntegerField(default=3, help_text="Nombre max de sessions consécutives")
+    preferred_start_time = models.TimeField(null=True, blank=True, help_text="Heure de début préférée (ex: 08:00)")
+    preferred_end_time = models.TimeField(null=True, blank=True, help_text="Heure de fin préférée (ex: 18:00)")
+
+    # Contraintes de charge de travail
+    max_hours_per_day_students = models.IntegerField(default=8, help_text="Heures max par jour pour les étudiants")
+    max_hours_per_week_students = models.IntegerField(default=30, help_text="Heures max par semaine pour les étudiants")
+
+    # Contraintes enseignants
+    max_hours_per_day_teachers = models.IntegerField(default=6, help_text="Heures max par jour pour un enseignant")
+    min_rest_time_teachers = models.IntegerField(default=30, help_text="Temps de repos min entre cours (minutes)")
+
+    # Distribution des cours
+    distribute_evenly = models.BooleanField(default=True, help_text="Distribuer équitablement les cours sur la semaine")
+    avoid_single_sessions = models.BooleanField(default=True, help_text="Éviter les journées avec une seule session")
+    group_same_subject = models.BooleanField(default=False, help_text="Grouper les sessions d'une même matière")
+
+    # Préférences de jours
+    preferred_days = models.JSONField(default=list, help_text="Jours préférés ['monday', 'tuesday', etc.]")
+    excluded_days = models.JSONField(default=list, help_text="Jours exclus ['saturday', 'sunday']")
 
     # Jours exclus (jours fériés, etc.)
     excluded_dates = models.JSONField(default=list)  # Liste de dates au format YYYY-MM-DD
@@ -608,38 +733,58 @@ class SessionOccurrence(models.Model):
 
     def check_conflicts(self):
         """Vérifie les conflits pour cette occurrence"""
+        from datetime import datetime, timedelta
         conflicts = []
+
+        # Fonction helper pour vérifier le chevauchement avec buffer
+        def has_overlap_with_buffer(start1, end1, start2, end2):
+            """Vérifie le chevauchement avec buffer de 5 minutes"""
+            today = datetime.today().date()
+            dt_start1 = datetime.combine(today, start1)
+            dt_end1 = datetime.combine(today, end1)
+            dt_start2 = datetime.combine(today, start2)
+            dt_end2 = datetime.combine(today, end2)
+
+            transition_buffer = timedelta(minutes=5)
+            dt_end1_with_buffer = dt_end1 + transition_buffer
+            dt_end2_with_buffer = dt_end2 + transition_buffer
+
+            return not (dt_end1_with_buffer <= dt_start2 or dt_end2_with_buffer <= dt_start1)
 
         # Conflit de salle
         room_conflicts = SessionOccurrence.objects.filter(
             room=self.room,
             actual_date=self.actual_date,
             status='scheduled'
-        ).exclude(id=self.id).filter(
-            models.Q(start_time__lt=self.end_time, end_time__gt=self.start_time)
-        )
+        ).exclude(id=self.id)
 
-        if room_conflicts.exists():
-            conflicts.append({
-                'type': 'room_double_booking',
-                'severity': 'high',
-                'description': f"La salle {self.room.code} est déjà occupée"
-            })
+        for rc in room_conflicts:
+            if has_overlap_with_buffer(self.start_time, self.end_time, rc.start_time, rc.end_time):
+                conflicts.append({
+                    'type': 'room_double_booking',
+                    'severity': 'critical',
+                    'description': f"La salle {self.room.code} est déjà occupée",
+                    'conflicting_course': rc.session_template.course.code,
+                    'time': f"{rc.start_time} - {rc.end_time}"
+                })
+                break  # Un seul conflit suffit pour la salle
 
         # Conflit d'enseignant
         teacher_conflicts = SessionOccurrence.objects.filter(
             teacher=self.teacher,
             actual_date=self.actual_date,
             status='scheduled'
-        ).exclude(id=self.id).filter(
-            models.Q(start_time__lt=self.end_time, end_time__gt=self.start_time)
-        )
+        ).exclude(id=self.id)
 
-        if teacher_conflicts.exists():
-            conflicts.append({
-                'type': 'teacher_double_booking',
-                'severity': 'critical',
-                'description': f"L'enseignant {self.teacher.user.get_full_name()} est déjà occupé"
-            })
+        for tc in teacher_conflicts:
+            if has_overlap_with_buffer(self.start_time, self.end_time, tc.start_time, tc.end_time):
+                conflicts.append({
+                    'type': 'teacher_double_booking',
+                    'severity': 'critical',
+                    'description': f"L'enseignant {self.teacher.user.get_full_name()} est déjà occupé",
+                    'conflicting_course': tc.session_template.course.code,
+                    'time': f"{tc.start_time} - {tc.end_time}"
+                })
+                break  # Un seul conflit suffit pour l'enseignant
 
         return conflicts

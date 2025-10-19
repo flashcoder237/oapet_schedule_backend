@@ -8,7 +8,8 @@ from django.utils import timezone
 from courses.models import Course, Teacher, Department
 from schedules.models import Schedule, ScheduleSession
 from rooms.models import Room
-from .models import ChatbotKnowledge
+from .models import ChatbotKnowledge, Conversation
+from .agent_service import AgentActionService
 from difflib import SequenceMatcher
 
 
@@ -181,12 +182,208 @@ class ChatbotService:
 
         return 'unknown', 0.0
 
-    def process_message(self, message, user):
-        """Traite le message et génère une réponse avec contexte"""
-        intent, confidence = self.detect_intent(message)
+    def process_message(self, message, user, conversation=None):
+        """Traite le message et génère une réponse avec contexte et actions agent"""
+        message_lower = message.lower()
 
         # Gérer le contexte de la conversation
         user_context = self.context.get(user.id, {})
+
+        # Initialiser le service d'agent pour cet utilisateur
+        agent_service = AgentActionService(user)
+
+        # === GESTION DES ACTIONS AGENT ===
+
+        # Verifier si l'utilisateur repond a une demande de confirmation
+        pending_action = user_context.get('pending_action')
+        if pending_action:
+            # L'utilisateur confirme ou annule
+            if any(word in message_lower for word in ['oui', 'ok', 'confirme', 'confirmer', 'valide', 'valider', 'oui']):
+                # Executer l'action en attente
+                success, response_message, data = agent_service.execute_action(
+                    pending_action['action_name'],
+                    pending_action['params'],
+                    conversation
+                )
+
+                # Nettoyer le contexte
+                user_context.pop('pending_action', None)
+                self.context[user.id] = user_context
+
+                return {
+                    'response': response_message,
+                    'intent': 'agent_action',
+                    'confidence': 100,
+                    'context_data': {'action_executed': success, 'action_name': pending_action['action_name']},
+                    'attachments': []
+                }
+            elif any(word in message_lower for word in ['non', 'annule', 'annuler', 'stop', 'pas']):
+                # Annuler l'action
+                user_context.pop('pending_action', None)
+                self.context[user.id] = user_context
+
+                return {
+                    'response': "Action annulee. Comment puis-je vous aider autrement ?",
+                    'intent': 'agent_action_cancel',
+                    'confidence': 100,
+                    'context_data': {},
+                    'attachments': []
+                }
+
+        # Verifier si l'utilisateur complete des parametres manquants
+        if user_context.get('awaiting_params'):
+            awaiting_info = user_context['awaiting_params']
+            action_name = awaiting_info['action_name']
+            current_params = awaiting_info['params']
+
+            # Extraire les nouveaux parametres du message
+            new_params = agent_service.extract_parameters(message, action_name)
+
+            # Fusionner avec les parametres existants
+            current_params.update(new_params)
+
+            # Verifier si tous les parametres sont maintenant presents
+            missing = agent_service.get_missing_parameters(action_name, current_params)
+
+            if missing:
+                # Encore des parametres manquants, demander le prochain
+                param_labels = {
+                    'schedule_id': "l'ID de l'emploi du temps",
+                    'session_id': "l'ID de la session",
+                    'course_id': "l'ID du cours",
+                    'room_id': "l'ID de la salle",
+                    'teacher_id': "l'ID de l'enseignant",
+                    'name': "le nom",
+                    'academic_year': "l'annee academique (ex: 2024-2025)",
+                    'semester': "le semestre",
+                    'start_time': "l'heure de debut",
+                    'duration': "la duree (en heures)"
+                }
+                next_param = missing[0]
+                param_label = param_labels.get(next_param, next_param)
+
+                return {
+                    'response': f"Veuillez fournir {param_label}.",
+                    'intent': 'agent_param_request',
+                    'confidence': 100,
+                    'context_data': {'missing_param': next_param},
+                    'attachments': []
+                }
+            else:
+                # Tous les parametres sont presents
+                user_context.pop('awaiting_params', None)
+
+                # Verifier si confirmation requise
+                action_config = agent_service.ACTION_INTENTS.get(action_name, {})
+                if action_config.get('confirmation_required'):
+                    # Stocker l'action en attente de confirmation
+                    user_context['pending_action'] = {
+                        'action_name': action_name,
+                        'params': current_params
+                    }
+                    self.context[user.id] = user_context
+
+                    return {
+                        'response': f"Voulez-vous vraiment executer cette action ? (Repondez 'oui' ou 'non')",
+                        'intent': 'agent_confirmation',
+                        'confidence': 100,
+                        'context_data': {'action': action_name, 'params': current_params},
+                        'attachments': []
+                    }
+                else:
+                    # Executer directement
+                    success, response_message, data = agent_service.execute_action(
+                        action_name,
+                        current_params,
+                        conversation
+                    )
+
+                    self.context[user.id] = user_context
+
+                    return {
+                        'response': response_message,
+                        'intent': 'agent_action',
+                        'confidence': 100,
+                        'context_data': {'action_executed': success, 'action_name': action_name},
+                        'attachments': []
+                    }
+
+        # Detecter une nouvelle intention d'action
+        action_name, action_confidence = agent_service.detect_action_intent(message)
+
+        if action_name and action_confidence > 0.5:
+            # Une action a ete detectee
+            params = agent_service.extract_parameters(message, action_name)
+            missing = agent_service.get_missing_parameters(action_name, params)
+
+            if missing:
+                # Parametres manquants, demander le premier
+                param_labels = {
+                    'schedule_id': "l'ID de l'emploi du temps",
+                    'session_id': "l'ID de la session",
+                    'course_id': "l'ID du cours",
+                    'room_id': "l'ID de la salle",
+                    'teacher_id': "l'ID de l'enseignant",
+                    'name': "le nom",
+                    'academic_year': "l'annee academique (ex: 2024-2025)",
+                    'semester': "le semestre",
+                    'start_time': "l'heure de debut",
+                    'duration': "la duree (en heures)"
+                }
+                next_param = missing[0]
+                param_label = param_labels.get(next_param, next_param)
+
+                # Stocker le contexte
+                user_context['awaiting_params'] = {
+                    'action_name': action_name,
+                    'params': params
+                }
+                self.context[user.id] = user_context
+
+                return {
+                    'response': f"Pour executer cette action, j'ai besoin de {param_label}.",
+                    'intent': 'agent_param_request',
+                    'confidence': 100,
+                    'context_data': {'missing_param': next_param},
+                    'attachments': []
+                }
+            else:
+                # Tous les parametres sont presents
+                action_config = agent_service.ACTION_INTENTS.get(action_name, {})
+                if action_config.get('confirmation_required'):
+                    # Demander confirmation
+                    user_context['pending_action'] = {
+                        'action_name': action_name,
+                        'params': params
+                    }
+                    self.context[user.id] = user_context
+
+                    return {
+                        'response': f"Voulez-vous vraiment executer cette action ? (Repondez 'oui' ou 'non')",
+                        'intent': 'agent_confirmation',
+                        'confidence': 100,
+                        'context_data': {'action': action_name, 'params': params},
+                        'attachments': []
+                    }
+                else:
+                    # Executer directement
+                    success, response_message, data = agent_service.execute_action(
+                        action_name,
+                        params,
+                        conversation
+                    )
+
+                    return {
+                        'response': response_message,
+                        'intent': 'agent_action',
+                        'confidence': 100,
+                        'context_data': {'action_executed': success, 'action_name': action_name},
+                        'attachments': []
+                    }
+
+        # === TRAITEMENT NORMAL DU CHATBOT ===
+
+        intent, confidence = self.detect_intent(message)
 
         # Chercher dans la base de connaissances
         knowledge_response = self._search_knowledge_base(message, intent)
@@ -263,20 +460,47 @@ class ChatbotService:
         else:
             greeting = "Bonsoir"
 
+        # Determiner le role de l'utilisateur pour personnaliser le message
+        agent = AgentActionService(user)
+        role = agent.user_role
+
         response = f"{greeting} {user.first_name or user.username} !\n\n"
-        response += "Je suis l'assistant intelligent OAPET. Je peux vous aider avec :\n"
-        response += "- Consulter les emplois du temps\n"
-        response += "- Obtenir des informations sur les cours\n"
-        response += "- Trouver des salles disponibles\n"
-        response += "- Contacter des enseignants\n"
-        response += "- Repondre a vos questions\n\n"
-        response += "Comment puis-je vous aider aujourd'hui ?"
+        response += "Je suis l'assistant intelligent OAPET. "
+
+        # Personnaliser selon le role
+        if role == 'admin':
+            response += "En tant qu'administrateur, je peux vous aider a :\n"
+            response += "- Consulter et analyser les emplois du temps\n"
+            response += "- Creer, modifier et supprimer des emplois du temps\n"
+            response += "- Gerer les sessions (creer, modifier, supprimer)\n"
+            response += "- Assigner des enseignants et des salles\n"
+            response += "- Publier les emplois du temps\n"
+            response += "- Detecter les conflits et anomalies\n"
+            response += "- Obtenir des statistiques et recommandations\n"
+        elif role == 'teacher':
+            response += "En tant qu'enseignant, je peux vous aider a :\n"
+            response += "- Consulter vos emplois du temps et sessions\n"
+            response += "- Modifier vos sessions (changement de salle)\n"
+            response += "- Demander des modifications de sessions\n"
+            response += "- Verifier la disponibilite des salles\n"
+            response += "- Exporter vos emplois du temps\n"
+            response += "- Obtenir des informations sur les cours et salles\n"
+        else:  # student
+            response += "Je peux vous aider a :\n"
+            response += "- Consulter votre emploi du temps\n"
+            response += "- Voir l'emploi du temps de votre classe\n"
+            response += "- Rechercher des sessions et cours\n"
+            response += "- Trouver des salles et enseignants\n"
+            response += "- Exporter votre emploi du temps\n"
+            response += "- Repondre a vos questions\n"
+
+        response += "\nComment puis-je vous aider aujourd'hui ?"
 
         return {
             'response': response,
             'intent': 'greeting',
             'confidence': 100,
-            'context_data': {'greeting_time': hour},
+            'context_data': {'greeting_time': hour, 'user_role': role},
             'attachments': []
         }
 

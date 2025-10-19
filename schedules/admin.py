@@ -54,8 +54,8 @@ class ScheduleOptimizationAdmin(admin.ModelAdmin):
 
 @admin.register(ScheduleTemplate)
 class ScheduleTemplateAdmin(admin.ModelAdmin):
-    list_display = ['name', 'curriculum', 'level', 'usage_count', 'success_rate', 'is_active']
-    list_filter = ['level', 'is_active', 'curriculum']
+    list_display = ['name', 'student_class', 'level', 'usage_count', 'success_rate', 'is_active']
+    list_filter = ['level', 'is_active', 'student_class']
     search_fields = ['name', 'description']
 
 

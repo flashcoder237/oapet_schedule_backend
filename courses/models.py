@@ -2,6 +2,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+# Import des modèles de classes
+from .models_class import StudentClass, ClassCourse
+
 
 class Department(models.Model):
     """Modèle pour les départements"""
@@ -81,6 +84,12 @@ class Course(models.Model):
     requires_computer = models.BooleanField(default=False)
     requires_projector = models.BooleanField(default=True)
     requires_laboratory = models.BooleanField(default=False)
+
+    # Préférences de salles
+    preferred_rooms = models.JSONField(default=list, help_text="IDs des salles préférées")
+    excluded_rooms = models.JSONField(default=list, help_text="IDs des salles à éviter")
+    requires_specific_room_type = models.CharField(max_length=50, blank=True, help_text="Type de salle requis (amphithéâtre, laboratoire, etc.)")
+
     semester = models.CharField(max_length=10, default='S1')  # S1, S2
     academic_year = models.CharField(max_length=10, default='2024-2025')
     min_sessions_per_week = models.IntegerField(default=1)

@@ -86,6 +86,9 @@ class MLOptimizedScheduleGenerator:
 
     def _prepare_course_data(self, session: ScheduleSession) -> Dict:
         """Prépare les données du cours pour la prédiction ML"""
+        from django.db.models import Sum
+        from courses.models_class import ClassCourse
+
         course = session.course
 
         # Compte les cours dans le même cursus
@@ -95,9 +98,19 @@ class MLOptimizedScheduleGenerator:
             semester=course.semester
         ).count()
 
+        # Calcule le nombre d'étudiants via les classes assignées
+        class_total_students = ClassCourse.objects.filter(
+            course=course,
+            is_active=True
+        ).aggregate(
+            total=Sum('student_class__student_count')
+        )['total'] or 0
+
+        actual_students = class_total_students or session.expected_students or course.max_students or 30
+
         # Compte les salles disponibles avec les bonnes capacités
         suitable_rooms = Room.objects.filter(
-            capacity__gte=session.expected_students,
+            capacity__gte=actual_students,
             is_active=True
         ).count()
 
@@ -109,7 +122,7 @@ class MLOptimizedScheduleGenerator:
             'course_name': course.name,
             'lectures': course.total_hours // 2 if course.total_hours else 15,  # Approximation
             'min_days': course.min_sessions_per_week or 1,
-            'students': course.enrollments_count or session.expected_students or course.max_students,
+            'students': actual_students,
             'teacher': session.teacher.user.username,
             'total_courses': curriculum_courses,
             'total_rooms': suitable_rooms,
@@ -119,7 +132,7 @@ class MLOptimizedScheduleGenerator:
             'total_lectures': course.total_hours or 30,
             'avg_room_capacity': 50,  # Moyenne approximative
             'lecture_density': (course.total_hours or 30) / (5 * 6 * 15),  # Approx
-            'student_lecture_ratio': (course.max_students or 40) / max(course.hours_per_week or 1, 1),
+            'student_lecture_ratio': actual_students / max(course.hours_per_week or 1, 1),
             'course_room_ratio': curriculum_courses / max(suitable_rooms, 1),
             'utilization_pressure': 0.6,  # Valeur par défaut
             'min_days_constraint_tightness': course.hours_per_week / max(course.min_sessions_per_week or 1, 1) if course.hours_per_week else 1.5,
@@ -291,6 +304,8 @@ class MLOptimizedScheduleGenerator:
         existing_occurrences: List[SessionOccurrence]
     ) -> Optional[Room]:
         """Sélectionne la meilleure salle disponible si flexibilité activée"""
+        from django.db.models import Sum
+        from courses.models_class import ClassCourse
 
         # Si pas de flexibilité pour les salles, garder la salle originale
         if not self.config.respect_room_preferences:
@@ -298,10 +313,20 @@ class MLOptimizedScheduleGenerator:
 
         course = session_template.course
 
+        # Calcule le nombre d'étudiants via les classes assignées
+        class_total_students = ClassCourse.objects.filter(
+            course=course,
+            is_active=True
+        ).aggregate(
+            total=Sum('student_class__student_count')
+        )['total'] or 0
+
+        actual_students = class_total_students or session_template.expected_students or course.max_students or 30
+
         # Cherche les salles disponibles qui correspondent aux besoins
         available_rooms = Room.objects.filter(
             is_active=True,
-            capacity__gte=session_template.expected_students,
+            capacity__gte=actual_students,
             has_projector=course.requires_projector if course.requires_projector else True,
             has_computer=course.requires_computer if course.requires_computer else True,
             is_laboratory=course.requires_laboratory if course.requires_laboratory else False
@@ -321,7 +346,7 @@ class MLOptimizedScheduleGenerator:
         # Sélectionne la salle la plus adaptée (capacité proche du besoin)
         best_room = min(
             available_rooms,
-            key=lambda r: abs(r.capacity - session_template.expected_students)
+            key=lambda r: abs(r.capacity - actual_students)
         )
 
         return best_room
