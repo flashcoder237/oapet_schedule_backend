@@ -5,6 +5,7 @@ from . import views
 
 # Router pour les ViewSets
 router = DefaultRouter()
+router.register(r'users', views.UserViewSet, basename='user')
 router.register(r'profiles', views.UserProfileViewSet, basename='userprofile')
 router.register(r'sessions', views.UserSessionViewSet, basename='usersession')
 router.register(r'login-attempts', views.LoginAttemptViewSet, basename='loginattempt')
@@ -16,7 +17,7 @@ urlpatterns = [
     path('auth/me/', views.current_user, name='current-user'),
     path('auth/register/', views.register_user, name='register-user'),
     path('auth/change-password/', views.change_password, name='change-password'),
-    
+
     # ViewSets
     path('', include(router.urls)),
 ]

@@ -129,25 +129,45 @@ class RoomViewSet(ImportExportMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Statistiques des salles"""
+        from schedules.models import ScheduleSession
+        from django.db.models import Sum
+        from django.utils import timezone
+
         total_rooms = Room.objects.filter(is_active=True).count()
-        
+
+        # Calculer les salles occupées (qui ont des sessions actives non annulées)
+        occupied_rooms_ids = ScheduleSession.objects.filter(
+            is_cancelled=False,
+            schedule__is_published=True
+        ).values_list('room_id', flat=True).distinct()
+        occupied_rooms = len(set(occupied_rooms_ids))
+
+        # Salles disponibles = Total - Occupées
+        available_rooms = total_rooms - occupied_rooms
+
+        # Capacité totale
+        total_capacity_data = Room.objects.filter(is_active=True).aggregate(
+            total=Sum('capacity')
+        )
+        total_capacity = total_capacity_data['total'] or 0
+
         # Par type de salle
         by_type = Room.objects.filter(is_active=True).values(
             'room_type__name'
         ).annotate(count=Count('id'))
-        
+
         # Par bâtiment
         by_building = Room.objects.filter(is_active=True).values(
             'building__name', 'building__code'
         ).annotate(count=Count('id'))
-        
+
         # Capacités
         capacity_stats = Room.objects.filter(is_active=True).aggregate(
             avg_capacity=Avg('capacity'),
             min_capacity=Min('capacity'),
             max_capacity=Max('capacity')
         )
-        
+
         # Équipements
         equipment_stats = {
             'with_projector': Room.objects.filter(is_active=True, has_projector=True).count(),
@@ -155,9 +175,13 @@ class RoomViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'laboratories': Room.objects.filter(is_active=True, is_laboratory=True).count(),
             'with_audio_system': Room.objects.filter(is_active=True, has_audio_system=True).count()
         }
-        
+
         return Response({
             'total_rooms': total_rooms,
+            'available_rooms': available_rooms,
+            'occupied_rooms': occupied_rooms,
+            'total_capacity': total_capacity,
+            'maintenance_rooms': 0,  # TODO: ajouter un champ maintenance dans le modèle
             'by_type': list(by_type),
             'by_building': list(by_building),
             'capacity_stats': capacity_stats,

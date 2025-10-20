@@ -412,32 +412,48 @@ class CourseViewSet(ImportExportMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Statistiques générales des cours"""
-        total_courses = Course.objects.filter(is_active=True).count()
-        
+        from django.db.models import Sum
+
+        active_courses = Course.objects.filter(is_active=True)
+        all_courses = Course.objects.all()
+
+        total_courses = all_courses.count()
+        active_courses_count = active_courses.count()
+
+        # Calculer le total des heures
+        total_hours_data = active_courses.aggregate(total=Sum('total_hours'))
+        total_hours = total_hours_data['total'] or 0
+
+        # Compter les enseignants uniques
+        unique_teachers = active_courses.values('teacher').distinct().count()
+
         # Répartition par type
-        by_type = Course.objects.filter(is_active=True).values('course_type').annotate(
+        by_type = active_courses.values('course_type').annotate(
             count=Count('id')
         )
-        
+
         # Répartition par niveau
-        by_level = Course.objects.filter(is_active=True).values('level').annotate(
+        by_level = active_courses.values('level').annotate(
             count=Count('id')
         )
-        
+
         # Répartition par département
-        by_department = Course.objects.filter(is_active=True).values(
+        by_department = active_courses.values(
             'department__name', 'department__code'
         ).annotate(count=Count('id'))
-        
+
         # Moyennes
-        avg_hours = Course.objects.filter(is_active=True).aggregate(
+        avg_hours = active_courses.aggregate(
             avg_hours_per_week=Avg('hours_per_week'),
             avg_total_hours=Avg('total_hours'),
             avg_credits=Avg('credits')
         )
-        
+
         return Response({
             'total_courses': total_courses,
+            'active_courses': active_courses_count,
+            'total_hours': total_hours,
+            'teachers_count': unique_teachers,
             'by_type': list(by_type),
             'by_level': list(by_level),
             'by_department': list(by_department),

@@ -158,22 +158,26 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
     
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
+        # Check if request has query_params (DRF Request object)
+        if not hasattr(self.request, 'query_params'):
+            return queryset.order_by('-created_at')
+
         # Filtrer par période académique
         academic_period_id = self.request.query_params.get('academic_period')
         if academic_period_id:
             queryset = queryset.filter(academic_period_id=academic_period_id)
-        
+
         # Filtrer par classe
         student_class_id = self.request.query_params.get('student_class')
         if student_class_id:
             queryset = queryset.filter(student_class_id=student_class_id)
-        
+
         # Filtrer par statut de publication
         published_only = self.request.query_params.get('published_only')
         if published_only == 'true':
             queryset = queryset.filter(is_published=True)
-        
+
         return queryset.order_by('-created_at')
     
     def perform_create(self, serializer):
@@ -277,16 +281,24 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'sessions_deleted': sessions_count
         }, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='course_coverage')
     def course_coverage(self, request, pk=None):
         """
         Retourne le rapport de couverture des heures de cours
         Permet à l'admin de voir quels cours ne couvrent pas toutes les heures du semestre
         """
-        schedule = self.get_object()
-        coverage_report = schedule.get_course_coverage()
-
-        return Response(coverage_report, status=status.HTTP_200_OK)
+        try:
+            schedule = self.get_object()
+            coverage_report = schedule.get_course_coverage()
+            return Response(coverage_report, status=status.HTTP_200_OK)
+        except Exception as e:
+            import traceback
+            logger.error(f"Error in course_coverage: {e}")
+            logger.error(traceback.format_exc())
+            return Response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['post'])
     def generate_for_period(self, request):
@@ -396,20 +408,125 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                     current_date = period_start
                     course_index = 0
 
+                    # Dictionnaire pour suivre les heures planifiées par cours
+                    course_hours_scheduled = {course.id: 0 for course in courses}
+
                     if not courses:
                         logger.warning(f"Aucun cours trouvé pour la classe {class_id}")
                         continue
+
+                    # Vérifier si la classe a un emploi du temps fixe
+                    has_fixed_schedule = getattr(student_class, 'has_fixed_schedule', False)
+                    fixed_schedule_pattern = getattr(student_class, 'fixed_schedule_pattern', {}) if has_fixed_schedule else {}
+                    fixed_room = getattr(student_class, 'fixed_room', None)
+
+                    if has_fixed_schedule and fixed_schedule_pattern:
+                        logger.info(f"Génération avec emploi du temps fixe pour {student_class.name}")
 
                     while current_date <= period_end:
                         # Pour chaque jour de la semaine
                         day_name = current_date.strftime('%A').lower()
                         day_slots = time_slots.filter(day_of_week=day_name)
 
-                        for slot in day_slots:
-                            if course_index >= len(courses):
-                                course_index = 0
+                        # Si emploi du temps fixe, utiliser le pattern
+                        if has_fixed_schedule and day_name in fixed_schedule_pattern:
+                            fixed_sessions = fixed_schedule_pattern.get(day_name, [])
+                            for fixed_session in fixed_sessions:
+                                try:
+                                    from datetime import time as dt_time
+                                    # Parse les heures
+                                    start_parts = fixed_session['start'].split(':')
+                                    end_parts = fixed_session['end'].split(':')
+                                    start_time = dt_time(int(start_parts[0]), int(start_parts[1]))
+                                    end_time = dt_time(int(end_parts[0]), int(end_parts[1]))
 
-                            course = courses[course_index]
+                                    # Récupérer le cours
+                                    course_id = fixed_session.get('course_id')
+                                    course = Course.objects.get(id=course_id)
+
+                                    # Utiliser la salle fixe si définie, sinon chercher
+                                    room = fixed_room if fixed_room else None
+                                    if not room:
+                                        from rooms.models import Room
+                                        room = Room.objects.filter(
+                                            is_active=True,
+                                            capacity__gte=student_class.student_count
+                                        ).first()
+
+                                    if room and course.teacher:
+                                        # Créer la session
+                                        session = ScheduleSession.objects.create(
+                                            schedule=schedule,
+                                            course=course,
+                                            teacher=course.teacher,
+                                            room=room,
+                                            time_slot=None,  # Pas de time_slot car horaires personnalisés
+                                            specific_date=current_date,
+                                            specific_start_time=start_time,
+                                            specific_end_time=end_time,
+                                            session_type='CM'
+                                        )
+
+                                        # Créer l'occurrence
+                                        from .models import SessionOccurrence
+                                        SessionOccurrence.objects.create(
+                                            session_template=session,
+                                            actual_date=current_date,
+                                            start_time=start_time,
+                                            end_time=end_time,
+                                            room=room,
+                                            teacher=course.teacher,
+                                            status='scheduled',
+                                            is_room_modified=False,
+                                            is_teacher_modified=False,
+                                            is_time_modified=False,
+                                            is_cancelled=False
+                                        )
+
+                                        logger.info(f"Session fixe créée: {course.code} le {day_name} de {start_time} à {end_time} en salle {room.code}")
+
+                                except (Course.DoesNotExist, KeyError, ValueError) as e:
+                                    logger.error(f"Erreur lors de la création d'une session fixe: {e}")
+                                    continue
+
+                            # Passer au jour suivant sans générer les créneaux standards
+                            current_date += timedelta(days=1)
+                            if current_date.weekday() >= 5:  # Sauter les week-ends
+                                current_date += timedelta(days=7 - current_date.weekday())
+                            continue
+
+                        # Génération standard si pas d'emploi du temps fixe
+                        for slot in day_slots:
+                            # Trouver le prochain cours qui n'a pas atteint son quota d'heures
+                            course = None
+                            attempts = 0
+                            max_attempts = len(courses) * 2  # Eviter boucle infinie
+
+                            while attempts < max_attempts:
+                                if course_index >= len(courses):
+                                    course_index = 0
+
+                                candidate_course = courses[course_index]
+
+                                # Calculer la durée d'une session en heures
+                                session_duration_hours = (
+                                    (slot.end_time.hour * 60 + slot.end_time.minute) -
+                                    (slot.start_time.hour * 60 + slot.start_time.minute)
+                                ) / 60.0
+
+                                # Vérifier si le cours a encore besoin d'heures
+                                hours_remaining = candidate_course.total_hours - course_hours_scheduled.get(candidate_course.id, 0)
+
+                                if hours_remaining >= session_duration_hours:
+                                    course = candidate_course
+                                    break
+
+                                course_index += 1
+                                attempts += 1
+
+                            # Si aucun cours ne nécessite plus d'heures, passer au slot suivant
+                            if not course:
+                                continue
 
                             # Trouver une salle disponible pour ce créneau ET cette date spécifique
                             from rooms.models import Room
@@ -456,16 +573,21 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                             if hasattr(course, 'excluded_rooms') and course.excluded_rooms:
                                 available_rooms = available_rooms.exclude(id__in=course.excluded_rooms)
 
-                            # Prioriser les salles préférées
+                            # 1. Vérifier si la classe a une salle fixe
                             available_room = None
-                            if hasattr(course, 'preferred_rooms') and course.preferred_rooms:
+                            if fixed_room and fixed_room.id not in all_used_room_ids:
+                                # Utiliser la salle fixe de la classe si disponible
+                                available_room = fixed_room
+                                logger.info(f"Salle fixe de classe allouée: {available_room.code} pour {student_class.name}")
+                            # 2. Sinon, prioriser les salles préférées du cours
+                            elif hasattr(course, 'preferred_rooms') and course.preferred_rooms:
                                 # Essayer d'abord les salles préférées
                                 preferred_available = available_rooms.filter(id__in=course.preferred_rooms).order_by('capacity')
                                 if preferred_available.exists():
                                     available_room = preferred_available.first()
                                     logger.info(f"Salle préférée allouée: {available_room.code} pour {course.code}")
 
-                            # Si aucune salle préférée disponible, prendre la plus proche en capacité
+                            # 3. Si aucune salle préférée disponible, prendre la plus proche en capacité
                             if not available_room:
                                 available_room = available_rooms.order_by('capacity').first()
 
@@ -530,6 +652,15 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                     is_time_modified=False,
                                     is_cancelled=False
                                 )
+
+                                # Mettre à jour le compteur d'heures pour ce cours
+                                session_duration_hours = (
+                                    (slot.end_time.hour * 60 + slot.end_time.minute) -
+                                    (slot.start_time.hour * 60 + slot.start_time.minute)
+                                ) / 60.0
+                                course_hours_scheduled[course.id] = course_hours_scheduled.get(course.id, 0) + session_duration_hours
+
+                                logger.info(f"Cours {course.code}: {course_hours_scheduled[course.id]}h planifiées / {course.total_hours}h totales")
 
                             course_index += 1
 

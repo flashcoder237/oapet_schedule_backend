@@ -110,15 +110,28 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
 class UserDetailSerializer(serializers.ModelSerializer):
     """Serializer détaillé pour les utilisateurs"""
     profile = UserProfileSerializer(read_only=True)
-    
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'is_active', 'is_staff', 'is_superuser', 'last_login',
-            'date_joined', 'profile'
+            'date_joined', 'profile', 'role'
         ]
         read_only_fields = ['id', 'username', 'last_login', 'date_joined']
+
+    def get_role(self, obj):
+        """Détermine le rôle de l'utilisateur"""
+        if obj.is_superuser or obj.is_staff:
+            return 'admin'
+
+        # Vérifier si l'utilisateur a un profil
+        if hasattr(obj, 'profile') and obj.profile:
+            return obj.profile.role
+
+        # Par défaut, retourner 'student'
+        return 'student'
 
 
 class CustomPermissionSerializer(serializers.ModelSerializer):

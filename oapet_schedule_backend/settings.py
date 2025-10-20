@@ -50,6 +50,7 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'django_celery_results',
     'django_celery_beat',
+    'clearcache',
 ]
 
 LOCAL_APPS = [

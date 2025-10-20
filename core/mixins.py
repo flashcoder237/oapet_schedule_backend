@@ -143,16 +143,21 @@ class ImportExportMixin:
 
     def _export_excel(self, data, fields):
         """Exporte en Excel"""
+        from io import BytesIO
+
         wb = Workbook()
         ws = wb.active
         ws.title = "Export"
 
         if not data:
+            output = BytesIO()
+            wb.save(output)
+            output.seek(0)
             response = HttpResponse(
+                output.read(),
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
             response['Content-Disposition'] = 'attachment; filename="export.xlsx"'
-            wb.save(response)
             return response
 
         # En-têtes
@@ -173,11 +178,16 @@ class ImportExportMixin:
             column_letter = get_column_letter(col_num)
             ws.column_dimensions[column_letter].width = 20
 
+        # Sauvegarder dans un buffer en mémoire
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
         response = HttpResponse(
+            output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         response['Content-Disposition'] = 'attachment; filename="export.xlsx"'
-        wb.save(response)
         return response
 
     def _import_csv(self, file_obj):
@@ -253,6 +263,8 @@ class ImportExportMixin:
 
     def _generate_excel_template(self, fields):
         """Génère un template Excel stylé avec exemples"""
+        from io import BytesIO
+
         wb = Workbook()
         ws = wb.active
         ws.title = "Template"
@@ -305,9 +317,14 @@ class ImportExportMixin:
         # Figer la première ligne
         ws.freeze_panes = 'A2'
 
+        # Sauvegarder dans un buffer en mémoire
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
         response = HttpResponse(
+            output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         response['Content-Disposition'] = 'attachment; filename="template.xlsx"'
-        wb.save(response)
         return response

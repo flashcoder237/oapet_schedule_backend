@@ -12,9 +12,9 @@ from .views_generation import (
 )
 
 router = DefaultRouter()
+router.register(r'schedules', ScheduleViewSet)
 router.register(r'academic-periods', AcademicPeriodViewSet)
 router.register(r'time-slots', TimeSlotViewSet)
-router.register(r'schedules', ScheduleViewSet)
 router.register(r'sessions', ScheduleSessionViewSet)
 router.register(r'conflicts', ConflictViewSet)
 router.register(r'optimizations', ScheduleOptimizationViewSet)
@@ -26,6 +26,7 @@ router.register(r'exports', ScheduleExportViewSet)
 router.register(r'generation-configs', ScheduleGenerationConfigViewSet, basename='generation-config')
 router.register(r'occurrences', SessionOccurrenceViewSet, basename='occurrence')
 router.register(r'generation', ScheduleGenerationViewSet, basename='generation')
+
 
 urlpatterns = [
     path('', include(router.urls)),

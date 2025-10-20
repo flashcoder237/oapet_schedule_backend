@@ -4,7 +4,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
+from django.db import models
 
+from core.mixins import ImportExportMixin
 from .models_class import StudentClass, ClassCourse
 from .models import Course
 from .serializers_class import (
@@ -17,10 +19,14 @@ from .serializers_class import (
 )
 
 
-class StudentClassViewSet(viewsets.ModelViewSet):
+class StudentClassViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour gérer les classes d'étudiants"""
     queryset = StudentClass.objects.all()
     permission_classes = [IsAuthenticated]
+
+    # Champs pour l'export/import
+    export_fields = ['id', 'name', 'code', 'level', 'section', 'department', 'curriculum', 'academic_year', 'student_count', 'max_capacity', 'is_active']
+    import_fields = ['name', 'code', 'level', 'section', 'department', 'curriculum', 'academic_year', 'student_count', 'max_capacity']
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -190,10 +196,14 @@ class StudentClassViewSet(viewsets.ModelViewSet):
         })
 
 
-class ClassCourseViewSet(viewsets.ModelViewSet):
+class ClassCourseViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour gérer les assignations cours-classe"""
     queryset = ClassCourse.objects.all()
     permission_classes = [IsAuthenticated]
+
+    # Champs pour l'export/import
+    export_fields = ['id', 'student_class', 'course', 'is_mandatory', 'semester', 'is_active']
+    import_fields = ['student_class', 'course', 'is_mandatory', 'semester']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:

@@ -292,9 +292,21 @@ class PredictionRequestViewSet(viewsets.ModelViewSet):
             difficulty_score = round(random.uniform(0.3, 0.9), 2)
             confidence = round(random.uniform(0.7, 0.95), 2)
 
+            # Déterminer le niveau de complexité
+            if difficulty_score > 0.7:
+                complexity_level = 'Élevée'
+                priority = 3
+            elif difficulty_score > 0.4:
+                complexity_level = 'Moyenne'
+                priority = 2
+            else:
+                complexity_level = 'Faible'
+                priority = 1
+
             result = {
                 'difficulty_score': difficulty_score,
-                'difficulty_level': 'high' if difficulty_score > 0.7 else 'medium' if difficulty_score > 0.4 else 'low',
+                'complexity_level': complexity_level,
+                'priority': priority,
                 'confidence': confidence,
                 'recommendations': [
                     'Préférer les créneaux du matin pour ce type de cours',
@@ -784,15 +796,20 @@ class AISuggestionsViewSet(viewsets.ViewSet):
                 'error': f'Erreur lors de la génération de l\'emploi du temps: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['post', 'get'])
     def analyze_workload(self, request):
         """Analyse l'équilibre de la charge de travail des enseignants"""
         try:
-            schedule_data = request.query_params.get('schedule_data', None)
+            # Accepter les données du body (POST) ou des query params (GET - pour rétrocompatibilité)
+            if request.method == 'POST':
+                schedule_data = request.data.get('schedule_data', None)
+            else:
+                schedule_data = request.query_params.get('schedule_data', None)
+
             result = ml_service.analyze_workload_balance(schedule_data=schedule_data)
-            
+
             return Response(result, status=status.HTTP_200_OK)
-            
+
         except Exception as e:
             return Response({
                 'error': f'Erreur lors de l\'analyse de charge: {str(e)}',
@@ -800,15 +817,20 @@ class AISuggestionsViewSet(viewsets.ViewSet):
                 'overall_balance': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['post', 'get'])
     def detect_anomalies(self, request):
         """Détecte les anomalies dans un emploi du temps"""
         try:
-            schedule_data = request.query_params.get('schedule_data', None)
+            # Accepter les données du body (POST) ou des query params (GET - pour rétrocompatibilité)
+            if request.method == 'POST':
+                schedule_data = request.data.get('schedule_data', None)
+            else:
+                schedule_data = request.query_params.get('schedule_data', None)
+
             result = ml_service.detect_schedule_anomalies(schedule_data=schedule_data)
-            
+
             return Response(result, status=status.HTTP_200_OK)
-            
+
         except Exception as e:
             return Response({
                 'error': f'Erreur lors de la détection d\'anomalies: {str(e)}',
@@ -834,19 +856,23 @@ class AISuggestionsViewSet(viewsets.ViewSet):
                 'predictions': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['post', 'get'])
     def optimal_schedule_recommendations(self, request):
         """Recommande un emploi du temps optimal"""
         try:
-            constraints = request.query_params.get('constraints', None)
-            if constraints:
-                import json
-                constraints = json.loads(constraints)
-            
+            # Accepter les données du body (POST) ou des query params (GET - pour rétrocompatibilité)
+            if request.method == 'POST':
+                constraints = request.data.get('constraints', None)
+            else:
+                constraints = request.query_params.get('constraints', None)
+                if constraints:
+                    import json
+                    constraints = json.loads(constraints)
+
             result = ml_service.recommend_optimal_schedule(constraints=constraints)
-            
+
             return Response(result, status=status.HTTP_200_OK)
-            
+
         except Exception as e:
             return Response({
                 'error': f'Erreur lors de la génération de recommandations: {str(e)}',
@@ -854,15 +880,19 @@ class AISuggestionsViewSet(viewsets.ViewSet):
                 'confidence': 0.5
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['post', 'get'])
     def analyze_student_preferences(self, request):
         """Analyse les préférences des étudiants"""
         try:
-            student_data = request.query_params.get('student_data', None)
-            if student_data:
-                import json
-                student_data = json.loads(student_data)
-            
+            # Accepter les données du body (POST) ou des query params (GET - pour rétrocompatibilité)
+            if request.method == 'POST':
+                student_data = request.data.get('student_data', None)
+            else:
+                student_data = request.query_params.get('student_data', None)
+                if student_data:
+                    import json
+                    student_data = json.loads(student_data)
+
             result = ml_service.analyze_student_preferences(student_data=student_data)
             
             return Response(result, status=status.HTTP_200_OK)
@@ -874,17 +904,21 @@ class AISuggestionsViewSet(viewsets.ViewSet):
                 'recommendations': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['post', 'get'])
     def predict_course_success(self, request):
         """Prédit le taux de réussite des cours"""
         try:
-            course_data = request.query_params.get('course_data', None)
-            if course_data:
-                import json
-                course_data = json.loads(course_data)
-            
+            # Accepter les données du body (POST) ou des query params (GET - pour rétrocompatibilité)
+            if request.method == 'POST':
+                course_data = request.data.get('course_data', None)
+            else:
+                course_data = request.query_params.get('course_data', None)
+                if course_data:
+                    import json
+                    course_data = json.loads(course_data)
+
             result = ml_service.predict_course_success_rate(course_data=course_data)
-            
+
             return Response(result, status=status.HTTP_200_OK)
             
         except Exception as e:

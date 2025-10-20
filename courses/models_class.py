@@ -69,6 +69,26 @@ class StudentClass(models.Model):
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
 
+    # Contraintes de salle et horaires fixes
+    fixed_room = models.ForeignKey(
+        'rooms.Room',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='fixed_classes',
+        help_text="Salle fixe attribuée à cette classe (si applicable)"
+    )
+    has_fixed_schedule = models.BooleanField(
+        default=False,
+        help_text="Cette classe a-t-elle un emploi du temps fixe qui se répète chaque semaine?"
+    )
+    fixed_schedule_pattern = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Modèle d'emploi du temps fixe: {jour: [{heure_debut, heure_fin, cours_id}]}"
+    )
+    # Exemple: {"monday": [{"start": "08:00", "end": "10:00", "course_id": 5}], "tuesday": [...]}
+
     def __str__(self):
         return f"{self.code} - {self.name} ({self.student_count} étudiants)"
 

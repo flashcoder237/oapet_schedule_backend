@@ -329,7 +329,7 @@ def register_user(request):
 def change_password(request):
     """Changement de mot de passe"""
     from .serializers import PasswordChangeSerializer
-    
+
     serializer = PasswordChangeSerializer(data=request.data)
     if serializer.is_valid():
         # Vérifier l'ancien mot de passe
@@ -337,16 +337,99 @@ def change_password(request):
             return Response({
                 'old_password': ['Mot de passe incorrect']
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Changer le mot de passe
         request.user.set_password(serializer.validated_data['new_password'])
         request.user.save()
-        
+
         # Supprimer tous les tokens pour forcer une nouvelle connexion
         Token.objects.filter(user=request.user).delete()
-        
+
         return Response({
             'message': 'Mot de passe modifié avec succès'
         }, status=status.HTTP_200_OK)
-    
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """ViewSet pour la gestion des utilisateurs Django"""
+    queryset = User.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import UserDetailSerializer
+        return UserDetailSerializer
+
+    def get_queryset(self):
+        from django.db.models import Q
+
+        queryset = User.objects.select_related('profile').all()
+
+        # Filtres
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) |
+                Q(email__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search)
+            )
+
+        is_active = self.request.query_params.get('is_active')
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+
+        role = self.request.query_params.get('role')
+        if role:
+            if role == 'admin':
+                # Filtrer les utilisateurs qui sont staff OU superuser
+                queryset = queryset.filter(Q(is_staff=True) | Q(is_superuser=True))
+            elif role in ['professor', 'student', 'staff']:
+                # Filtrer par le rôle dans le profil ET exclure les admins
+                queryset = queryset.filter(
+                    profile__role=role,
+                    is_staff=False,
+                    is_superuser=False
+                )
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'results': serializer.data,
+            'count': len(serializer.data)
+        })
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Statistiques des utilisateurs"""
+        from django.db.models import Count, Q
+
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        admin_users = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True)).count()
+
+        # Compter par rôle
+        professor_count = UserProfile.objects.filter(role='professor').count()
+        student_count = UserProfile.objects.filter(role='student').count()
+        staff_count = UserProfile.objects.filter(role='staff').count()
+
+        return Response({
+            'total_users': total_users,
+            'active_users': active_users,
+            'admin_users': admin_users,
+            'professor_count': professor_count,
+            'student_count': student_count,
+            'staff_count': staff_count
+        })
