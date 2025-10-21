@@ -1,4 +1,5 @@
 # users/views.py
+# Updated: User creation and update functionality
 import uuid
 from datetime import datetime, timedelta
 from django.contrib.auth import authenticate, login, logout
@@ -358,13 +359,23 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
-        from .serializers import UserDetailSerializer
+        from .serializers import UserDetailSerializer, UserCreateSerializer, UserUpdateSerializer
+
+        # Utiliser UserCreateSerializer pour la création
+        if self.action == 'create':
+            return UserCreateSerializer
+
+        # Utiliser UserUpdateSerializer pour les mises à jour
+        if self.action in ['update', 'partial_update']:
+            return UserUpdateSerializer
+
+        # Utiliser UserDetailSerializer pour les autres actions (list, retrieve)
         return UserDetailSerializer
 
     def get_queryset(self):
         from django.db.models import Q
 
-        queryset = User.objects.select_related('profile').all()
+        queryset = User.objects.select_related('profile').all().order_by('-date_joined')
 
         # Filtres
         search = self.request.query_params.get('search')
@@ -385,10 +396,17 @@ class UserViewSet(viewsets.ModelViewSet):
             if role == 'admin':
                 # Filtrer les utilisateurs qui sont staff OU superuser
                 queryset = queryset.filter(Q(is_staff=True) | Q(is_superuser=True))
-            elif role in ['professor', 'student', 'staff']:
+            elif role in ['teacher', 'student', 'staff', 'department_head', 'scheduler']:
                 # Filtrer par le rôle dans le profil ET exclure les admins
                 queryset = queryset.filter(
                     profile__role=role,
+                    is_staff=False,
+                    is_superuser=False
+                )
+            elif role == 'professor':
+                # Alias pour 'teacher' pour compatibilité
+                queryset = queryset.filter(
+                    profile__role='teacher',
                     is_staff=False,
                     is_superuser=False
                 )
@@ -421,15 +439,20 @@ class UserViewSet(viewsets.ModelViewSet):
         admin_users = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True)).count()
 
         # Compter par rôle
-        professor_count = UserProfile.objects.filter(role='professor').count()
+        teacher_count = UserProfile.objects.filter(role='teacher').count()
         student_count = UserProfile.objects.filter(role='student').count()
         staff_count = UserProfile.objects.filter(role='staff').count()
+        department_head_count = UserProfile.objects.filter(role='department_head').count()
+        scheduler_count = UserProfile.objects.filter(role='scheduler').count()
 
         return Response({
             'total_users': total_users,
             'active_users': active_users,
             'admin_users': admin_users,
-            'professor_count': professor_count,
+            'teacher_count': teacher_count,
+            'professor_count': teacher_count,  # Alias pour compatibilité
             'student_count': student_count,
-            'staff_count': staff_count
+            'staff_count': staff_count,
+            'department_head_count': department_head_count,
+            'scheduler_count': scheduler_count
         })

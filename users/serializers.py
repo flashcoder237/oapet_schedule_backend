@@ -107,19 +107,129 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         return value
 
 
+class UserCreateSerializer(serializers.ModelSerializer):
+    """Serializer pour la création d'utilisateurs"""
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    role = serializers.ChoiceField(choices=UserProfile.ROLE_CHOICES, required=False, default='student', write_only=True)
+    department_id = serializers.IntegerField(required=False, allow_null=True, write_only=True)
+    employee_id = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'password', 'is_active', 'role', 'department_id', 'employee_id'
+        ]
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        # Extraire les données du profil
+        role = validated_data.pop('role', 'student')
+        department_id = validated_data.pop('department_id', None)
+        employee_id = validated_data.pop('employee_id', '')
+
+        # Créer l'utilisateur
+        user = User.objects.create_user(**validated_data)
+
+        # Mettre à jour ou créer le profil
+        if hasattr(user, 'profile'):
+            user.profile.role = role
+            user.profile.employee_id = employee_id
+            if department_id:
+                from courses.models import Department
+                try:
+                    department = Department.objects.get(id=department_id)
+                    user.profile.department = department
+                except Department.DoesNotExist:
+                    pass
+            user.profile.save()
+        else:
+            # Créer le profil s'il n'existe pas
+            from courses.models import Department
+            department = None
+            if department_id:
+                try:
+                    department = Department.objects.get(id=department_id)
+                except Department.DoesNotExist:
+                    pass
+
+            UserProfile.objects.create(
+                user=user,
+                role=role,
+                employee_id=employee_id,
+                department=department
+            )
+
+        return user
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """Serializer pour la mise à jour d'utilisateurs"""
+    role = serializers.ChoiceField(choices=UserProfile.ROLE_CHOICES, required=False, write_only=True)
+    department_id = serializers.IntegerField(required=False, allow_null=True, write_only=True)
+    employee_id = serializers.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'is_active', 'role', 'department_id', 'employee_id'
+        ]
+        read_only_fields = ['id']
+
+    def update(self, instance, validated_data):
+        """Mise à jour d'un utilisateur et son profil"""
+        # Extraire les données du profil
+        role = validated_data.pop('role', None)
+        department_id = validated_data.pop('department_id', None)
+        employee_id = validated_data.pop('employee_id', None)
+
+        # Mettre à jour les champs de base
+        instance.username = validated_data.get('username', instance.username)
+        instance.email = validated_data.get('email', instance.email)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.is_active = validated_data.get('is_active', instance.is_active)
+        instance.save()
+
+        # Mettre à jour le profil si nécessaire
+        if hasattr(instance, 'profile'):
+            if role is not None:
+                instance.profile.role = role
+
+            if employee_id is not None:
+                instance.profile.employee_id = employee_id
+
+            if department_id is not None:
+                from courses.models import Department
+                try:
+                    department = Department.objects.get(id=department_id)
+                    instance.profile.department = department
+                except Department.DoesNotExist:
+                    instance.profile.department = None
+
+            instance.profile.save()
+
+        return instance
+
+
 class UserDetailSerializer(serializers.ModelSerializer):
     """Serializer détaillé pour les utilisateurs"""
     profile = UserProfileSerializer(read_only=True)
     role = serializers.SerializerMethodField()
+    department_id = serializers.SerializerMethodField()
+    department_name = serializers.SerializerMethodField()
+    employee_id = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'is_active', 'is_staff', 'is_superuser', 'last_login',
-            'date_joined', 'profile', 'role'
+            'date_joined', 'profile', 'role', 'department_id',
+            'department_name', 'employee_id'
         ]
-        read_only_fields = ['id', 'username', 'last_login', 'date_joined']
+        read_only_fields = ['id', 'last_login', 'date_joined', 'username']
 
     def get_role(self, obj):
         """Détermine le rôle de l'utilisateur"""
@@ -132,6 +242,24 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
         # Par défaut, retourner 'student'
         return 'student'
+
+    def get_department_id(self, obj):
+        """Récupère l'ID du département"""
+        if hasattr(obj, 'profile') and obj.profile and obj.profile.department:
+            return obj.profile.department.id
+        return None
+
+    def get_department_name(self, obj):
+        """Récupère le nom du département"""
+        if hasattr(obj, 'profile') and obj.profile and obj.profile.department:
+            return obj.profile.department.name
+        return None
+
+    def get_employee_id(self, obj):
+        """Récupère l'ID employé"""
+        if hasattr(obj, 'profile') and obj.profile:
+            return obj.profile.employee_id
+        return None
 
 
 class CustomPermissionSerializer(serializers.ModelSerializer):

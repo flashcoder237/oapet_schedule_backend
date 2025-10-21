@@ -17,6 +17,8 @@ class UserProfile(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
+    employee_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    department = models.ForeignKey('courses.Department', on_delete=models.SET_NULL, blank=True, null=True, related_name='users')
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
