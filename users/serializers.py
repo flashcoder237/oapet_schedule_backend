@@ -123,6 +123,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def create(self, validated_data):
+        from courses.models import Department, Teacher
+
         # Extraire les données du profil
         role = validated_data.pop('role', 'student')
         department_id = validated_data.pop('department_id', None)
@@ -131,33 +133,46 @@ class UserCreateSerializer(serializers.ModelSerializer):
         # Créer l'utilisateur
         user = User.objects.create_user(**validated_data)
 
-        # Mettre à jour ou créer le profil
+        # Récupérer le département si fourni
+        department = None
+        if department_id:
+            try:
+                department = Department.objects.get(id=department_id)
+            except Department.DoesNotExist:
+                pass
+
+        # Créer le profil
         if hasattr(user, 'profile'):
             user.profile.role = role
             user.profile.employee_id = employee_id
-            if department_id:
-                from courses.models import Department
-                try:
-                    department = Department.objects.get(id=department_id)
-                    user.profile.department = department
-                except Department.DoesNotExist:
-                    pass
+            user.profile.department = department
             user.profile.save()
         else:
-            # Créer le profil s'il n'existe pas
-            from courses.models import Department
-            department = None
-            if department_id:
-                try:
-                    department = Department.objects.get(id=department_id)
-                except Department.DoesNotExist:
-                    pass
-
             UserProfile.objects.create(
                 user=user,
                 role=role,
                 employee_id=employee_id,
                 department=department
+            )
+
+        # Si le rôle est 'teacher' ou 'professor', créer automatiquement le Teacher
+        if role in ['teacher', 'professor']:
+            # Récupérer ou créer le département par défaut si nécessaire
+            if not department:
+                department, _ = Department.objects.get_or_create(
+                    code='DEFAULT',
+                    defaults={
+                        'name': 'Département par défaut',
+                        'description': 'Département par défaut pour les enseignants'
+                    }
+                )
+
+            # Créer le Teacher
+            Teacher.objects.create(
+                user=user,
+                employee_id=employee_id or f'TEACH-{user.id}',
+                department=department,
+                is_active=user.is_active
             )
 
         return user
@@ -179,10 +194,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Mise à jour d'un utilisateur et son profil"""
+        from courses.models import Department, Teacher
+
         # Extraire les données du profil
         role = validated_data.pop('role', None)
         department_id = validated_data.pop('department_id', None)
         employee_id = validated_data.pop('employee_id', None)
+
+        # Sauvegarder l'ancien rôle pour détecter les changements
+        old_role = instance.profile.role if hasattr(instance, 'profile') else None
 
         # Mettre à jour les champs de base
         instance.username = validated_data.get('username', instance.username)
@@ -192,6 +212,14 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         instance.is_active = validated_data.get('is_active', instance.is_active)
         instance.save()
 
+        # Récupérer le département si fourni
+        department = None
+        if department_id is not None:
+            try:
+                department = Department.objects.get(id=department_id)
+            except Department.DoesNotExist:
+                pass
+
         # Mettre à jour le profil si nécessaire
         if hasattr(instance, 'profile'):
             if role is not None:
@@ -200,15 +228,46 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             if employee_id is not None:
                 instance.profile.employee_id = employee_id
 
-            if department_id is not None:
-                from courses.models import Department
-                try:
-                    department = Department.objects.get(id=department_id)
-                    instance.profile.department = department
-                except Department.DoesNotExist:
-                    instance.profile.department = None
+            if department is not None or department_id is not None:
+                instance.profile.department = department
 
             instance.profile.save()
+
+        # Gérer le changement de rôle vers 'teacher' ou 'professor'
+        new_role = role if role is not None else old_role
+
+        if new_role in ['teacher', 'professor'] and old_role not in ['teacher', 'professor']:
+            # L'utilisateur devient enseignant, créer le Teacher s'il n'existe pas
+            try:
+                Teacher.objects.get(user=instance)
+            except Teacher.DoesNotExist:
+                # Récupérer ou créer le département par défaut si nécessaire
+                if not department and not instance.profile.department:
+                    department, _ = Department.objects.get_or_create(
+                        code='DEFAULT',
+                        defaults={
+                            'name': 'Département par défaut',
+                            'description': 'Département par défaut pour les enseignants'
+                        }
+                    )
+                else:
+                    department = department or instance.profile.department
+
+                # Créer le Teacher
+                Teacher.objects.create(
+                    user=instance,
+                    employee_id=instance.profile.employee_id or f'TEACH-{instance.id}',
+                    department=department,
+                    is_active=instance.is_active
+                )
+
+        elif new_role not in ['teacher', 'professor'] and old_role in ['teacher', 'professor']:
+            # L'utilisateur n'est plus enseignant, supprimer le Teacher
+            try:
+                teacher = Teacher.objects.get(user=instance)
+                teacher.delete()
+            except Teacher.DoesNotExist:
+                pass
 
         return instance
 
@@ -220,6 +279,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     department_id = serializers.SerializerMethodField()
     department_name = serializers.SerializerMethodField()
     employee_id = serializers.SerializerMethodField()
+    teacher_id = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -227,7 +287,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name',
             'is_active', 'is_staff', 'is_superuser', 'last_login',
             'date_joined', 'profile', 'role', 'department_id',
-            'department_name', 'employee_id'
+            'department_name', 'employee_id', 'teacher_id'
         ]
         read_only_fields = ['id', 'last_login', 'date_joined', 'username']
 
@@ -260,6 +320,15 @@ class UserDetailSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'profile') and obj.profile:
             return obj.profile.employee_id
         return None
+
+    def get_teacher_id(self, obj):
+        """Récupère l'ID du Teacher associé à l'utilisateur (pour les enseignants)"""
+        try:
+            from courses.models import Teacher
+            teacher = Teacher.objects.get(user=obj)
+            return teacher.id
+        except Teacher.DoesNotExist:
+            return None
 
 
 class CustomPermissionSerializer(serializers.ModelSerializer):

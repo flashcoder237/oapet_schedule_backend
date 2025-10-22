@@ -396,17 +396,17 @@ class UserViewSet(viewsets.ModelViewSet):
             if role == 'admin':
                 # Filtrer les utilisateurs qui sont staff OU superuser
                 queryset = queryset.filter(Q(is_staff=True) | Q(is_superuser=True))
-            elif role in ['teacher', 'student', 'staff', 'department_head', 'scheduler']:
-                # Filtrer par le rôle dans le profil ET exclure les admins
+            elif role in ['teacher', 'professor']:
+                # Filtrer par teacher OU professor (pour compatibilité)
                 queryset = queryset.filter(
-                    profile__role=role,
+                    Q(profile__role='teacher') | Q(profile__role='professor'),
                     is_staff=False,
                     is_superuser=False
                 )
-            elif role == 'professor':
-                # Alias pour 'teacher' pour compatibilité
+            elif role in ['student', 'staff', 'department_head', 'scheduler']:
+                # Filtrer par le rôle dans le profil ET exclure les admins
                 queryset = queryset.filter(
-                    profile__role='teacher',
+                    profile__role=role,
                     is_staff=False,
                     is_superuser=False
                 )

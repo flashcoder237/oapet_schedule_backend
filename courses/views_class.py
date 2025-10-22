@@ -45,6 +45,7 @@ class StudentClassViewSet(ImportExportMixin, viewsets.ModelViewSet):
         department = self.request.query_params.get('department')
         academic_year = self.request.query_params.get('academic_year')
         is_active = self.request.query_params.get('is_active')
+        teacher_id = self.request.query_params.get('teacher')
 
         if level:
             queryset = queryset.filter(level=level)
@@ -54,6 +55,15 @@ class StudentClassViewSet(ImportExportMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(academic_year=academic_year)
         if is_active is not None:
             queryset = queryset.filter(is_active=is_active.lower() == 'true')
+
+        # Filtrer par enseignant - classes où l'enseignant a des sessions programmées
+        if teacher_id:
+            from schedules.models import ScheduleSession
+            # Récupérer les classes où l'enseignant a au moins une session
+            class_ids = ScheduleSession.objects.filter(
+                teacher_id=teacher_id
+            ).values_list('schedule__student_class_id', flat=True).distinct()
+            queryset = queryset.filter(id__in=class_ids)
 
         return queryset
 

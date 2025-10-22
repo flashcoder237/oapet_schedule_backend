@@ -9,7 +9,8 @@ class UserProfile(models.Model):
     ROLE_CHOICES = [
         ('admin', 'Administrateur'),
         ('department_head', 'Chef de Département'),
-        ('teacher', 'Enseignant'),
+        ('professor', 'Enseignant'),  # Nom principal
+        ('teacher', 'Enseignant'),    # Alias pour compatibilité
         ('student', 'Étudiant'),
         ('staff', 'Personnel Administratif'),
         ('scheduler', 'Planificateur'),

@@ -61,18 +61,23 @@ class TeacherViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
     export_fields = ['id', 'employee_id', 'department', 'specialization', 'max_hours_per_week', 'is_active']
     import_fields = ['employee_id', 'department', 'specialization', 'max_hours_per_week']
-    
+
     def get_serializer_class(self):
         if self.action == 'create':
             return TeacherCreateSerializer
         return TeacherSerializer
-    
+
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('user', 'department')
         department_id = self.request.query_params.get('department')
         if department_id:
             queryset = queryset.filter(department_id=department_id)
-        return queryset.filter(is_active=True)
+
+        # Filtrer par enseignants actifs ET avec utilisateurs actifs
+        return queryset.filter(
+            is_active=True,
+            user__is_active=True
+        ).order_by('user__last_name', 'user__first_name')
     
     @action(detail=False, methods=['get'])
     def stats(self, request):
