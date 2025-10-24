@@ -203,9 +203,22 @@ def enhanced_logout(request):
 @permission_classes([IsAuthenticated])
 def current_user(request):
     """Récupère les informations de l'utilisateur actuel"""
+    from courses.models import Teacher
+
     user = request.user
     profile = getattr(user, 'profile', None)
-    
+
+    # Récupérer le teacher_id si l'utilisateur est un enseignant
+    teacher_id = None
+    try:
+        teacher = Teacher.objects.get(user=user)
+        teacher_id = teacher.id
+    except Teacher.DoesNotExist:
+        pass
+
+    # Déterminer le rôle (profile.role a priorité)
+    role = profile.role if profile else 'student'
+
     return Response({
         'id': user.id,
         'username': user.username,
@@ -213,12 +226,14 @@ def current_user(request):
         'first_name': user.first_name,
         'last_name': user.last_name,
         'full_name': user.get_full_name(),
+        'role': role,
         'is_staff': user.is_staff,
         'is_superuser': user.is_superuser,
+        'teacher_id': teacher_id,
         'last_login': user.last_login,
         'date_joined': user.date_joined,
         'profile': {
-            'role': profile.role if profile else 'student',
+            'role': role,
             'phone': profile.phone if profile else '',
             'language': profile.language if profile else 'fr',
             'timezone': profile.timezone if profile else 'Africa/Douala'

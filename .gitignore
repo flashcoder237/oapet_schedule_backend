@@ -1,0 +1,17 @@
+# Environnement virtuel
+venv/
+venv_new/
+logs/
+
+# Base de données SQLite
+*.sqlite3
+
+# Fichier de log Django
+django.log
+
+
+# Autres fichiers temporaires de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
