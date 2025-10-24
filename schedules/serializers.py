@@ -345,21 +345,36 @@ class SessionOccurrenceListSerializer(serializers.ModelSerializer):
     course_code = serializers.CharField(source='session_template.course.code', read_only=True)
     course_name = serializers.CharField(source='session_template.course.name', read_only=True)
     room_code = serializers.CharField(source='room.code', read_only=True)
+    room_id = serializers.IntegerField(source='room.id', read_only=True)
     teacher_name = serializers.SerializerMethodField()
+    teacher_id = serializers.IntegerField(source='teacher.id', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    session_template_details = serializers.SerializerMethodField()
 
     class Meta:
         model = SessionOccurrence
         fields = [
-            'id', 'actual_date', 'start_time', 'end_time', 'status',
-            'course_code', 'course_name', 'room_code', 'teacher_name',
+            'id', 'session_template', 'actual_date', 'start_time', 'end_time', 'status',
+            'course_code', 'course_name', 'room_code', 'room_id', 'teacher_name', 'teacher_id',
             'status_display', 'is_cancelled', 'is_room_modified',
-            'is_teacher_modified', 'is_time_modified'
+            'is_teacher_modified', 'is_time_modified', 'session_template_details', 'notes'
         ]
 
     def get_teacher_name(self, obj):
         """Retourne le nom complet de l'enseignant"""
-        return obj.teacher.user.get_full_name()
+        if obj.teacher and obj.teacher.user:
+            return obj.teacher.user.get_full_name()
+        return ""
+
+    def get_session_template_details(self, obj):
+        """Retourne les détails du template de session"""
+        if obj.session_template:
+            return {
+                'session_type': obj.session_template.session_type,
+                'expected_students': obj.session_template.expected_students,
+                'course': obj.session_template.course.id if obj.session_template.course else None
+            }
+        return None
 
 
 class SessionOccurrenceCreateSerializer(serializers.ModelSerializer):

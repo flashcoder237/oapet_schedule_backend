@@ -340,6 +340,11 @@ class SessionOccurrenceViewSet(viewsets.ModelViewSet):
         # Récupère les occurrences pour cette date
         occurrences = self.get_queryset().filter(actual_date=date)
 
+        # Calcule le jour de la semaine
+        day_names_en = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        day_names_fr = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+        day_index = date.weekday()  # 0 = lundi, 6 = dimanche
+
         # Calcule les statistiques
         total_sessions = occurrences.count()
         cancelled_sessions = occurrences.filter(is_cancelled=True).count()
@@ -350,8 +355,11 @@ class SessionOccurrenceViewSet(viewsets.ModelViewSet):
             conflicts_count += len(occurrence.check_conflicts())
 
         data = {
-            'date': date,
+            'date': date.isoformat(),
+            'day_of_week': day_names_en[day_index],
+            'day_of_week_fr': day_names_fr[day_index],
             'occurrences': SessionOccurrenceListSerializer(occurrences, many=True).data,
+            'total': total_sessions,
             'total_sessions': total_sessions,
             'cancelled_sessions': cancelled_sessions,
             'conflicts_count': conflicts_count
@@ -421,6 +429,66 @@ class SessionOccurrenceViewSet(viewsets.ModelViewSet):
             'week_start': week_start,
             'week_end': week_end,
             'occurrences_by_day': serialized_occurrences,  # Format attendu par le frontend
+            'total': total_sessions,
+            'total_hours': total_hours
+        }
+
+        return Response(data)
+
+    @action(detail=False, methods=['get'])
+    def monthly(self, request):
+        """Retourne les occurrences pour un mois"""
+        date_param = request.query_params.get('date')
+
+        if not date_param:
+            return Response(
+                {'error': 'Le paramètre date est requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            date = datetime.strptime(date_param, '%Y-%m-%d').date()
+        except ValueError:
+            return Response(
+                {'error': 'Format de date invalide (YYYY-MM-DD attendu)'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Calcule le début et la fin du mois
+        from datetime import timedelta
+        from calendar import monthrange
+
+        month_start = date.replace(day=1)
+        _, last_day = monthrange(date.year, date.month)
+        month_end = date.replace(day=last_day)
+
+        # Récupère les occurrences pour ce mois
+        occurrences = self.get_queryset().filter(
+            actual_date__gte=month_start,
+            actual_date__lte=month_end
+        )
+
+        # Groupe par date
+        from collections import defaultdict
+        occurrences_by_date = defaultdict(list)
+
+        for occurrence in occurrences:
+            date_str = occurrence.actual_date.isoformat()
+            occurrences_by_date[date_str].append(occurrence)
+
+        # Sérialiser les occurrences par date
+        serialized_occurrences = {}
+        for date_str, date_occurrences in occurrences_by_date.items():
+            serialized_occurrences[date_str] = SessionOccurrenceListSerializer(date_occurrences, many=True).data
+
+        # Calcule les statistiques
+        total_sessions = occurrences.count()
+        total_hours = sum(occ.get_duration_hours() for occ in occurrences)
+
+        data = {
+            'month_start': month_start,
+            'month_end': month_end,
+            'occurrences_by_date': serialized_occurrences,
             'total': total_sessions,
             'total_hours': total_hours
         }
