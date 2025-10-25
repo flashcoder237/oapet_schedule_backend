@@ -65,6 +65,7 @@ class Course(models.Model):
         ('CM', 'Cours Magistral'),
         ('TD', 'Travaux Dirigés'),
         ('TP', 'Travaux Pratiques'),
+        ('TPE', 'Travail Personnel Encadré'),
         ('CONF', 'Conférence'),
         ('EXAM', 'Examen'),
     ]
@@ -127,11 +128,35 @@ class Course(models.Model):
         help_text="Métadonnées supplémentaires des prédictions ML"
     )
 
+    # ============= PRIORITÉ MANUELLE =============
+    manual_scheduling_priority = models.IntegerField(
+        default=3,
+        choices=[
+            (1, 'Très Haute (à planifier en premier)'),
+            (2, 'Haute'),
+            (3, 'Moyenne'),
+            (4, 'Basse'),
+            (5, 'Très Basse (flexible)')
+        ],
+        help_text="Priorité de planification définie manuellement par l'admin"
+    )
+    use_manual_priority = models.BooleanField(
+        default=False,
+        help_text="Si True, utilise manual_scheduling_priority au lieu de ml_scheduling_priority"
+    )
+
     def __str__(self):
         return f"{self.code} - {self.name}"
 
     class Meta:
         ordering = ['code']
+
+    @property
+    def effective_priority(self):
+        """Retourne la priorité effective (manuelle si activée, sinon ML)"""
+        if self.use_manual_priority:
+            return self.manual_scheduling_priority
+        return self.ml_scheduling_priority
 
     def update_ml_predictions(self, force=False):
         """

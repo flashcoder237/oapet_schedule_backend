@@ -33,8 +33,8 @@ class AcademicPeriodViewSet(ImportExportMixin, viewsets.ModelViewSet):
     serializer_class = AcademicPeriodSerializer
     permission_classes = [IsAuthenticated]
 
-    export_fields = ['id', 'name', 'type', 'start_date', 'end_date', 'is_current']
-    import_fields = ['name', 'type', 'start_date', 'end_date']
+    export_fields = ['id', 'name', 'academic_year', 'semester', 'start_date', 'end_date', 'is_current']
+    import_fields = ['name', 'academic_year', 'semester', 'start_date', 'end_date']
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -146,8 +146,8 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
     queryset = Schedule.objects.all()
     permission_classes = [IsAuthenticated]
 
-    export_fields = ['id', 'name', 'academic_period', 'student_class', 'schedule_type', 'start_date', 'end_date', 'status', 'is_published']
-    import_fields = ['name', 'academic_period', 'student_class', 'schedule_type', 'start_date', 'end_date', 'status']
+    export_fields = ['id', 'name', 'academic_period', 'student_class', 'teacher', 'level', 'schedule_type', 'status', 'is_published']
+    import_fields = ['name', 'academic_period', 'student_class', 'teacher', 'level', 'schedule_type', 'status']
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -1059,6 +1059,67 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'total_sessions': len(sessions_data)
         })
 
+    @action(detail=True, methods=['post'])
+    def generate_advanced(self, request, pk=None):
+        """Génération avancée d'emploi du temps avec détection de blocages et suggestions"""
+        from .advanced_generation_service import AdvancedScheduleGenerator
+        from datetime import datetime
+
+        schedule = self.get_object()
+
+        preview_mode = request.data.get('preview_mode', False)
+        force_regenerate = request.data.get('force_regenerate', False)
+        date_from = request.data.get('date_from')
+        date_to = request.data.get('date_to')
+
+        # Convertir les dates si fournies
+        if date_from:
+            try:
+                date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+            except ValueError:
+                return Response({
+                    'error': 'Format de date invalide pour date_from. Utilisez YYYY-MM-DD'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        if date_to:
+            try:
+                date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+            except ValueError:
+                return Response({
+                    'error': 'Format de date invalide pour date_to. Utilisez YYYY-MM-DD'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            generator = AdvancedScheduleGenerator(schedule)
+            result = generator.generate_with_validation(
+                preview_mode=preview_mode,
+                force_regenerate=force_regenerate,
+                date_from=date_from,
+                date_to=date_to
+            )
+
+            if result['success']:
+                logger.info(
+                    f"Génération avancée réussie pour schedule {schedule.id}: "
+                    f"{result['occurrences_created']} occurrences créées"
+                )
+            else:
+                logger.warning(
+                    f"Génération avancée échouée pour schedule {schedule.id}: "
+                    f"{result.get('message', 'Erreur inconnue')}"
+                )
+
+            return Response(result)
+
+        except Exception as e:
+            logger.error(f"Erreur lors de la génération avancée: {str(e)}")
+            return Response({
+                'success': False,
+                'error': 'Erreur lors de la génération',
+                'details': str(e),
+                'schedule_id': schedule.id
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class ScheduleSessionViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des sessions d'emploi du temps"""
@@ -1180,15 +1241,15 @@ class ScheduleTemplateViewSet(ImportExportMixin, viewsets.ModelViewSet):
     serializer_class = ScheduleTemplateSerializer
     permission_classes = [IsAuthenticated]
 
-    export_fields = ['id', 'name', 'curriculum', 'level', 'template_data', 'is_active']
-    import_fields = ['name', 'curriculum', 'level', 'template_data']
-    
+    export_fields = ['id', 'name', 'student_class', 'level', 'template_data', 'is_active']
+    import_fields = ['name', 'student_class', 'level', 'template_data']
+
     def get_queryset(self):
         queryset = super().get_queryset().filter(is_active=True)
-        
-        curriculum_id = self.request.query_params.get('curriculum')
-        if curriculum_id:
-            queryset = queryset.filter(curriculum_id=curriculum_id)
+
+        student_class_id = self.request.query_params.get('student_class')
+        if student_class_id:
+            queryset = queryset.filter(student_class_id=student_class_id)
         
         level = self.request.query_params.get('level')
         if level:

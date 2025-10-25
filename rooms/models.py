@@ -8,7 +8,7 @@ class Building(models.Model):
     code = models.CharField(max_length=10, unique=True)
     address = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    total_floors = models.IntegerField(default=1)
+    total_floors = models.IntegerField(default=0, help_text="Nombre d'étages (0 = seulement RDC)")
     has_elevator = models.BooleanField(default=False)
     has_parking = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -49,7 +49,14 @@ class Room(models.Model):
 
     code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
-    building = models.ForeignKey(Building, on_delete=models.CASCADE, related_name='rooms')
+    building = models.ForeignKey(
+        Building,
+        on_delete=models.CASCADE,
+        related_name='rooms',
+        null=True,
+        blank=True,
+        help_text="Laisser vide pour les salles isolées (amphithéâtres, structures isolées, etc.)"
+    )
     room_type = models.ForeignKey(RoomType, on_delete=models.CASCADE, related_name='rooms')
     floor = models.CharField(max_length=5, choices=FLOOR_CHOICES, default='RDC')
     capacity = models.IntegerField()

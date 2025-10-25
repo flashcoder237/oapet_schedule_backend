@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db import models
 
 from core.mixins import ImportExportMixin
-from .models_class import StudentClass, ClassCourse
+from .models_class import StudentClass, ClassCourse, ClassRoomPreference
 from .models import Course
 from .serializers_class import (
     StudentClassListSerializer,
@@ -15,8 +15,11 @@ from .serializers_class import (
     StudentClassCreateSerializer,
     ClassCourseSerializer,
     ClassCourseCreateSerializer,
-    BulkAssignCoursesSerializer
+    BulkAssignCoursesSerializer,
+    ClassRoomPreferenceSerializer,
+    ClassRoomPreferenceCreateSerializer
 )
+from rooms.models import Room
 
 
 class StudentClassViewSet(ImportExportMixin, viewsets.ModelViewSet):
@@ -25,8 +28,8 @@ class StudentClassViewSet(ImportExportMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     # Champs pour l'export/import
-    export_fields = ['id', 'name', 'code', 'level', 'section', 'department', 'curriculum', 'academic_year', 'student_count', 'max_capacity', 'is_active']
-    import_fields = ['name', 'code', 'level', 'section', 'department', 'curriculum', 'academic_year', 'student_count', 'max_capacity']
+    export_fields = ['id', 'name', 'code', 'level', 'department', 'curriculum', 'academic_year', 'student_count', 'max_capacity', 'is_active']
+    import_fields = ['name', 'code', 'level', 'department', 'curriculum', 'academic_year', 'student_count', 'max_capacity']
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -238,3 +241,125 @@ class ClassCourseViewSet(ImportExportMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(semester=semester)
 
         return queryset
+
+
+class ClassRoomPreferenceViewSet(viewsets.ModelViewSet):
+    """ViewSet pour gérer les préférences de salle par classe"""
+    queryset = ClassRoomPreference.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return ClassRoomPreferenceCreateSerializer
+        return ClassRoomPreferenceSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related(
+            'student_class', 'room', 'room__building'
+        )
+
+        class_id = self.request.query_params.get('class_id')
+        if class_id:
+            queryset = queryset.filter(student_class_id=class_id)
+
+        room_id = self.request.query_params.get('room_id')
+        if room_id:
+            queryset = queryset.filter(room_id=room_id)
+
+        priority = self.request.query_params.get('priority')
+        if priority:
+            queryset = queryset.filter(priority=priority)
+
+        active_only = self.request.query_params.get('active_only')
+        if active_only == 'true':
+            queryset = queryset.filter(is_active=True)
+
+        return queryset.order_by('student_class__code', 'priority', 'room__code')
+
+    @action(detail=False, methods=['post'])
+    def bulk_create(self, request):
+        """Créer plusieurs préférences en une fois"""
+        preferences = request.data.get('preferences', [])
+
+        if not preferences:
+            return Response({'error': 'Aucune préférence fournie'}, status=status.HTTP_400_BAD_REQUEST)
+
+        created_preferences = []
+        errors = []
+
+        with transaction.atomic():
+            for pref_data in preferences:
+                serializer = ClassRoomPreferenceCreateSerializer(data=pref_data)
+                if serializer.is_valid():
+                    pref = serializer.save()
+                    created_preferences.append(ClassRoomPreferenceSerializer(pref).data)
+                else:
+                    errors.append({'data': pref_data, 'errors': serializer.errors})
+
+        return Response({
+            'created': len(created_preferences),
+            'failed': len(errors),
+            'preferences': created_preferences,
+            'errors': errors
+        }, status=status.HTTP_201_CREATED if created_preferences else status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def by_class(self, request):
+        """Récupère toutes les préférences pour une classe"""
+        class_id = request.query_params.get('class_id')
+
+        if not class_id:
+            return Response({'error': 'class_id est requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        preferences = self.get_queryset().filter(student_class_id=class_id)
+        serializer = self.get_serializer(preferences, many=True)
+
+        grouped = {'obligatoire': [], 'preferee': [], 'acceptable': []}
+
+        for pref in serializer.data:
+            priority = pref['priority']
+            if priority == 1:
+                grouped['obligatoire'].append(pref)
+            elif priority == 2:
+                grouped['preferee'].append(pref)
+            elif priority == 3:
+                grouped['acceptable'].append(pref)
+
+        return Response({
+            'class_id': class_id,
+            'total': preferences.count(),
+            'grouped_by_priority': grouped,
+            'preferences': serializer.data
+        })
+
+    @action(detail=False, methods=['get'])
+    def available_rooms(self, request):
+        """Liste des salles disponibles pour créer une préférence"""
+        class_id = request.query_params.get('class_id')
+
+        if not class_id:
+            return Response({'error': 'class_id est requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        used_room_ids = ClassRoomPreference.objects.filter(
+            student_class_id=class_id
+        ).values_list('room_id', flat=True)
+
+        available_rooms = Room.objects.filter(
+            is_active=True
+        ).exclude(
+            id__in=used_room_ids
+        ).select_related('building').order_by('building__code', 'code')
+
+        rooms_data = [{
+            'id': room.id,
+            'code': room.code,
+            'name': room.name,
+            'building': room.building.name if room.building else None,
+            'building_code': room.building.code if room.building else None,
+            'capacity': room.capacity,
+            'has_computer': room.has_computer,
+            'has_projector': room.has_projector,
+            'is_laboratory': room.is_laboratory,
+        } for room in available_rooms]
+
+        return Response({'count': len(rooms_data), 'rooms': rooms_data})

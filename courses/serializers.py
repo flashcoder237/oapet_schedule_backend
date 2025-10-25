@@ -68,11 +68,24 @@ class CourseSerializer(serializers.ModelSerializer):
     teacher_name = serializers.CharField(source='teacher.user.get_full_name', read_only=True)
     department_name = serializers.CharField(source='department.name', read_only=True)
     enrollments_count = serializers.IntegerField(source='enrollments.count', read_only=True)
-    
+    effective_priority = serializers.IntegerField(read_only=True)
+    manual_scheduling_priority_display = serializers.SerializerMethodField()
+
     class Meta:
         model = Course
         fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at')
+        read_only_fields = ('created_at', 'updated_at', 'effective_priority')
+
+    def get_manual_scheduling_priority_display(self, obj):
+        """Retourne le label de la priorité manuelle"""
+        priority_labels = {
+            1: 'Très Haute',
+            2: 'Haute',
+            3: 'Moyenne',
+            4: 'Basse',
+            5: 'Très Basse'
+        }
+        return priority_labels.get(obj.manual_scheduling_priority, 'Moyenne')
 
 
 class CourseDetailSerializer(CourseSerializer):

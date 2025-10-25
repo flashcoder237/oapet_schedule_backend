@@ -111,14 +111,20 @@ class UserCreateSerializer(serializers.ModelSerializer):
     """Serializer pour la création d'utilisateurs"""
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     role = serializers.ChoiceField(choices=UserProfile.ROLE_CHOICES, required=False, default='student', write_only=True)
+
+    # Champs pour les enseignants
     department_id = serializers.IntegerField(required=False, allow_null=True, write_only=True)
     employee_id = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    phone = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    office = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    max_hours_per_week = serializers.IntegerField(required=False, allow_null=True, write_only=True)
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
-            'password', 'is_active', 'role', 'department_id', 'employee_id'
+            'password', 'is_active', 'role', 'department_id', 'employee_id',
+            'phone', 'office', 'max_hours_per_week'
         ]
         read_only_fields = ['id']
 
@@ -129,6 +135,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
         role = validated_data.pop('role', 'student')
         department_id = validated_data.pop('department_id', None)
         employee_id = validated_data.pop('employee_id', '')
+
+        # Extraire les champs spécifiques Teacher
+        phone = validated_data.pop('phone', '')
+        office = validated_data.pop('office', '')
+        max_hours_per_week = validated_data.pop('max_hours_per_week', 20)
 
         # Créer l'utilisateur
         user = User.objects.create_user(**validated_data)
@@ -167,11 +178,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
                     }
                 )
 
-            # Créer le Teacher
+            # Créer le Teacher avec tous les champs
             Teacher.objects.create(
                 user=user,
                 employee_id=employee_id or f'TEACH-{user.id}',
                 department=department,
+                phone=phone,
+                office=office,
+                max_hours_per_week=max_hours_per_week,
                 is_active=user.is_active
             )
 

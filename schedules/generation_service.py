@@ -8,6 +8,7 @@ from .models import (
     Schedule, ScheduleSession, SessionOccurrence,
     ScheduleGenerationConfig, TimeSlot, Room, Teacher
 )
+from .course_type_constraints import CourseTypeConstraintChecker
 
 
 class ScheduleGenerationService:
@@ -16,10 +17,13 @@ class ScheduleGenerationService:
     def __init__(self, schedule: Schedule):
         self.schedule = schedule
         self.config = None
+        self.constraint_checker = CourseTypeConstraintChecker()
+        self.scheduled_sessions = {}  # Track scheduled sessions for prerequisite checking
         self.stats = {
             'occurrences_created': 0,
             'conflicts_detected': 0,
             'conflicts': [],
+            'course_type_violations': 0,
             'generation_time': 0
         }
 
@@ -159,6 +163,7 @@ class ScheduleGenerationService:
             'message': f"{len(occurrences)} occurrence(s) générée(s) avec succès",
             'occurrences_created': len(occurrences),
             'conflicts_detected': self.stats['conflicts_detected'],
+            'course_type_violations': self.stats['course_type_violations'],
             'conflicts': self.stats['conflicts'],
             'preview_data': self._get_preview_data(occurrences) if preview_mode else None,
             'generation_time': self.stats['generation_time']
@@ -307,6 +312,89 @@ class ScheduleGenerationService:
                         current_date += self._get_recurrence_delta()
                         continue
 
+                # Vérifie les contraintes de type de cours
+                course_type = session_template.course.course_type
+                course_code = session_template.course.code
+
+                # Vérifie les préférences de temps
+                is_valid_time, time_penalty = self.constraint_checker.check_time_preference(
+                    course_type, session_start
+                )
+
+                # Vérifie les préférences de jour
+                is_valid_day, day_penalty = self.constraint_checker.check_day_preference(
+                    course_type, current_date.weekday()
+                )
+
+                # Vérifie les prérequis (TD doit suivre CM, TP doit suivre TD)
+                is_valid_prereq, prereq_penalty = self.constraint_checker.check_prerequisite(
+                    course_type, course_code, self.scheduled_sessions
+                )
+
+                # Vérifie le nombre maximum par jour
+                is_valid_max, max_penalty = self.constraint_checker.check_max_per_day(
+                    course_type, current_date.date(), course_code, self.scheduled_sessions
+                )
+
+                # Calcule la pénalité totale
+                total_penalty = time_penalty + day_penalty + prereq_penalty + max_penalty
+
+                # Si des contraintes critiques sont violées (jour interdit, prérequis manquant, etc.)
+                if not is_valid_time or not is_valid_day or not is_valid_prereq or not is_valid_max:
+                    violation = {
+                        'type': 'course_type_constraint_violation',
+                        'severity': 'high' if not is_valid_prereq else 'medium',
+                        'date': str(current_date),
+                        'time': f"{session_start} - {session_end}",
+                        'course': course_code,
+                        'course_type': course_type,
+                        'penalty': total_penalty,
+                        'violations': []
+                    }
+
+                    if not is_valid_time:
+                        violation['violations'].append('Horaire inapproprié pour ce type de cours')
+                    if not is_valid_day:
+                        violation['violations'].append('Jour inapproprié pour ce type de cours')
+                    if not is_valid_prereq:
+                        rule = self.constraint_checker.rules.get(course_type)
+                        if rule and rule.predecessor_type:
+                            violation['violations'].append(
+                                f'Prérequis manquant: {rule.predecessor_type} doit être programmé avant'
+                            )
+                    if not is_valid_max:
+                        rule = self.constraint_checker.rules.get(course_type)
+                        if rule:
+                            violation['violations'].append(
+                                f'Trop de sessions de ce type ce jour (max: {rule.max_per_day})'
+                            )
+
+                    violation['message'] = '; '.join(violation['violations'])
+
+                    self.stats['conflicts'].append(violation)
+                    self.stats['course_type_violations'] += 1
+                    self.stats['conflicts_detected'] += 1
+
+                    # Si prérequis manquant et que allow_conflicts est False, skip
+                    if not is_valid_prereq and not self.config.allow_conflicts:
+                        current_date += self._get_recurrence_delta()
+                        continue
+
+                # Ajoute un warning si pénalité modérée (hors plage préférée mais pas interdite)
+                elif total_penalty > 0:
+                    warning = {
+                        'type': 'course_type_preference_warning',
+                        'severity': 'low',
+                        'date': str(current_date),
+                        'time': f"{session_start} - {session_end}",
+                        'course': course_code,
+                        'course_type': course_type,
+                        'penalty': total_penalty,
+                        'message': 'Créneau sous-optimal pour ce type de cours'
+                    }
+
+                    self.stats['conflicts'].append(warning)
+
                 # Crée l'occurrence
                 occurrence = SessionOccurrence(
                     session_template=session_template,
@@ -322,6 +410,11 @@ class ScheduleGenerationService:
                 )
                 occurrences.append(occurrence)
                 occurrence_count += 1
+
+                # Track cette session pour la vérification des prérequis
+                if course_code not in self.scheduled_sessions:
+                    self.scheduled_sessions[course_code] = []
+                self.scheduled_sessions[course_code].append(current_date)
 
             # Passe à la semaine suivante selon le type de récurrence
             current_date += self._get_recurrence_delta()

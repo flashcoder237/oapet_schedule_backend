@@ -24,11 +24,21 @@ class BuildingViewSet(ImportExportMixin, viewsets.ModelViewSet):
     serializer_class = BuildingSerializer
     permission_classes = [IsAuthenticated]
 
-    export_fields = ['id', 'name', 'code', 'address', 'floors', 'description', 'is_active']
-    import_fields = ['name', 'code', 'address', 'floors', 'description']
+    export_fields = ['id', 'name', 'code', 'address', 'total_floors', 'description', 'is_active']
+    import_fields = ['name', 'code', 'address', 'total_floors', 'description']
 
     def get_queryset(self):
-        return super().get_queryset().filter(is_active=True)
+        queryset = super().get_queryset()
+
+        # Filtre optionnel par statut actif
+        is_active = self.request.query_params.get('is_active')
+        if is_active == 'true':
+            queryset = queryset.filter(is_active=True)
+        elif is_active == 'false':
+            queryset = queryset.filter(is_active=False)
+        # Si is_active n'est pas spécifié, retourner tous les bâtiments
+
+        return queryset
 
 
 class RoomTypeViewSet(ImportExportMixin, viewsets.ModelViewSet):
@@ -55,8 +65,16 @@ class RoomViewSet(ImportExportMixin, viewsets.ModelViewSet):
         return RoomSerializer
     
     def get_queryset(self):
-        queryset = super().get_queryset().filter(is_active=True)
-        
+        queryset = super().get_queryset()
+
+        # Filtre optionnel par statut actif
+        is_active = self.request.query_params.get('is_active')
+        if is_active == 'true':
+            queryset = queryset.filter(is_active=True)
+        elif is_active == 'false':
+            queryset = queryset.filter(is_active=False)
+        # Si is_active n'est pas spécifié, retourner toutes les salles
+
         # Filtres de recherche
         building_id = self.request.query_params.get('building')
         if building_id:

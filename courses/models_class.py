@@ -47,12 +47,9 @@ class StudentClass(models.Model):
     )
 
     # Année académique
+    # Une classe existe pour toute l'année (S1 + S2)
+    # Les cours sont liés aux semestres via ClassCourse.semester
     academic_year = models.CharField(max_length=10, default='2024-2025')
-    semester = models.CharField(
-        max_length=5,
-        choices=[('S1', 'Semestre 1'), ('S2', 'Semestre 2')],
-        default='S1'
-    )
 
     # Métadonnées
     created_by = models.ForeignKey(
@@ -160,3 +157,50 @@ class ClassCourse(models.Model):
     def effective_student_count(self):
         """Retourne l'effectif effectif pour ce cours"""
         return self.specific_student_count or self.student_class.student_count
+
+
+class ClassRoomPreference(models.Model):
+    """
+    Modèle pour les préférences de salle d'une classe
+    Permet à l'admin de définir quelles salles sont préférées/obligatoires pour une classe
+    """
+    PRIORITY_CHOICES = [
+        (1, 'Obligatoire'),
+        (2, 'Préférée'),
+        (3, 'Acceptable'),
+    ]
+
+    student_class = models.ForeignKey(
+        StudentClass,
+        on_delete=models.CASCADE,
+        related_name='room_preferences'
+    )
+    room = models.ForeignKey(
+        'rooms.Room',
+        on_delete=models.CASCADE,
+        related_name='class_preferences'
+    )
+    priority = models.IntegerField(
+        choices=PRIORITY_CHOICES,
+        default=2,
+        help_text="Niveau de préférence pour cette salle"
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Notes sur cette préférence"
+    )
+
+    # Métadonnées
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        priority_label = dict(self.PRIORITY_CHOICES).get(self.priority, '')
+        return f"{self.student_class.code} → {self.room.code} ({priority_label})"
+
+    class Meta:
+        verbose_name = "Préférence de salle pour classe"
+        verbose_name_plural = "Préférences de salles pour classes"
+        unique_together = ['student_class', 'room']
+        ordering = ['student_class', 'priority']
