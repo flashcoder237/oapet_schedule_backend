@@ -14,6 +14,9 @@ logger = logging.getLogger('schedules.views')
 from ml_engine.simple_ml_service import SimpleMLService
 ml_service = SimpleMLService()
 
+# Import pedagogical sequencer
+from .pedagogical_sequencing import PedagogicalSequencer
+
 from core.mixins import ImportExportMixin
 from .models import (
     AcademicPeriod, TimeSlot, Schedule, ScheduleSession, Conflict,
@@ -308,7 +311,7 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
         period_type = request.data.get('period_type')  # 'semester', 'year', 'custom'
         academic_period_id = request.data.get('academic_period_id')
-        academic_year = request.data.get('academic_year')  # Ex: "2024-2025"
+        academic_year = request.data.get('academic_year')  # Ex: "2025-2026"
         semester = request.data.get('semester')  # Ex: "S1" ou "S2"
         start_date = request.data.get('start_date')
         end_date = request.data.get('end_date')
@@ -411,6 +414,9 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                     # Dictionnaire pour suivre les heures planifiées par cours
                     course_hours_scheduled = {course.id: 0 for course in courses}
 
+                    # Dictionnaire pour suivre les sessions par cours (pour le séquencement pédagogique)
+                    course_sessions_tracker = {course.id: [] for course in courses}
+
                     if not courses:
                         logger.warning(f"Aucun cours trouvé pour la classe {class_id}")
                         continue
@@ -491,18 +497,20 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
                         # Génération standard si pas d'emploi du temps fixe
                         elif not has_fixed_schedule or day_name not in fixed_schedule_pattern:
+                            # NOUVELLE APPROCHE : Optimisation pédagogique avec flexibilité
+                            # On évalue tous les cours pour chaque créneau et on choisit le meilleur
+                            # en tenant compte à la fois de la pédagogie ET de la couverture
+
+                            # Tracker des sessions déjà planifiées AUJOURD'HUI (ce jour spécifique)
+                            sessions_today = {}  # {course_id: [session_types]}
+
                             for slot in day_slots:
-                                # Trouver le prochain cours qui n'a pas atteint son quota d'heures
-                                course = None
-                                attempts = 0
-                                max_attempts = len(courses) * 2  # Eviter boucle infinie
+                                # Trouver le meilleur cours pour ce créneau
+                                best_course = None
+                                best_session_type = None
+                                best_score = -1
 
-                                while attempts < max_attempts:
-                                    if course_index >= len(courses):
-                                        course_index = 0
-
-                                    candidate_course = courses[course_index]
-
+                                for candidate_course in courses:
                                     # Calculer la durée d'une session en heures
                                     session_duration_hours = (
                                         (slot.end_time.hour * 60 + slot.end_time.minute) -
@@ -512,16 +520,118 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                     # Vérifier si le cours a encore besoin d'heures
                                     hours_remaining = candidate_course.total_hours - course_hours_scheduled.get(candidate_course.id, 0)
 
-                                    if hours_remaining >= session_duration_hours:
-                                        course = candidate_course
-                                        break
+                                    if hours_remaining < session_duration_hours:
+                                        continue  # Ce cours a atteint son quota
 
-                                    course_index += 1
-                                    attempts += 1
+                                    # RÈGLE : Maximum 1 session par cours par jour
+                                    if candidate_course.id in sessions_today:
+                                        logger.debug(f"Cours {candidate_course.code} déjà planifié aujourd'hui ({day_name})")
+                                        continue
 
-                                # Si aucun cours ne nécessite plus d'heures, passer au slot suivant
-                                if not course:
+                                    # Récupérer l'historique des sessions pour ce cours
+                                    existing_sessions = course_sessions_tracker.get(candidate_course.id, [])
+
+                                    # Déterminer le type de session
+                                    # PRIORITÉ 1 : Si le code du cours contient le type (ex: COURS-CM, COURS-TD), l'utiliser
+                                    next_session_type = None
+                                    course_code_upper = candidate_course.code.upper()
+
+                                    # IMPORTANT : Vérifier TPE avant TP (sinon "-TPE" matchera "-TP")
+                                    if '-TPE' in course_code_upper or '_TPE' in course_code_upper:
+                                        next_session_type = 'TPE'
+                                    elif '-CM' in course_code_upper or '_CM' in course_code_upper:
+                                        next_session_type = 'CM'
+                                    elif '-TD' in course_code_upper or '_TD' in course_code_upper:
+                                        next_session_type = 'TD'
+                                    elif '-TP' in course_code_upper or '_TP' in course_code_upper:
+                                        next_session_type = 'TP'
+                                    else:
+                                        # PRIORITÉ 2 : Sinon, utiliser le séquencement pédagogique automatique
+                                        next_session_type = PedagogicalSequencer.get_next_session_type(existing_sessions)
+
+                                    # Valider que la séquence respecte les délais minimums
+                                    # MAIS seulement si le type n'est PAS fixé dans le code du cours
+                                    # (car un cours "-CM" est déjà spécifique et n'a pas de contraintes de séquence)
+                                    is_valid = True
+                                    reason = "Type fixé dans le code du cours"
+
+                                    # Vérifier si le type est déterminé automatiquement (pas dans le code)
+                                    # IMPORTANT : Vérifier TPE avant TP
+                                    has_fixed_type = ('-TPE' in course_code_upper or '_TPE' in course_code_upper or
+                                                     '-CM' in course_code_upper or '_CM' in course_code_upper or
+                                                     '-TD' in course_code_upper or '_TD' in course_code_upper or
+                                                     '-TP' in course_code_upper or '_TP' in course_code_upper)
+
+                                    if not has_fixed_type:
+                                        # Seulement pour les cours sans type fixe, valider la séquence
+                                        is_valid, reason = PedagogicalSequencer.is_valid_sequence(
+                                            existing_sessions,
+                                            current_date,
+                                            next_session_type
+                                        )
+
+                                        # Si la séquence viole les délais minimums, passer au cours suivant
+                                        if not is_valid:
+                                            logger.debug(f"Séquence invalide pour {candidate_course.code} ({next_session_type}): {reason}")
+                                            continue
+
+                                    # Calculer le score pédagogique
+                                    # Le score favorise les placements optimaux mais accepte les sous-optimaux
+                                    ped_score = PedagogicalSequencer.calculate_session_priority(
+                                        session_type=next_session_type,
+                                        slot_start_time=slot.start_time,
+                                        day_of_week=day_name,
+                                        course_sessions=existing_sessions,
+                                        proposed_date=current_date
+                                    )
+
+                                    # BONUS DE COUVERTURE : Favoriser les cours qui ont peu d'heures planifiées
+                                    # MAIS ne doit PAS écraser les contraintes pédagogiques
+                                    coverage_ratio = course_hours_scheduled.get(candidate_course.id, 0) / candidate_course.total_hours
+                                    coverage_bonus = int((1 - coverage_ratio) * 30)  # 0-30 points
+
+                                    # BONUS DE DISTRIBUTION : Favoriser les cours qui n'ont PAS ENCORE été programmés
+                                    # Ceci assure que tous les cours apparaissent avant de répéter
+                                    sessions_count = len(course_sessions_tracker.get(candidate_course.id, []))
+
+                                    # Calculer le nombre moyen de sessions par cours
+                                    total_sessions = sum(len(sessions) for sessions in course_sessions_tracker.values())
+                                    avg_sessions = total_sessions / len(courses) if len(courses) > 0 else 0
+
+                                    # Bonus si ce cours est en retard par rapport à la moyenne
+                                    distribution_bonus = 0
+                                    if sessions_count < avg_sessions:
+                                        # Cours sous la moyenne : GROS bonus (priorité absolue)
+                                        distribution_bonus = int((avg_sessions - sessions_count) * 50)
+
+                                    # Score final = score pédagogique + bonus de couverture + bonus de distribution
+                                    total_score = ped_score + coverage_bonus + distribution_bonus
+
+                                    # Log pour debug
+                                    logger.debug(
+                                        f"{candidate_course.code} ({next_session_type}): "
+                                        f"ped={ped_score}, cov={coverage_bonus}, dist={distribution_bonus}, "
+                                        f"total={total_score} (sessions={sessions_count}, avg={avg_sessions:.1f})"
+                                    )
+
+                                    # Garder le meilleur score
+                                    if total_score > best_score:
+                                        best_score = total_score
+                                        best_course = candidate_course
+                                        best_session_type = next_session_type
+
+                                # Si aucun cours disponible, passer au créneau suivant
+                                if not best_course:
                                     continue
+
+                                course = best_course
+                                session_type = best_session_type
+
+                                # Calculer la durée de la session
+                                session_duration_hours = (
+                                    (slot.end_time.hour * 60 + slot.end_time.minute) -
+                                    (slot.start_time.hour * 60 + slot.start_time.minute)
+                                ) / 60.0
 
                                 # Trouver une salle disponible pour ce créneau ET cette date spécifique
                                 from rooms.models import Room
@@ -638,7 +748,9 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
                                 if available_room and course.teacher and teacher_available:
                                     logger.info(f"Salle allouée: {available_room.code} (capacité: {available_room.capacity}) pour {course.code} - {student_class.name}")
-                                    # Créer la session template
+                                    logger.info(f"Session {session_type} programmée pour {course.code} le {current_date} ({day_name}) à {slot.start_time} (score: {best_score})")
+
+                                    # Créer la session template avec le type pédagogique approprié
                                     session = ScheduleSession.objects.create(
                                         schedule=schedule,
                                         course=course,
@@ -648,7 +760,7 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                         specific_date=current_date,
                                         specific_start_time=slot.start_time,
                                         specific_end_time=slot.end_time,
-                                        session_type='CM'
+                                        session_type=session_type
                                     )
 
                                     # Créer l'occurrence correspondante (nouveau système)
@@ -674,9 +786,20 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                     ) / 60.0
                                     course_hours_scheduled[course.id] = course_hours_scheduled.get(course.id, 0) + session_duration_hours
 
-                                    logger.info(f"Cours {course.code}: {course_hours_scheduled[course.id]}h planifiées / {course.total_hours}h totales")
+                                    # Ajouter cette session au tracker pour le séquencement pédagogique
+                                    course_sessions_tracker[course.id].append({
+                                        'date': current_date,
+                                        'type': session_type,
+                                        'start_time': slot.start_time,
+                                        'day_of_week': day_name
+                                    })
 
-                                course_index += 1
+                                    # Marquer ce cours comme planifié aujourd'hui
+                                    if course.id not in sessions_today:
+                                        sessions_today[course.id] = []
+                                    sessions_today[course.id].append(session_type)
+
+                                    logger.info(f"Cours {course.code}: {course_hours_scheduled[course.id]}h planifiées / {course.total_hours}h totales")
 
                         # Passer au jour suivant
                         current_date += timedelta(days=1)

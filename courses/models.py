@@ -92,7 +92,7 @@ class Course(models.Model):
     requires_specific_room_type = models.CharField(max_length=50, blank=True, help_text="Type de salle requis (amphithéâtre, laboratoire, etc.)")
 
     semester = models.CharField(max_length=10, default='S1')  # S1, S2
-    academic_year = models.CharField(max_length=10, default='2024-2025')
+    academic_year = models.CharField(max_length=10, default='2025-2026')
     min_sessions_per_week = models.IntegerField(default=1)
     max_sessions_per_week = models.IntegerField(default=3)
     preferred_times = models.JSONField(default=list)  # Créneaux préférés
@@ -242,7 +242,7 @@ class Curriculum(models.Model):
     courses = models.ManyToManyField(Course, through='CurriculumCourse')
     total_credits = models.IntegerField(default=60)
     description = models.TextField(blank=True)
-    academic_year = models.CharField(max_length=10, default='2024-2025')
+    academic_year = models.CharField(max_length=10, default='2025-2026')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -293,7 +293,7 @@ class CourseEnrollment(models.Model):
     """Modèle pour les inscriptions aux cours"""
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='enrollments')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
-    academic_year = models.CharField(max_length=10, default='2024-2025')
+    academic_year = models.CharField(max_length=10, default='2025-2026')
     semester = models.CharField(max_length=10, default='S1')
     enrollment_date = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
