@@ -59,8 +59,8 @@ class TeacherViewSet(ImportExportMixin, viewsets.ModelViewSet):
     queryset = Teacher.objects.all()
     permission_classes = [IsAuthenticated]
 
-    export_fields = ['id', 'employee_id', 'department', 'specialization', 'max_hours_per_week', 'is_active']
-    import_fields = ['employee_id', 'department', 'specialization', 'max_hours_per_week']
+    export_fields = ['id', 'employee_id', 'department', 'specializations', 'max_hours_per_week', 'is_active']
+    import_fields = ['employee_id', 'department', 'specializations', 'max_hours_per_week']
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -640,8 +640,8 @@ class CurriculumViewSet(ImportExportMixin, viewsets.ModelViewSet):
     queryset = Curriculum.objects.all()
     permission_classes = []  # Temporairement désactivé pour les tests
 
-    export_fields = ['id', 'name', 'code', 'department', 'level', 'duration_semesters', 'is_active']
-    import_fields = ['name', 'code', 'department', 'level', 'duration_semesters']
+    export_fields = ['id', 'name', 'code', 'department', 'level', 'total_credits', 'academic_year', 'is_active']
+    import_fields = ['name', 'code', 'department', 'level', 'total_credits', 'academic_year']
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -661,8 +661,8 @@ class StudentViewSet(ImportExportMixin, viewsets.ModelViewSet):
     queryset = Student.objects.all()
     permission_classes = [IsAuthenticated]
 
-    export_fields = ['id', 'student_id', 'curriculum', 'current_semester', 'enrollment_year', 'is_active']
-    import_fields = ['student_id', 'curriculum', 'current_semester', 'enrollment_year']
+    export_fields = ['id', 'student_id', 'curriculum', 'current_level', 'entry_year', 'is_active']
+    import_fields = ['student_id', 'curriculum', 'current_level', 'entry_year']
     
     def get_serializer_class(self):
         if self.action == 'create':

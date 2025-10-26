@@ -5,6 +5,25 @@ Service de génération avancée d'emploi du temps avec:
 - Préférences de salle pour les classes
 - Détection de blocage et suggestions de solutions
 - Validation complète avant génération
+- Regroupement automatique des cours liés (Math-CM, Math-TD, Math-TP)
+- Respect de l'ordre pédagogique (CM → TD → TP → TPE)
+
+Ordre de programmation:
+1. Priorité manuelle du cours (1 = haute, 5 = basse)
+2. Type de cours selon ordre pédagogique:
+   - CM (Cours Magistral) programmé en premier
+   - TD (Travaux Dirigés) après les CM
+   - TP (Travaux Pratiques) après les TD
+   - TPE (Travaux Personnels Encadrés) en dernier
+3. Nom de base du cours (regroupe MATH-CM, MATH-TD, MATH-TP ensemble)
+
+Exemple: Pour Math (priorité 2) et Info (priorité 1):
+  1. INFO101-CM
+  2. INFO101-TD
+  3. INFO101-TP
+  4. MATH-CM
+  5. MATH-TD
+  6. MATH-TP
 """
 
 from datetime import datetime, timedelta, time
@@ -182,8 +201,31 @@ class AdvancedScheduleGenerator:
             is_cancelled=False
         ).select_related('course', 'teacher', 'room', 'time_slot')
 
-        # Trier par priorité effective du cours (1 = haute, 5 = basse)
-        return sorted(sessions, key=lambda s: s.course.effective_priority)
+        # Ordre pédagogique des types de cours
+        course_type_order = {'CM': 1, 'TD': 2, 'TP': 3, 'TPE': 4, 'CONF': 5, 'EXAM': 6}
+
+        # Trier par:
+        # 1. Priorité effective du cours (1 = haute, 5 = basse)
+        # 2. Ordre pédagogique (CM avant TD avant TP)
+        # 3. Nom de base du cours (pour regrouper Math-CM, Math-TD, Math-TP)
+        return sorted(sessions, key=lambda s: (
+            s.course.effective_priority,
+            course_type_order.get(s.course.course_type, 99),
+            self._extract_base_course_name(s.course.code)
+        ))
+
+    def _extract_base_course_name(self, course_code: str) -> str:
+        """
+        Extrait le nom de base d'un cours pour regrouper les variantes.
+        Exemples:
+        - MATH-CM, MATH-TD, MATH-TP → MATH
+        - INFO101-CM, INFO101-TD → INFO101
+        """
+        # Supprimer les suffixes -CM, -TD, -TP, -TPE
+        for suffix in ['-CM', '-TD', '-TP', '-TPE', '-CONF', '-EXAM']:
+            if course_code.endswith(suffix):
+                return course_code[:-len(suffix)]
+        return course_code
 
     def _pre_validate(
         self,

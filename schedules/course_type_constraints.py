@@ -12,27 +12,37 @@ CM (Cours Magistral):
 - Grande salle nécessaire (amphithéâtre)
 - Peut être programmé en début de semaine
 
-TD (Travaux Dirigés):
-- DOIT suivre le CM correspondant (dans la même semaine ou la semaine suivante)
-- Privilégier l'après-midi
+TD (Travaux Dirigés) - 30% du volume:
+- ✅ Programmer 2-3 jours APRÈS le CM correspondant
+- ✅ TD peut être le même jour que le CM si programmé l'après-midi
+- ❌ ÉVITER plus de 2h consécutives
+- Privilégier l'après-midi (13h-18h)
 - Durée: généralement 1h30 à 2h
 - Salle moyenne nécessaire
 - Maximum 2-3 TD par jour pour un même groupe
 
-TP (Travaux Pratiques):
-- DOIT suivre le TD correspondant (obligatoire)
-- Nécessite une préparation donc pas le lundi matin
-- Durée: minimum 2h, souvent 3h
+TP (Travaux Pratiques) - 20% du volume:
+- ✅ Programmer APRÈS CM et TD (ordre obligatoire)
+- ✅ Créneaux longs (2-4h pour manipulations)
+- ✅ Jeudi/Vendredi idéal pour les TP
+- ✅ Bloquer plusieurs créneaux la même semaine pour rotations de groupes
+- ✅ Système de rotation équitable entre groupes
+- ❌ ÉVITER lundi matin (besoin de préparation)
 - Nécessite un laboratoire/salle informatique
 - Maximum 1 TP par jour par groupe (fatiguant)
-- Éviter vendredi après-midi si possible
 
-TPE (Travail Personnel Encadré):
-- Peut être programmé à tout moment
+TPE (Travail Personnel Encadré) - 10% du volume:
+- ✅ Programmer en milieu/fin de semestre (après acquisitions de base)
+- ✅ Créneaux de 1h30 à 2h
+- ✅ Vendredi après-midi acceptable (travail autonome)
+- ❌ ÉVITER séances trop espacées (perte de fil conducteur)
 - Privilégier fin de semaine (jeudi/vendredi)
-- Durée: généralement 1h à 2h
 - Petits groupes
 - Peut être en fin de journée
+
+SEMESTRES:
+- Semestre 1 (S1): Fin septembre → Fin février
+- Semestre 2 (S2): Début mars → Août
 """
 
 from datetime import datetime, time
@@ -86,43 +96,43 @@ class CourseTypeConstraintChecker:
                     (time(13, 0), time(18, 0)),  # Après-midi privilégié
                 ],
                 forbidden_time_ranges=[],
-                preferred_days=[],
+                preferred_days=[],  # Tous les jours OK si 2-3 jours après CM
                 forbidden_days=[],
                 min_duration_hours=1.5,
-                max_duration_hours=2.0,
+                max_duration_hours=2.0,  # Max 2h consécutives
                 requires_predecessor=True,
                 predecessor_type='CM',
-                max_per_day=3,
+                max_per_day=3,  # Maximum 2-3 TD par jour
                 penalty_weight=0.8
             ),
             'TP': CourseTypeRule(
                 course_type='TP',
                 preferred_time_ranges=[
-                    (time(13, 0), time(17, 0)),  # Après-midi préféré
+                    (time(8, 0), time(17, 0)),  # Toute la journée sauf soir
                 ],
                 forbidden_time_ranges=[
-                    (time(17, 0), time(19, 0)),  # Éviter fin de journée
+                    (time(8, 0), time(10, 0)),  # Éviter lundi matin (géré séparément)
                 ],
-                preferred_days=[1, 2, 3, 4],  # Mardi à Vendredi préférés
-                forbidden_days=[],  # Lundi autorisé mais pas optimal (préférence gérée par preferred_days)
-                min_duration_hours=2.0,
-                max_duration_hours=4.0,
+                preferred_days=[3, 4],  # Jeudi/Vendredi idéal pour TP
+                forbidden_days=[],
+                min_duration_hours=2.0,  # Créneaux longs
+                max_duration_hours=4.0,  # Jusqu'à 4h pour manipulations
                 requires_predecessor=True,
-                predecessor_type='TD',
-                max_per_day=1,  # Maximum 1 TP par jour
+                predecessor_type='TD',  # APRÈS CM et TD
+                max_per_day=1,  # Maximum 1 TP par jour (fatiguant)
                 penalty_weight=1.0  # Très important
             ),
             'TPE': CourseTypeRule(
                 course_type='TPE',
                 preferred_time_ranges=[
-                    (time(14, 0), time(18, 0)),
+                    (time(14, 0), time(18, 0)),  # Vendredi après-midi OK
                 ],
                 forbidden_time_ranges=[],
-                preferred_days=[3, 4],  # Jeudi, Vendredi
+                preferred_days=[3, 4],  # Jeudi, Vendredi (travail autonome)
                 forbidden_days=[],
-                min_duration_hours=1.0,
+                min_duration_hours=1.5,  # Créneaux 1h30 à 2h
                 max_duration_hours=2.0,
-                requires_predecessor=False,
+                requires_predecessor=False,  # Mais programmé en milieu/fin semestre
                 predecessor_type=None,
                 max_per_day=2,
                 penalty_weight=0.3
@@ -229,15 +239,18 @@ class CourseTypeConstraintChecker:
         self,
         course_type: str,
         course_code: str,
-        scheduled_sessions: Dict[str, List[datetime]]
+        scheduled_sessions: Dict[str, List[datetime]],
+        proposed_date: Optional[datetime] = None
     ) -> Tuple[bool, float]:
         """
         Vérifie si le cours prérequis a été programmé avant
+        Pour les TD: vérifie aussi le délai de 2-3 jours après le CM
 
         Args:
             course_type: Type du cours à planifier
             course_code: Code du cours (ex: "ANAT101")
             scheduled_sessions: Dictionnaire {course_code: [dates_programmées]}
+            proposed_date: Date proposée pour ce cours
 
         Returns:
             (is_valid, penalty)
@@ -261,6 +274,27 @@ class CourseTypeConstraintChecker:
         # Le prérequis doit avoir au moins une session programmée
         if not scheduled_sessions[predecessor_code]:
             return False, rule.penalty_weight
+
+        # Règle spéciale pour TD: 2-3 jours après le CM
+        if course_type == 'TD' and proposed_date and scheduled_sessions[predecessor_code]:
+            from datetime import timedelta
+
+            # Prendre la date du dernier CM programmé
+            last_cm_date = max(scheduled_sessions[predecessor_code])
+            days_diff = (proposed_date.date() - last_cm_date.date()).days
+
+            # Optimal: 2-3 jours après
+            if 2 <= days_diff <= 3:
+                return True, 0.0  # Parfait
+            elif 1 <= days_diff <= 5:
+                return True, 0.2  # Acceptable avec petite pénalité
+            elif days_diff == 0:
+                # Même jour acceptable si TD l'après-midi et CM le matin
+                if proposed_date.hour >= 13:  # TD l'après-midi
+                    return True, 0.1
+                return True, 0.5  # Pénalité plus forte
+            else:
+                return True, 0.6  # Trop tôt ou trop tard
 
         return True, 0.0
 
@@ -350,3 +384,94 @@ class CourseTypeConstraintChecker:
             'predecessor_type': rule.predecessor_type,
             'max_per_day': rule.max_per_day
         }
+
+
+# Fonctions utilitaires pour les semestres
+
+def get_semester_from_date(date: datetime) -> str:
+    """
+    Détermine le semestre en fonction de la date
+
+    Semestre 1 (S1): Fin septembre → Fin février (mois 9, 10, 11, 12, 1, 2)
+    Semestre 2 (S2): Début mars → Août (mois 3, 4, 5, 6, 7, 8)
+
+    Args:
+        date: Date à vérifier
+
+    Returns:
+        'S1' ou 'S2'
+    """
+    month = date.month
+
+    # S1: Septembre (9) à Février (2)
+    if month >= 9 or month <= 2:
+        return 'S1'
+    # S2: Mars (3) à Août (8)
+    else:
+        return 'S2'
+
+
+def is_date_in_semester(date: datetime, semester: str) -> bool:
+    """
+    Vérifie si une date appartient au semestre spécifié
+
+    Args:
+        date: Date à vérifier
+        semester: 'S1' ou 'S2'
+
+    Returns:
+        True si la date est dans le semestre
+    """
+    return get_semester_from_date(date) == semester
+
+
+def get_semester_weeks(date: datetime, semester: str) -> int:
+    """
+    Calcule la semaine dans le semestre (1-16 environ)
+    Utile pour programmer les TPE en milieu/fin de semestre
+
+    Args:
+        date: Date à vérifier
+        semester: 'S1' ou 'S2'
+
+    Returns:
+        Numéro de semaine (1-16)
+    """
+    from datetime import timedelta
+
+    # Définir les dates de début approximatives
+    year = date.year
+
+    if semester == 'S1':
+        # S1 commence fin septembre
+        if date.month >= 9:
+            start_date = datetime(year, 9, 20)
+        else:
+            start_date = datetime(year - 1, 9, 20)
+    else:  # S2
+        # S2 commence début mars
+        start_date = datetime(year, 3, 1)
+
+    # Calculer la différence en semaines
+    week_num = ((date - start_date).days // 7) + 1
+
+    # Limiter entre 1 et 16
+    return max(1, min(week_num, 16))
+
+
+def should_schedule_tpe(date: datetime, semester: str) -> bool:
+    """
+    Détermine si c'est le bon moment pour programmer un TPE
+    TPE doit être programmé en milieu/fin de semestre (semaine 6+)
+
+    Args:
+        date: Date proposée
+        semester: Semestre du cours
+
+    Returns:
+        True si c'est le bon moment pour un TPE
+    """
+    week = get_semester_weeks(date, semester)
+
+    # TPE à partir de la semaine 6 (milieu de semestre)
+    return week >= 6

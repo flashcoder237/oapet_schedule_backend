@@ -275,6 +275,17 @@ class ScheduleSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        """Synchronise automatiquement session_type avec course.course_type"""
+        if self.course_id and not kwargs.get('skip_sync', False):
+            # Synchronise toujours le session_type avec le course_type du cours
+            if self.course:
+                self.session_type = self.course.course_type
+
+        # Retire skip_sync de kwargs avant de sauvegarder
+        kwargs.pop('skip_sync', None)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.course.code} - {self.time_slot} - {self.room.code}"
 

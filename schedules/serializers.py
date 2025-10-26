@@ -471,3 +471,21 @@ class ScheduleGenerationResponseSerializer(serializers.Serializer):
     conflicts = serializers.ListField(child=serializers.DictField(), required=False)
     preview_data = serializers.DictField(required=False)
     generation_time = serializers.FloatField()
+
+
+class PedagogicalConstraintSerializer(serializers.Serializer):
+    """Serializer pour la configuration des contraintes pédagogiques"""
+    course_type = serializers.CharField()
+    preferred_time_start = serializers.TimeField()
+    preferred_time_end = serializers.TimeField()
+    preferred_days = serializers.ListField(
+        child=serializers.IntegerField(min_value=0, max_value=6)
+    )
+    min_duration_hours = serializers.FloatField()
+    max_duration_hours = serializers.FloatField()
+    max_per_day = serializers.IntegerField()
+    requires_predecessor = serializers.BooleanField()
+    predecessor_type = serializers.CharField(allow_null=True, required=False, allow_blank=True)
+    delay_after_predecessor_min = serializers.IntegerField(default=0)
+    delay_after_predecessor_max = serializers.IntegerField(default=0)
+    min_semester_week = serializers.IntegerField(default=1)

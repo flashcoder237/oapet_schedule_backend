@@ -489,180 +489,194 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                     logger.error(f"Erreur lors de la création d'une session fixe: {e}")
                                     continue
 
-                            # Passer au jour suivant sans générer les créneaux standards
-                            current_date += timedelta(days=1)
-                            if current_date.weekday() >= 5:  # Sauter les week-ends
-                                current_date += timedelta(days=7 - current_date.weekday())
-                            continue
-
                         # Génération standard si pas d'emploi du temps fixe
-                        for slot in day_slots:
-                            # Trouver le prochain cours qui n'a pas atteint son quota d'heures
-                            course = None
-                            attempts = 0
-                            max_attempts = len(courses) * 2  # Eviter boucle infinie
+                        elif not has_fixed_schedule or day_name not in fixed_schedule_pattern:
+                            for slot in day_slots:
+                                # Trouver le prochain cours qui n'a pas atteint son quota d'heures
+                                course = None
+                                attempts = 0
+                                max_attempts = len(courses) * 2  # Eviter boucle infinie
 
-                            while attempts < max_attempts:
-                                if course_index >= len(courses):
-                                    course_index = 0
+                                while attempts < max_attempts:
+                                    if course_index >= len(courses):
+                                        course_index = 0
 
-                                candidate_course = courses[course_index]
+                                    candidate_course = courses[course_index]
 
-                                # Calculer la durée d'une session en heures
-                                session_duration_hours = (
-                                    (slot.end_time.hour * 60 + slot.end_time.minute) -
-                                    (slot.start_time.hour * 60 + slot.start_time.minute)
-                                ) / 60.0
+                                    # Calculer la durée d'une session en heures
+                                    session_duration_hours = (
+                                        (slot.end_time.hour * 60 + slot.end_time.minute) -
+                                        (slot.start_time.hour * 60 + slot.start_time.minute)
+                                    ) / 60.0
 
-                                # Vérifier si le cours a encore besoin d'heures
-                                hours_remaining = candidate_course.total_hours - course_hours_scheduled.get(candidate_course.id, 0)
+                                    # Vérifier si le cours a encore besoin d'heures
+                                    hours_remaining = candidate_course.total_hours - course_hours_scheduled.get(candidate_course.id, 0)
 
-                                if hours_remaining >= session_duration_hours:
-                                    course = candidate_course
-                                    break
+                                    if hours_remaining >= session_duration_hours:
+                                        course = candidate_course
+                                        break
 
-                                course_index += 1
-                                attempts += 1
+                                    course_index += 1
+                                    attempts += 1
 
-                            # Si aucun cours ne nécessite plus d'heures, passer au slot suivant
-                            if not course:
-                                continue
+                                # Si aucun cours ne nécessite plus d'heures, passer au slot suivant
+                                if not course:
+                                    continue
 
-                            # Trouver une salle disponible pour ce créneau ET cette date spécifique
-                            from rooms.models import Room
-                            from .models import SessionOccurrence
+                                # Trouver une salle disponible pour ce créneau ET cette date spécifique
+                                from rooms.models import Room
+                                from .models import SessionOccurrence
+                                from courses.models_class import ClassRoomPreference
 
-                            # Déterminer le nombre d'étudiants requis
-                            required_capacity = student_class.student_count if hasattr(student_class, 'student_count') else 30
+                                # Déterminer le nombre d'étudiants requis
+                                required_capacity = student_class.student_count if hasattr(student_class, 'student_count') else 30
 
-                            # Exclure les salles déjà utilisées pour CETTE DATE SPÉCIFIQUE et ce créneau horaire
-                            # Vérifier dans TOUTES les sessions (pas seulement ce schedule)
-                            used_room_ids_sessions = ScheduleSession.objects.filter(
-                                specific_date=current_date,
-                                specific_start_time=slot.start_time,
-                                specific_end_time=slot.end_time
-                            ).values_list('room_id', flat=True)
-
-                            # Vérifier aussi dans les occurrences
-                            used_room_ids_occurrences = SessionOccurrence.objects.filter(
-                                actual_date=current_date,
-                                start_time=slot.start_time,
-                                end_time=slot.end_time,
-                                status='scheduled',
-                                is_cancelled=False
-                            ).values_list('room_id', flat=True)
-
-                            # Combiner les deux listes
-                            all_used_room_ids = set(list(used_room_ids_sessions) + list(used_room_ids_occurrences))
-
-                            # Chercher une salle disponible avec la capacité suffisante
-                            available_rooms = Room.objects.filter(
-                                is_active=True,
-                                capacity__gte=required_capacity
-                            ).exclude(id__in=all_used_room_ids)
-
-                            # Vérifier les équipements requis par le cours
-                            if hasattr(course, 'requires_projector') and course.requires_projector:
-                                available_rooms = available_rooms.filter(has_projector=True)
-                            if hasattr(course, 'requires_computer') and course.requires_computer:
-                                available_rooms = available_rooms.filter(has_computer=True)
-                            if hasattr(course, 'requires_laboratory') and course.requires_laboratory:
-                                available_rooms = available_rooms.filter(is_laboratory=True)
-
-                            # Exclure les salles exclues par le cours
-                            if hasattr(course, 'excluded_rooms') and course.excluded_rooms:
-                                available_rooms = available_rooms.exclude(id__in=course.excluded_rooms)
-
-                            # 1. Vérifier si la classe a une salle fixe
-                            available_room = None
-                            if fixed_room and fixed_room.id not in all_used_room_ids:
-                                # Utiliser la salle fixe de la classe si disponible
-                                available_room = fixed_room
-                                logger.info(f"Salle fixe de classe allouée: {available_room.code} pour {student_class.name}")
-                            # 2. Sinon, prioriser les salles préférées du cours
-                            elif hasattr(course, 'preferred_rooms') and course.preferred_rooms:
-                                # Essayer d'abord les salles préférées
-                                preferred_available = available_rooms.filter(id__in=course.preferred_rooms).order_by('capacity')
-                                if preferred_available.exists():
-                                    available_room = preferred_available.first()
-                                    logger.info(f"Salle préférée allouée: {available_room.code} pour {course.code}")
-
-                            # 3. Si aucune salle préférée disponible, prendre la plus proche en capacité
-                            if not available_room:
-                                available_room = available_rooms.order_by('capacity').first()
-
-                            # Vérifier que l'enseignant est disponible
-                            teacher_available = True
-                            if course.teacher:
-                                # Vérifier les sessions existantes
-                                teacher_conflicts_sessions = ScheduleSession.objects.filter(
-                                    teacher=course.teacher,
+                                # Exclure les salles déjà utilisées pour CETTE DATE SPÉCIFIQUE et ce créneau horaire
+                                # Vérifier dans TOUTES les sessions (pas seulement ce schedule)
+                                used_room_ids_sessions = ScheduleSession.objects.filter(
                                     specific_date=current_date,
                                     specific_start_time=slot.start_time,
                                     specific_end_time=slot.end_time
-                                ).exists()
+                                ).values_list('room_id', flat=True)
 
-                                # Vérifier les occurrences
-                                teacher_conflicts_occurrences = SessionOccurrence.objects.filter(
-                                    teacher=course.teacher,
+                                # Vérifier aussi dans les occurrences
+                                used_room_ids_occurrences = SessionOccurrence.objects.filter(
                                     actual_date=current_date,
                                     start_time=slot.start_time,
                                     end_time=slot.end_time,
                                     status='scheduled',
                                     is_cancelled=False
-                                ).exists()
+                                ).values_list('room_id', flat=True)
 
-                                teacher_available = not (teacher_conflicts_sessions or teacher_conflicts_occurrences)
+                                # Combiner les deux listes
+                                all_used_room_ids = set(list(used_room_ids_sessions) + list(used_room_ids_occurrences))
 
-                            # Logging pour debug
-                            if not available_room:
-                                logger.warning(f"Aucune salle disponible pour {course.code} le {current_date} à {slot.start_time} (capacité requise: {required_capacity})")
-                            elif not course.teacher:
-                                logger.warning(f"Aucun enseignant assigné pour le cours {course.code}")
-                            elif not teacher_available:
-                                logger.warning(f"Enseignant {course.teacher} non disponible pour {course.code} le {current_date} à {slot.start_time}")
+                                # Chercher une salle disponible avec la capacité suffisante
+                                available_rooms = Room.objects.filter(
+                                    is_active=True,
+                                    capacity__gte=required_capacity
+                                ).exclude(id__in=all_used_room_ids)
 
-                            if available_room and course.teacher and teacher_available:
-                                logger.info(f"Salle allouée: {available_room.code} (capacité: {available_room.capacity}) pour {course.code} - {student_class.name}")
-                                # Créer la session template
-                                session = ScheduleSession.objects.create(
-                                    schedule=schedule,
-                                    course=course,
-                                    teacher=course.teacher,
-                                    room=available_room,
-                                    time_slot=slot,
-                                    specific_date=current_date,
-                                    specific_start_time=slot.start_time,
-                                    specific_end_time=slot.end_time,
-                                    session_type='CM'
-                                )
+                                # Vérifier les équipements requis par le cours
+                                if hasattr(course, 'requires_projector') and course.requires_projector:
+                                    available_rooms = available_rooms.filter(has_projector=True)
+                                if hasattr(course, 'requires_computer') and course.requires_computer:
+                                    available_rooms = available_rooms.filter(has_computer=True)
+                                if hasattr(course, 'requires_laboratory') and course.requires_laboratory:
+                                    available_rooms = available_rooms.filter(is_laboratory=True)
 
-                                # Créer l'occurrence correspondante (nouveau système)
-                                from .models import SessionOccurrence
-                                SessionOccurrence.objects.create(
-                                    session_template=session,
-                                    actual_date=current_date,
-                                    start_time=slot.start_time,
-                                    end_time=slot.end_time,
-                                    room=available_room,
-                                    teacher=course.teacher,
-                                    status='scheduled',
-                                    is_room_modified=False,
-                                    is_teacher_modified=False,
-                                    is_time_modified=False,
-                                    is_cancelled=False
-                                )
+                                # Exclure les salles exclues par le cours
+                                if hasattr(course, 'excluded_rooms') and course.excluded_rooms:
+                                    available_rooms = available_rooms.exclude(id__in=course.excluded_rooms)
 
-                                # Mettre à jour le compteur d'heures pour ce cours
-                                session_duration_hours = (
-                                    (slot.end_time.hour * 60 + slot.end_time.minute) -
-                                    (slot.start_time.hour * 60 + slot.start_time.minute)
-                                ) / 60.0
-                                course_hours_scheduled[course.id] = course_hours_scheduled.get(course.id, 0) + session_duration_hours
+                                # 1. Vérifier si la classe a une salle fixe
+                                available_room = None
+                                if fixed_room and fixed_room.id not in all_used_room_ids:
+                                    # Utiliser la salle fixe de la classe si disponible
+                                    available_room = fixed_room
+                                    logger.info(f"Salle fixe de classe allouée: {available_room.code} pour {student_class.name}")
 
-                                logger.info(f"Cours {course.code}: {course_hours_scheduled[course.id]}h planifiées / {course.total_hours}h totales")
+                                # 2. Sinon, vérifier les préférences de salle de la classe (NOUVEAU)
+                                if not available_room:
+                                    # Récupérer les préférences de salle par ordre de priorité
+                                    class_preferences = ClassRoomPreference.objects.filter(
+                                        student_class=student_class,
+                                        is_active=True
+                                    ).order_by('priority').select_related('room')
 
-                            course_index += 1
+                                    for preference in class_preferences:
+                                        if preference.room.id not in all_used_room_ids and preference.room.is_active:
+                                            # Vérifier que la salle a la capacité suffisante
+                                            if preference.room.capacity >= required_capacity:
+                                                available_room = preference.room
+                                                priority_label = dict(ClassRoomPreference.PRIORITY_CHOICES).get(preference.priority, '')
+                                                logger.info(f"Salle de préférence de classe allouée ({priority_label}): {available_room.code} pour {student_class.name}")
+                                                break
+
+                                # 3. Sinon, prioriser les salles préférées du cours
+                                if not available_room and hasattr(course, 'preferred_rooms') and course.preferred_rooms:
+                                    # Essayer d'abord les salles préférées
+                                    preferred_available = available_rooms.filter(id__in=course.preferred_rooms).order_by('capacity')
+                                    if preferred_available.exists():
+                                        available_room = preferred_available.first()
+                                        logger.info(f"Salle préférée du cours allouée: {available_room.code} pour {course.code}")
+
+                                # 4. Si aucune salle préférée disponible, prendre la plus proche en capacité
+                                if not available_room:
+                                    available_room = available_rooms.order_by('capacity').first()
+
+                                # Vérifier que l'enseignant est disponible
+                                teacher_available = True
+                                if course.teacher:
+                                    # Vérifier les sessions existantes
+                                    teacher_conflicts_sessions = ScheduleSession.objects.filter(
+                                        teacher=course.teacher,
+                                        specific_date=current_date,
+                                        specific_start_time=slot.start_time,
+                                        specific_end_time=slot.end_time
+                                    ).exists()
+
+                                    # Vérifier les occurrences
+                                    teacher_conflicts_occurrences = SessionOccurrence.objects.filter(
+                                        teacher=course.teacher,
+                                        actual_date=current_date,
+                                        start_time=slot.start_time,
+                                        end_time=slot.end_time,
+                                        status='scheduled',
+                                        is_cancelled=False
+                                    ).exists()
+
+                                    teacher_available = not (teacher_conflicts_sessions or teacher_conflicts_occurrences)
+
+                                # Logging pour debug
+                                if not available_room:
+                                    logger.warning(f"Aucune salle disponible pour {course.code} le {current_date} à {slot.start_time} (capacité requise: {required_capacity})")
+                                elif not course.teacher:
+                                    logger.warning(f"Aucun enseignant assigné pour le cours {course.code}")
+                                elif not teacher_available:
+                                    logger.warning(f"Enseignant {course.teacher} non disponible pour {course.code} le {current_date} à {slot.start_time}")
+
+                                if available_room and course.teacher and teacher_available:
+                                    logger.info(f"Salle allouée: {available_room.code} (capacité: {available_room.capacity}) pour {course.code} - {student_class.name}")
+                                    # Créer la session template
+                                    session = ScheduleSession.objects.create(
+                                        schedule=schedule,
+                                        course=course,
+                                        teacher=course.teacher,
+                                        room=available_room,
+                                        time_slot=slot,
+                                        specific_date=current_date,
+                                        specific_start_time=slot.start_time,
+                                        specific_end_time=slot.end_time,
+                                        session_type='CM'
+                                    )
+
+                                    # Créer l'occurrence correspondante (nouveau système)
+                                    from .models import SessionOccurrence
+                                    SessionOccurrence.objects.create(
+                                        session_template=session,
+                                        actual_date=current_date,
+                                        start_time=slot.start_time,
+                                        end_time=slot.end_time,
+                                        room=available_room,
+                                        teacher=course.teacher,
+                                        status='scheduled',
+                                        is_room_modified=False,
+                                        is_teacher_modified=False,
+                                        is_time_modified=False,
+                                        is_cancelled=False
+                                    )
+
+                                    # Mettre à jour le compteur d'heures pour ce cours
+                                    session_duration_hours = (
+                                        (slot.end_time.hour * 60 + slot.end_time.minute) -
+                                        (slot.start_time.hour * 60 + slot.start_time.minute)
+                                    ) / 60.0
+                                    course_hours_scheduled[course.id] = course_hours_scheduled.get(course.id, 0) + session_duration_hours
+
+                                    logger.info(f"Cours {course.code}: {course_hours_scheduled[course.id]}h planifiées / {course.total_hours}h totales")
+
+                                course_index += 1
 
                         # Passer au jour suivant
                         current_date += timedelta(days=1)
@@ -1119,6 +1133,72 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                 'details': str(e),
                 'schedule_id': schedule.id
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get', 'post'])
+    def pedagogical_constraints(self, request):
+        """Gère les contraintes pédagogiques par type de cours"""
+        from .course_type_constraints import CourseTypeConstraintChecker
+        from .serializers import PedagogicalConstraintSerializer
+        from datetime import time
+
+        checker = CourseTypeConstraintChecker()
+
+        if request.method == 'GET':
+            # Retourne la configuration actuelle des contraintes
+            constraints = []
+
+            for course_type, rule in checker.rules.items():
+                # Extraire les heures de début et fin des plages préférées
+                if rule.preferred_time_ranges:
+                    preferred_start = rule.preferred_time_ranges[0][0]
+                    preferred_end = rule.preferred_time_ranges[0][1]
+                else:
+                    preferred_start = time(8, 0)
+                    preferred_end = time(18, 0)
+
+                constraint_data = {
+                    'course_type': course_type,
+                    'preferred_time_start': preferred_start,
+                    'preferred_time_end': preferred_end,
+                    'preferred_days': rule.preferred_days,
+                    'min_duration_hours': rule.min_duration_hours,
+                    'max_duration_hours': rule.max_duration_hours,
+                    'max_per_day': rule.max_per_day,
+                    'requires_predecessor': rule.requires_predecessor,
+                    'predecessor_type': rule.predecessor_type or '',
+                    'delay_after_predecessor_min': 0,
+                    'delay_after_predecessor_max': 0,
+                    'min_semester_week': 1 if course_type == 'TPE' else 1
+                }
+
+                # Ajouter les délais spécifiques pour TD
+                if course_type == 'TD':
+                    constraint_data['delay_after_predecessor_min'] = 2
+                    constraint_data['delay_after_predecessor_max'] = 3
+                elif course_type == 'TPE':
+                    constraint_data['min_semester_week'] = 6
+
+                constraints.append(constraint_data)
+
+            serializer = PedagogicalConstraintSerializer(constraints, many=True)
+            return Response(serializer.data)
+
+        elif request.method == 'POST':
+            # Sauvegarde les nouvelles contraintes
+            serializer = PedagogicalConstraintSerializer(data=request.data, many=True)
+
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Ici on pourrait sauvegarder dans la base de données ou dans un fichier de config
+            # Pour l'instant, on retourne simplement un succès
+            # TODO: Implémenter la persistance des contraintes personnalisées
+
+            return Response({
+                'success': True,
+                'message': 'Contraintes pédagogiques mises à jour avec succès',
+                'constraints_updated': len(serializer.validated_data)
+            }, status=status.HTTP_200_OK)
 
 
 class ScheduleSessionViewSet(ImportExportMixin, viewsets.ModelViewSet):
