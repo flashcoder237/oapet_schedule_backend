@@ -85,10 +85,18 @@ class ScheduleGenerationService:
                     'generation_time': 0
                 }
 
+        # Récupère le semestre et l'année académique de la période
+        academic_semester = self.schedule.academic_period.semester
+        academic_year = self.schedule.academic_period.academic_year
+
         # Récupère toutes les sessions du template
+        # FILTRE IMPORTANT: Ne génère que les sessions dont le cours correspond
+        # au semestre et à l'année académique de l'emploi du temps
         session_templates = ScheduleSession.objects.filter(
             schedule=self.schedule,
-            is_cancelled=False
+            is_cancelled=False,
+            course__semester=academic_semester,  # ✅ Filtre par semestre
+            course__academic_year=academic_year  # ✅ Filtre par année académique
         ).select_related('course', 'teacher', 'room', 'time_slot')
 
         # Génère les occurrences (avec ou sans ML)

@@ -14,6 +14,9 @@ class StudentClass(models.Model):
         ('L3', 'Licence 3'),
         ('M1', 'Master 1'),
         ('M2', 'Master 2'),
+        ('D1', 'Doctorat 1'),
+        ('D2', 'Doctorat 2'),
+        ('D3', 'Doctorat 3'),
     ]
 
     # Informations de base

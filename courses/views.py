@@ -634,6 +634,261 @@ class CourseViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'conflicts': conflicts
         })
 
+    @action(detail=False, methods=['post'])
+    def import_data(self, request):
+        """
+        Import personnalisé pour les cours acceptant:
+        - department_name au lieu de department (ID)
+        - teacher_employee_id ou teacher_email au lieu de teacher (ID)
+        """
+        file_obj = request.FILES.get('file')
+        if not file_obj:
+            return Response(
+                {'error': 'Aucun fichier fourni'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        format_type = request.data.get('format', 'csv').lower()
+
+        try:
+            # Import du fichier selon le format
+            if format_type == 'json':
+                data = self._import_json(file_obj)
+            elif format_type == 'excel':
+                data = self._import_excel(file_obj)
+            else:  # csv
+                data = self._import_csv(file_obj)
+
+            created_count = 0
+            updated_count = 0
+            errors = []
+
+            for item in data:
+                try:
+                    # Mapper les noms de colonnes Excel vers les noms de champs attendus
+                    field_mapping = {
+                        'ID': 'id',
+                        'Code': 'code',
+                        'Nom du Cours': 'name',
+                        'Description': 'description',
+                        'Département': 'department_name',
+                        'ID Employé Enseignant': 'teacher_employee_id',
+                        'Email Enseignant (alternatif)': 'teacher_email',
+                        'Type de Cours': 'course_type',
+                        'Niveau': 'level',
+                        'Crédits': 'credits',
+                        'Heures par Semaine': 'hours_per_week',
+                        'Heures Totales': 'total_hours',
+                        'Max Étudiants': 'max_students',
+                        'Capacité Min Salle': 'min_room_capacity',
+                        'Nécessite Ordinateur': 'requires_computer',
+                        'Nécessite Projecteur': 'requires_projector',
+                        'Nécessite Laboratoire': 'requires_laboratory',
+                        'Semestre': 'semester',
+                        'Année Académique': 'academic_year',
+                        'Actif': 'is_active',
+                        # Pour le mode auto-génération
+                        'Code de Base': 'code',
+                        'Nom du Cours de Base': 'name',
+                        '% CM': 'cm_percentage',
+                        '% TD': 'td_percentage',
+                        '% TP': 'tp_percentage',
+                        '% TPE': 'tpe_percentage',
+                        'Heures par Crédit': 'credit_hours',
+                    }
+
+                    # Créer un nouveau dict avec les bons noms de champs
+                    normalized_item = {}
+                    for key, value in item.items():
+                        normalized_key = field_mapping.get(key, key)
+                        normalized_item[normalized_key] = value
+
+                    item = normalized_item
+
+                    # Détecter automatiquement le mode en fonction des champs présents
+                    auto_generate = 'cm_percentage' in item or 'td_percentage' in item
+
+                    # Extraire les pourcentages et heures par crédit pour le mode auto-génération
+                    cm_percentage = float(item.pop('cm_percentage', 40)) if 'cm_percentage' in item else None
+                    td_percentage = float(item.pop('td_percentage', 30)) if 'td_percentage' in item else None
+                    tp_percentage = float(item.pop('tp_percentage', 20)) if 'tp_percentage' in item else None
+                    tpe_percentage = float(item.pop('tpe_percentage', 10)) if 'tpe_percentage' in item else None
+                    credit_hours = float(item.pop('credit_hours', 15)) if 'credit_hours' in item else 15
+
+                    # Convertir department_name en department (ID)
+                    if 'department_name' in item and item['department_name']:
+                        try:
+                            dept = Department.objects.get(name=item['department_name'])
+                            item['department'] = dept.id
+                        except Department.DoesNotExist:
+                            errors.append({
+                                'data': item,
+                                'error': f"Département '{item['department_name']}' introuvable"
+                            })
+                            continue
+                        # Retirer department_name pour éviter les conflits
+                        del item['department_name']
+
+                    # Convertir teacher_employee_id ou teacher_email en teacher (ID)
+                    teacher_found = False
+                    if 'teacher_employee_id' in item and item['teacher_employee_id']:
+                        try:
+                            teacher = Teacher.objects.get(employee_id=item['teacher_employee_id'])
+                            item['teacher'] = teacher.id
+                            teacher_found = True
+                        except Teacher.DoesNotExist:
+                            errors.append({
+                                'data': item,
+                                'error': f"Enseignant avec employee_id '{item['teacher_employee_id']}' introuvable"
+                            })
+                            continue
+                        del item['teacher_employee_id']
+
+                    if not teacher_found and 'teacher_email' in item and item['teacher_email']:
+                        try:
+                            from users.models import CustomUser
+                            user = CustomUser.objects.get(email=item['teacher_email'])
+                            teacher = Teacher.objects.get(user=user)
+                            item['teacher'] = teacher.id
+                        except (CustomUser.DoesNotExist, Teacher.DoesNotExist):
+                            errors.append({
+                                'data': item,
+                                'error': f"Enseignant avec email '{item['teacher_email']}' introuvable"
+                            })
+                            continue
+                        del item['teacher_email']
+
+                    # Nettoyer le champ course_type (extraire juste le type, ex: "CM (CM, TD...)" -> "CM")
+                    if 'course_type' in item and isinstance(item['course_type'], str):
+                        # Extraire le premier mot avant l'espace ou la parenthèse
+                        course_type_clean = item['course_type'].split()[0].strip()
+                        item['course_type'] = course_type_clean
+
+                    # Nettoyer le champ level (extraire juste le niveau, ex: "L1 (L1, L2...)" -> "L1")
+                    if 'level' in item and isinstance(item['level'], str):
+                        level_clean = item['level'].split()[0].strip()
+                        item['level'] = level_clean
+
+                    # Convertir les booléens de string à boolean
+                    bool_fields = ['requires_computer', 'requires_projector', 'requires_laboratory', 'is_active']
+                    for field in bool_fields:
+                        if field in item:
+                            if isinstance(item[field], str):
+                                item[field] = item[field].lower() in ['true', '1', 'yes', 'oui']
+
+                    # Si mode auto-génération, créer automatiquement CM, TD, TP, TPE
+                    if auto_generate:
+                        # Calculer le total d'heures basé sur les crédits
+                        credits = float(item.get('credits', 6))
+                        total_hours = credits * credit_hours
+
+                        # Définir les types de cours à générer avec leurs pourcentages
+                        course_types = []
+                        if cm_percentage and cm_percentage > 0:
+                            course_types.append(('CM', total_hours * cm_percentage / 100))
+                        if td_percentage and td_percentage > 0:
+                            course_types.append(('TD', total_hours * td_percentage / 100))
+                        if tp_percentage and tp_percentage > 0:
+                            course_types.append(('TP', total_hours * tp_percentage / 100))
+                        if tpe_percentage and tpe_percentage > 0:
+                            course_types.append(('TPE', total_hours * tpe_percentage / 100))
+
+                        # Si aucun pourcentage spécifié, utiliser la répartition par défaut
+                        if not course_types:
+                            course_types = [
+                                ('CM', total_hours * 0.40),
+                                ('TD', total_hours * 0.30),
+                                ('TP', total_hours * 0.20),
+                                ('TPE', total_hours * 0.10)
+                            ]
+
+                        # Créer chaque type de cours
+                        base_code = item.get('code', 'COURS')
+                        base_name = item.get('name', 'Cours')
+
+                        for course_type, hours in course_types:
+                            course_data = item.copy()
+                            course_data['code'] = f"{base_code}_{course_type}"
+                            course_data['name'] = f"{base_name} ({course_type})"
+                            course_data['course_type'] = course_type
+                            course_data['total_hours'] = int(round(hours))  # Arrondir à l'entier
+                            course_data['hours_per_week'] = int(round(hours / 14))  # Arrondir à l'entier
+
+                            # Retirer l'ID pour forcer la création
+                            if 'id' in course_data:
+                                del course_data['id']
+
+                            serializer = self.get_serializer(data=course_data)
+                            if serializer.is_valid():
+                                serializer.save()
+                                created_count += 1
+                            else:
+                                errors.append({
+                                    'data': course_data,
+                                    'errors': serializer.errors
+                                })
+
+                        # Passer à l'élément suivant
+                        continue
+
+                    # Vérifier si on doit créer ou mettre à jour (mode normal, sans auto_generate)
+                    course_id = item.get('id')
+                    if course_id:
+                        try:
+                            course = Course.objects.get(id=course_id)
+                            serializer = self.get_serializer(course, data=item, partial=True)
+                            if serializer.is_valid():
+                                serializer.save()
+                                updated_count += 1
+                            else:
+                                errors.append({
+                                    'data': item,
+                                    'errors': serializer.errors
+                                })
+                        except Course.DoesNotExist:
+                            # Si l'ID n'existe pas, créer un nouveau cours
+                            item.pop('id')  # Retirer l'ID pour la création
+                            serializer = self.get_serializer(data=item)
+                            if serializer.is_valid():
+                                serializer.save()
+                                created_count += 1
+                            else:
+                                errors.append({
+                                    'data': item,
+                                    'errors': serializer.errors
+                                })
+                    else:
+                        # Création d'un nouveau cours
+                        serializer = self.get_serializer(data=item)
+                        if serializer.is_valid():
+                            serializer.save()
+                            created_count += 1
+                        else:
+                            errors.append({
+                                'data': item,
+                                'errors': serializer.errors
+                            })
+
+                except Exception as e:
+                    errors.append({
+                        'data': item,
+                        'error': str(e)
+                    })
+
+            return Response({
+                'message': f'{created_count} cours créé(s), {updated_count} cours mis à jour',
+                'created_count': created_count,
+                'updated_count': updated_count,
+                'error_count': len(errors),
+                'errors': errors[:10]  # Limiter les erreurs retournées
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur lors de l\'import: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class CurriculumViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des curriculums"""
