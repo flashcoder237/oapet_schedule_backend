@@ -127,6 +127,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'phone', 'office', 'max_hours_per_week'
         ]
         read_only_fields = ['id']
+        
+    def validate_employee_id(self, value):
+        """Valider que l'employee_id est unique s'il est fourni"""
+        if value:
+            if UserProfile.objects.filter(employee_id=value).exists():
+                raise serializers.ValidationError(
+                    "Un utilisateur avec cet identifiant employé existe déjà."
+                )
+        return value
 
     def create(self, validated_data):
         from courses.models import Department, Teacher
@@ -152,6 +161,18 @@ class UserCreateSerializer(serializers.ModelSerializer):
             except Department.DoesNotExist:
                 pass
 
+        # Générer un employee_id unique si nécessaire
+        if not employee_id and (role in ['teacher', 'professor']):
+            # Générer un ID unique basé sur le rôle et l'ID utilisateur
+            base_id = f"{role.upper()[:3]}-{user.id}"
+            employee_id = base_id
+            
+            # Vérifier si cet ID existe déjà et ajouter un suffixe si nécessaire
+            counter = 1
+            while UserProfile.objects.filter(employee_id=employee_id).exists():
+                employee_id = f"{base_id}-{counter}"
+                counter += 1
+
         # Créer le profil
         if hasattr(user, 'profile'):
             user.profile.role = role
@@ -168,26 +189,38 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         # Si le rôle est 'teacher' ou 'professor', créer automatiquement le Teacher
         if role in ['teacher', 'professor']:
-            # Récupérer ou créer le département par défaut si nécessaire
-            if not department:
-                department, _ = Department.objects.get_or_create(
-                    code='DEFAULT',
-                    defaults={
-                        'name': 'Département par défaut',
-                        'description': 'Département par défaut pour les enseignants'
-                    }
-                )
+            # Vérifier si un Teacher existe déjà pour cet utilisateur
+            teacher_exists = Teacher.objects.filter(user=user).exists()
+            
+            # Ne créer le Teacher que s'il n'existe pas déjà
+            if not teacher_exists:
+                # Récupérer ou créer le département par défaut si nécessaire
+                if not department:
+                    department, _ = Department.objects.get_or_create(
+                        code='DEFAULT',
+                        defaults={
+                            'name': 'Département par défaut',
+                            'description': 'Département par défaut pour les enseignants'
+                        }
+                    )
 
-            # Créer le Teacher avec tous les champs
-            Teacher.objects.create(
-                user=user,
-                employee_id=employee_id or f'TEACH-{user.id}',
-                department=department,
-                phone=phone,
-                office=office,
-                max_hours_per_week=max_hours_per_week,
-                is_active=user.is_active
-            )
+                # S'assurer que l'employee_id pour Teacher est également unique
+                teacher_employee_id = employee_id or f'TEACH-{user.id}'
+                counter = 1
+                while Teacher.objects.filter(employee_id=teacher_employee_id).exists():
+                    teacher_employee_id = f"{employee_id or f'TEACH-{user.id}'}-{counter}"
+                    counter += 1
+
+                # Créer le Teacher avec tous les champs
+                Teacher.objects.create(
+                    user=user,
+                    employee_id=teacher_employee_id,
+                    department=department,
+                    phone=phone,
+                    office=office,
+                    max_hours_per_week=max_hours_per_week,
+                    is_active=user.is_active
+                )
 
         return user
 
@@ -205,6 +238,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'is_active', 'role', 'department_id', 'employee_id'
         ]
         read_only_fields = ['id']
+        
+    def validate_employee_id(self, value):
+        """Valider que l'employee_id est unique s'il est fourni"""
+        if value:
+            # Vérifier si un autre utilisateur a déjà cet employee_id
+            instance = self.instance
+            if UserProfile.objects.filter(employee_id=value).exclude(user=instance).exists():
+                raise serializers.ValidationError(
+                    "Un autre utilisateur avec cet identifiant employé existe déjà."
+                )
+        return value
 
     def update(self, instance, validated_data):
         """Mise à jour d'un utilisateur et son profil"""
@@ -267,10 +311,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 else:
                     department = department or instance.profile.department
 
+                # S'assurer que l'employee_id pour Teacher est unique
+                teacher_employee_id = instance.profile.employee_id or f'TEACH-{instance.id}'
+                counter = 1
+                while Teacher.objects.filter(employee_id=teacher_employee_id).exists():
+                    teacher_employee_id = f"{instance.profile.employee_id or f'TEACH-{instance.id}'}-{counter}"
+                    counter += 1
+
                 # Créer le Teacher
                 Teacher.objects.create(
                     user=instance,
-                    employee_id=instance.profile.employee_id or f'TEACH-{instance.id}',
+                    employee_id=teacher_employee_id,
                     department=department,
                     is_active=instance.is_active
                 )
