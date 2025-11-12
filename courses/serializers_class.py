@@ -200,3 +200,5 @@ class BulkAssignCoursesSerializer(serializers.Serializer):
     )
     is_mandatory = serializers.BooleanField(default=True)
     semester = serializers.CharField(default='S1')
+    order = serializers.IntegerField(required=False, allow_null=True, help_text="Ordre d'affichage")
+    specific_student_count = serializers.IntegerField(required=False, allow_null=True, help_text="Nombre d'étudiants spécifique pour ce cours")

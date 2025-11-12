@@ -112,6 +112,8 @@ class StudentClassViewSet(ImportExportMixin, viewsets.ModelViewSet):
             course_ids = serializer.validated_data['courses']
             is_mandatory = serializer.validated_data.get('is_mandatory', True)
             semester = serializer.validated_data.get('semester', 'S1')
+            order = serializer.validated_data.get('order')
+            specific_student_count = serializer.validated_data.get('specific_student_count')
 
             created_assignments = []
             errors = []
@@ -130,15 +132,28 @@ class StudentClassViewSet(ImportExportMixin, viewsets.ModelViewSet):
                         if existing:
                             if not existing.is_active:
                                 existing.is_active = True
+                                existing.is_mandatory = is_mandatory
+                                existing.semester = semester
+                                if order is not None:
+                                    existing.order = order
+                                if specific_student_count is not None:
+                                    existing.specific_student_count = specific_student_count
                                 existing.save()
                                 created_assignments.append(existing)
                         else:
-                            class_course = ClassCourse.objects.create(
-                                student_class=student_class,
-                                course=course,
-                                is_mandatory=is_mandatory,
-                                semester=semester
-                            )
+                            # Préparer les données pour la création
+                            create_data = {
+                                'student_class': student_class,
+                                'course': course,
+                                'is_mandatory': is_mandatory,
+                                'semester': semester,
+                            }
+                            if order is not None:
+                                create_data['order'] = order
+                            if specific_student_count is not None:
+                                create_data['specific_student_count'] = specific_student_count
+
+                            class_course = ClassCourse.objects.create(**create_data)
                             created_assignments.append(class_course)
 
                     except Course.DoesNotExist:

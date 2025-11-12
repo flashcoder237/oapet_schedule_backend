@@ -289,10 +289,49 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         """
         Retourne le rapport de couverture des heures de cours
         Permet à l'admin de voir quels cours ne couvrent pas toutes les heures du semestre
+        Paramètre optionnel teacher_id: filtre par enseignant
         """
         try:
             schedule = self.get_object()
+            teacher_id = request.query_params.get('teacher_id')
+
+            # Obtenir le rapport de couverture complet
             coverage_report = schedule.get_course_coverage()
+
+            # Si un teacher_id est spécifié, filtrer les cours de cet enseignant
+            if teacher_id:
+                try:
+                    teacher_id = int(teacher_id)
+                    filtered_courses = []
+
+                    for course_info in coverage_report['courses']:
+                        # Récupérer le cours depuis la DB pour vérifier l'enseignant
+                        from courses.models import Course
+                        try:
+                            course = Course.objects.get(code=course_info['course_code'])
+                            if course.teacher_id == teacher_id:
+                                filtered_courses.append(course_info)
+                        except Course.DoesNotExist:
+                            continue
+
+                    # Recalculer les compteurs
+                    coverage_report['courses'] = filtered_courses
+                    coverage_report['total_courses'] = len(filtered_courses)
+                    coverage_report['fully_covered'] = sum(1 for c in filtered_courses if c['status'] == 'fully_covered')
+                    coverage_report['partially_covered'] = sum(1 for c in filtered_courses if c['status'] == 'partially_covered')
+                    coverage_report['not_covered'] = sum(1 for c in filtered_courses if c['status'] == 'not_covered')
+
+                    # Recalculer le résumé
+                    total_required = sum(c['required_hours'] for c in filtered_courses)
+                    total_scheduled = sum(c['scheduled_hours'] for c in filtered_courses)
+                    coverage_report['summary'] = {
+                        'total_required_hours': total_required,
+                        'total_scheduled_hours': round(total_scheduled, 2),
+                        'overall_coverage': round((total_scheduled / total_required * 100) if total_required > 0 else 0, 2)
+                    }
+                except ValueError:
+                    pass  # Si teacher_id n'est pas un entier valide, ignorer le filtre
+
             return Response(coverage_report, status=status.HTTP_200_OK)
         except Exception as e:
             import traceback
@@ -421,6 +460,43 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                         logger.warning(f"Aucun cours trouvé pour la classe {class_id}")
                         continue
 
+                    # OPTIMISATION SQL: Précharger TOUTES les allocations de salles et enseignants
+                    # Au lieu de 1000+ requêtes dans la boucle, 1 seule requête ici
+                    from collections import defaultdict
+                    from .models import SessionOccurrence
+
+                    logger.info("Préchargement des allocations existantes (optimisation)...")
+                    room_allocations = defaultdict(set)  # {(date, time): {room_ids}}
+                    teacher_allocations = defaultdict(set)  # {(date, time): {teacher_ids}}
+
+                    # Précharger sessions existantes
+                    existing_sessions = ScheduleSession.objects.filter(
+                        specific_date__range=(period_start, period_end)
+                    ).values('specific_date', 'specific_start_time', 'room_id', 'teacher_id')
+
+                    for sess in existing_sessions:
+                        key = (sess['specific_date'], sess['specific_start_time'])
+                        if sess['room_id']:
+                            room_allocations[key].add(sess['room_id'])
+                        if sess['teacher_id']:
+                            teacher_allocations[key].add(sess['teacher_id'])
+
+                    # Précharger occurrences existantes
+                    existing_occurrences = SessionOccurrence.objects.filter(
+                        actual_date__range=(period_start, period_end),
+                        status='scheduled',
+                        is_cancelled=False
+                    ).values('actual_date', 'start_time', 'room_id', 'teacher_id')
+
+                    for occ in existing_occurrences:
+                        key = (occ['actual_date'], occ['start_time'])
+                        if occ['room_id']:
+                            room_allocations[key].add(occ['room_id'])
+                        if occ['teacher_id']:
+                            teacher_allocations[key].add(occ['teacher_id'])
+
+                    logger.info(f"Préchargé {len(room_allocations)} créneaux occupés")
+
                     # Vérifier si la classe a un emploi du temps fixe
                     has_fixed_schedule = getattr(student_class, 'has_fixed_schedule', False)
                     fixed_schedule_pattern = getattr(student_class, 'fixed_schedule_pattern', {}) if has_fixed_schedule else {}
@@ -529,7 +605,26 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                         continue
 
                                     # Récupérer l'historique des sessions pour ce cours
-                                    existing_sessions = course_sessions_tracker.get(candidate_course.id, [])
+                                    # ATTENTION: Il faut regrouper par cours de base, pas par variant
+                                    # Ex: ANATG111_CM, ANATG111_TD, ANATG111_TP sont le même cours
+                                    course_code_base = candidate_course.code.upper()
+
+                                    # Extraire le code de base (avant _CM, _TD, _TP, _TPE)
+                                    for suffix in ['_TPE', '_CM', '_TD', '_TP', '-TPE', '-CM', '-TD', '-TP']:
+                                        if suffix in course_code_base:
+                                            course_code_base = course_code_base.replace(suffix, '')
+                                            break
+
+                                    # Récupérer TOUTES les sessions du cours de base (tous variants confondus)
+                                    existing_sessions = []
+                                    for c in courses:
+                                        c_base = c.code.upper()
+                                        for suffix in ['_TPE', '_CM', '_TD', '_TP', '-TPE', '-CM', '-TD', '-TP']:
+                                            if suffix in c_base:
+                                                c_base = c_base.replace(suffix, '')
+                                                break
+                                        if c_base == course_code_base:
+                                            existing_sessions.extend(course_sessions_tracker.get(c.id, []))
 
                                     # Déterminer le type de session
                                     # PRIORITÉ 1 : Si le code du cours contient le type (ex: COURS-CM, COURS-TD), l'utiliser
@@ -549,31 +644,45 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                         # PRIORITÉ 2 : Sinon, utiliser le séquencement pédagogique automatique
                                         next_session_type = PedagogicalSequencer.get_next_session_type(existing_sessions)
 
-                                    # Valider que la séquence respecte les délais minimums
-                                    # MAIS seulement si le type n'est PAS fixé dans le code du cours
-                                    # (car un cours "-CM" est déjà spécifique et n'a pas de contraintes de séquence)
-                                    is_valid = True
-                                    reason = "Type fixé dans le code du cours"
-
-                                    # Vérifier si le type est déterminé automatiquement (pas dans le code)
-                                    # IMPORTANT : Vérifier TPE avant TP
-                                    has_fixed_type = ('-TPE' in course_code_upper or '_TPE' in course_code_upper or
-                                                     '-CM' in course_code_upper or '_CM' in course_code_upper or
-                                                     '-TD' in course_code_upper or '_TD' in course_code_upper or
-                                                     '-TP' in course_code_upper or '_TP' in course_code_upper)
-
-                                    if not has_fixed_type:
-                                        # Seulement pour les cours sans type fixe, valider la séquence
-                                        is_valid, reason = PedagogicalSequencer.is_valid_sequence(
-                                            existing_sessions,
-                                            current_date,
-                                            next_session_type
-                                        )
-
-                                        # Si la séquence viole les délais minimums, passer au cours suivant
-                                        if not is_valid:
-                                            logger.debug(f"Séquence invalide pour {candidate_course.code} ({next_session_type}): {reason}")
+                                    # NOUVELLE RÈGLE STRICTE: Forcer la hiérarchie CM → TD → TP → TPE
+                                    # Même si le code dit "_TD", on ne peut pas le placer avant un CM
+                                    if next_session_type != 'CM':
+                                        # Vérifier qu'il y a au moins un CM avant
+                                        has_cm = any(s.get('type') == 'CM' for s in existing_sessions)
+                                        if not has_cm:
+                                            # Pas de CM encore : FORCER CM d'abord
+                                            logger.debug(f"Cours {candidate_course.code} a besoin d'un CM d'abord (type={next_session_type})")
                                             continue
+
+                                    if next_session_type == 'TP':
+                                        # TP nécessite au moins un TD avant
+                                        has_td = any(s.get('type') == 'TD' for s in existing_sessions)
+                                        if not has_td:
+                                            logger.debug(f"Cours {candidate_course.code} a besoin d'un TD avant le TP")
+                                            continue
+
+                                    if next_session_type == 'TPE':
+                                        # TPE nécessite CM + TD + TP
+                                        has_cm = any(s.get('type') == 'CM' for s in existing_sessions)
+                                        has_td = any(s.get('type') == 'TD' for s in existing_sessions)
+                                        has_tp = any(s.get('type') == 'TP' for s in existing_sessions)
+                                        if not (has_cm and has_td and has_tp):
+                                            logger.debug(f"Cours {candidate_course.code} a besoin de CM+TD+TP avant le TPE")
+                                            continue
+
+                                    # NOUVELLE RÈGLE: Valider TOUJOURS les délais minimums
+                                    # Même si le type est fixé dans le code (ex: ANATG111_TD)
+                                    # La pédagogie prime sur tout le reste
+                                    is_valid, reason = PedagogicalSequencer.is_valid_sequence(
+                                        existing_sessions,
+                                        current_date,
+                                        next_session_type
+                                    )
+
+                                    # Si la séquence viole les délais minimums, passer au cours suivant
+                                    if not is_valid:
+                                        logger.debug(f"Séquence invalide pour {candidate_course.code} ({next_session_type}): {reason}")
+                                        continue
 
                                     # Calculer le score pédagogique
                                     # Le score favorise les placements optimaux mais accepte les sous-optimaux
@@ -601,8 +710,9 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                     # Bonus si ce cours est en retard par rapport à la moyenne
                                     distribution_bonus = 0
                                     if sessions_count < avg_sessions:
-                                        # Cours sous la moyenne : GROS bonus (priorité absolue)
-                                        distribution_bonus = int((avg_sessions - sessions_count) * 50)
+                                        # Cours sous la moyenne : bonus avec PLAFOND pour éviter d'écraser le score pédagogique
+                                        # OPTIMISATION: Plafonné à 100 points max (au lieu de illimité)
+                                        distribution_bonus = min(int((avg_sessions - sessions_count) * 50), 100)
 
                                     # Score final = score pédagogique + bonus de couverture + bonus de distribution
                                     total_score = ped_score + coverage_bonus + distribution_bonus
@@ -635,31 +745,15 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
                                 # Trouver une salle disponible pour ce créneau ET cette date spécifique
                                 from rooms.models import Room
-                                from .models import SessionOccurrence
                                 from courses.models_class import ClassRoomPreference
 
                                 # Déterminer le nombre d'étudiants requis
                                 required_capacity = student_class.student_count if hasattr(student_class, 'student_count') else 30
 
-                                # Exclure les salles déjà utilisées pour CETTE DATE SPÉCIFIQUE et ce créneau horaire
-                                # Vérifier dans TOUTES les sessions (pas seulement ce schedule)
-                                used_room_ids_sessions = ScheduleSession.objects.filter(
-                                    specific_date=current_date,
-                                    specific_start_time=slot.start_time,
-                                    specific_end_time=slot.end_time
-                                ).values_list('room_id', flat=True)
-
-                                # Vérifier aussi dans les occurrences
-                                used_room_ids_occurrences = SessionOccurrence.objects.filter(
-                                    actual_date=current_date,
-                                    start_time=slot.start_time,
-                                    end_time=slot.end_time,
-                                    status='scheduled',
-                                    is_cancelled=False
-                                ).values_list('room_id', flat=True)
-
-                                # Combiner les deux listes
-                                all_used_room_ids = set(list(used_room_ids_sessions) + list(used_room_ids_occurrences))
+                                # OPTIMISATION: Utiliser le dictionnaire préchargé au lieu de requêtes SQL
+                                # Lookup O(1) au lieu de 2 requêtes SQL
+                                allocation_key = (current_date, slot.start_time)
+                                all_used_room_ids = room_allocations.get(allocation_key, set())
 
                                 # Chercher une salle disponible avec la capacité suffisante
                                 available_rooms = Room.objects.filter(
@@ -716,27 +810,11 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                     available_room = available_rooms.order_by('capacity').first()
 
                                 # Vérifier que l'enseignant est disponible
+                                # OPTIMISATION: Utiliser le dictionnaire préchargé au lieu de 2 requêtes SQL
                                 teacher_available = True
                                 if course.teacher:
-                                    # Vérifier les sessions existantes
-                                    teacher_conflicts_sessions = ScheduleSession.objects.filter(
-                                        teacher=course.teacher,
-                                        specific_date=current_date,
-                                        specific_start_time=slot.start_time,
-                                        specific_end_time=slot.end_time
-                                    ).exists()
-
-                                    # Vérifier les occurrences
-                                    teacher_conflicts_occurrences = SessionOccurrence.objects.filter(
-                                        teacher=course.teacher,
-                                        actual_date=current_date,
-                                        start_time=slot.start_time,
-                                        end_time=slot.end_time,
-                                        status='scheduled',
-                                        is_cancelled=False
-                                    ).exists()
-
-                                    teacher_available = not (teacher_conflicts_sessions or teacher_conflicts_occurrences)
+                                    occupied_teachers = teacher_allocations.get(allocation_key, set())
+                                    teacher_available = course.teacher.id not in occupied_teachers
 
                                 # Logging pour debug
                                 if not available_room:
@@ -798,6 +876,12 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                                     if course.id not in sessions_today:
                                         sessions_today[course.id] = []
                                     sessions_today[course.id].append(session_type)
+
+                                    # OPTIMISATION: Mettre à jour les dictionnaires d'allocations
+                                    # pour éviter les conflits dans les prochains créneaux
+                                    room_allocations[allocation_key].add(available_room.id)
+                                    if course.teacher:
+                                        teacher_allocations[allocation_key].add(course.teacher.id)
 
                                     logger.info(f"Cours {course.code}: {course_hours_scheduled[course.id]}h planifiées / {course.total_hours}h totales")
 
@@ -1050,17 +1134,93 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'by_academic_period': list(by_period)
         })
     
+    @action(detail=True, methods=['get'])
+    def evaluate_quality(self, request, pk=None):
+        """
+        Évalue la qualité d'un emploi du temps généré
+
+        GET /api/schedules/{id}/evaluate_quality/
+
+        Returns:
+            - global_score: Score global (0-1000+)
+            - hard_constraints: Violations critiques détectées
+            - soft_scores: Scores par critère (pédagogie, enseignants, salles, etc.)
+            - recommendations: Suggestions d'amélioration
+        """
+        try:
+            schedule = self.get_object()
+
+            from .schedule_evaluator import ScheduleEvaluator
+
+            evaluator = ScheduleEvaluator()
+
+            # Score global
+            global_score = evaluator.evaluate(schedule)
+
+            # Convertir -inf en 0 pour la sérialisation JSON
+            is_valid = global_score != float('-inf')
+            global_score_safe = 0 if global_score == float('-inf') else global_score
+
+            # Rapport détaillé
+            report = evaluator.get_detailed_report(schedule)
+
+            # Recommandations basées sur le score
+            recommendations = []
+            if report['hard_constraints']['room_conflicts'] > 0:
+                recommendations.append({
+                    'severity': 'critical',
+                    'message': f"{report['hard_constraints']['room_conflicts']} conflit(s) de salles détecté(s)",
+                    'action': 'Modifier les sessions en conflit'
+                })
+
+            if report['hard_constraints']['teacher_conflicts'] > 0:
+                recommendations.append({
+                    'severity': 'critical',
+                    'message': f"{report['hard_constraints']['teacher_conflicts']} conflit(s) d'enseignants détecté(s)",
+                    'action': 'Modifier les sessions en conflit'
+                })
+
+            if report['hard_constraints']['missing_course_hours'] > 0:
+                recommendations.append({
+                    'severity': 'critical',
+                    'message': f"{report['hard_constraints']['missing_course_hours']} cours avec heures manquantes",
+                    'action': 'Compléter les heures requises pour ces cours'
+                })
+
+            if is_valid and report['soft_scores']['pedagogical_quality'] < 60:
+                recommendations.append({
+                    'severity': 'warning',
+                    'message': 'Qualité pédagogique faible',
+                    'action': 'Déplacer les CM vers le matin et les TP vers l\'après-midi'
+                })
+
+            return Response({
+                'schedule_id': schedule.id,
+                'schedule_name': schedule.name,
+                'global_score': global_score_safe,
+                'is_valid': is_valid,
+                'report': report,
+                'recommendations': recommendations,
+                'grade': 'F' if not is_valid else ('A' if global_score_safe > 800 else 'B' if global_score_safe > 600 else 'C' if global_score_safe > 400 else 'D' if global_score_safe > 200 else 'F')
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Erreur lors de l'évaluation: {str(e)}", exc_info=True)
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=False, methods=['get'])
     def weekly_sessions(self, request):
         """Récupère toutes les sessions d'une semaine donnée"""
         from datetime import datetime, timedelta
-        
+
         # Paramètres
         curriculum = request.query_params.get('curriculum')
         week_start = request.query_params.get('week_start')  # Format: YYYY-MM-DD
         teacher_id = request.query_params.get('teacher')
         room_id = request.query_params.get('room')
-        
+
         if not week_start:
             return Response({
                 'error': 'Le paramètre week_start est requis (format YYYY-MM-DD)'
