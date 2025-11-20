@@ -29,6 +29,9 @@ numpy==1.26.4
 networkx==3.3
 joblib==1.4.2
 
+spacy
+rapidfuzz
+
 # Utilitaires
 requests==2.31.0
 python-dateutil==2.9.0.post0
