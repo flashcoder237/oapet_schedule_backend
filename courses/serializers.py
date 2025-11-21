@@ -167,12 +167,21 @@ class StudentCreateSerializer(serializers.ModelSerializer):
         return student
 
 
+class CourseEnrollmentCourseSerializer(serializers.ModelSerializer):
+    """Serializer simplifié pour les cours dans le contexte des inscriptions"""
+    class Meta:
+        model = Course
+        fields = ['id', 'name', 'code', 'credits', 'hours_per_week', 'course_type']
+
+
 class CourseEnrollmentSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.user.get_full_name', read_only=True)
     student_id = serializers.CharField(source='student.student_id', read_only=True)
     course_name = serializers.CharField(source='course.name', read_only=True)
     course_code = serializers.CharField(source='course.code', read_only=True)
-    
+    # Ajouter le cours complet sous forme d'objet imbriqué
+    course = CourseEnrollmentCourseSerializer(read_only=True)
+
     class Meta:
         model = CourseEnrollment
         fields = '__all__'

@@ -1513,9 +1513,24 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         else:
             target_date = datetime.now().date()
 
-        # Trouver le schedule de l'étudiant
+        # Trouver la classe de l'étudiant (par curriculum et niveau)
+        from courses.models_class import StudentClass
+        student_class = StudentClass.objects.filter(
+            curriculum=student.curriculum,
+            level=student.current_level
+        ).first()
+
+        if not student_class:
+            return Response({
+                'date': target_date.isoformat(),
+                'day_of_week': target_date.strftime('%A'),
+                'sessions': [],
+                'message': 'Aucune classe trouvée pour cet étudiant'
+            })
+
+        # Trouver le schedule pour cette classe
         schedule = Schedule.objects.filter(
-            student_class__curriculum=student.curriculum,
+            student_class=student_class,
             is_published=True
         ).order_by('-created_at').first()
 
@@ -1524,7 +1539,7 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                 'date': target_date.isoformat(),
                 'day_of_week': target_date.strftime('%A'),
                 'sessions': [],
-                'message': 'Aucun emploi du temps trouvé'
+                'message': 'Aucun emploi du temps publié trouvé pour votre classe'
             })
 
         # Récupérer les sessions pour cette date
@@ -1580,9 +1595,28 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
         week_end = week_start + timedelta(days=7)
 
-        # Trouver le schedule de l'étudiant
+        # Trouver la classe de l'étudiant (par curriculum et niveau)
+        from courses.models_class import StudentClass
+        student_class = StudentClass.objects.filter(
+            curriculum=student.curriculum,
+            level=student.current_level
+        ).first()
+
+        if not student_class:
+            return Response({
+                'week_start': week_start.isoformat(),
+                'week_end': week_end.isoformat(),
+                'sessions_by_day': {
+                    'monday': [], 'tuesday': [], 'wednesday': [],
+                    'thursday': [], 'friday': [], 'saturday': [], 'sunday': []
+                },
+                'total_sessions': 0,
+                'message': 'Aucune classe trouvée pour cet étudiant'
+            })
+
+        # Trouver le schedule pour cette classe
         schedule = Schedule.objects.filter(
-            student_class__curriculum=student.curriculum,
+            student_class=student_class,
             is_published=True
         ).order_by('-created_at').first()
 
@@ -1595,7 +1629,7 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                     'thursday': [], 'friday': [], 'saturday': [], 'sunday': []
                 },
                 'total_sessions': 0,
-                'message': 'Aucun emploi du temps trouvé'
+                'message': 'Aucun emploi du temps publié trouvé pour votre classe'
             })
 
         # Récupérer toutes les sessions de la semaine

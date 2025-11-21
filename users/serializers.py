@@ -195,16 +195,21 @@ class UserCreateSerializer(serializers.ModelSerializer):
         # Créer le profil
         if hasattr(user, 'profile'):
             user.profile.role = role
-            user.profile.employee_id = employee_id
+            # Ne définir employee_id que s'il n'est pas vide
+            if employee_id:
+                user.profile.employee_id = employee_id
             user.profile.department = department
             user.profile.save()
         else:
-            UserProfile.objects.create(
-                user=user,
-                role=role,
-                employee_id=employee_id,
-                department=department
-            )
+            profile_data = {
+                'user': user,
+                'role': role,
+                'department': department
+            }
+            # Ne définir employee_id que s'il n'est pas vide
+            if employee_id:
+                profile_data['employee_id'] = employee_id
+            UserProfile.objects.create(**profile_data)
 
         # Si le rôle est 'teacher' ou 'professor', créer automatiquement le Teacher
         if role in ['teacher', 'professor']:
@@ -249,15 +254,54 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 if not student_class_id:
                     raise ValueError("La classe est requise pour créer un étudiant")
 
-                student_class = StudentClass.objects.select_related('curriculum').get(id=student_class_id)
+                student_class = StudentClass.objects.select_related('curriculum', 'department').get(id=student_class_id)
 
-                # Extraire le curriculum et le niveau de la classe
-                curriculum = student_class.curriculum
+                # Extraire le niveau de la classe
                 current_level = student_class.level
 
-                # Si pas de curriculum dans la classe, on ne peut pas créer l'étudiant
+                # Utiliser le curriculum de la classe
+                # Si la classe n'a pas de curriculum, créer ou récupérer le curriculum par défaut
+                curriculum = student_class.curriculum
                 if not curriculum:
-                    raise ValueError("La classe sélectionnée n'a pas de filière associée")
+                    # Si la classe n'a pas de curriculum, assigner le curriculum par défaut du département
+                    if student_class.department:
+                        curriculum, created = Curriculum.objects.get_or_create(
+                            department=student_class.department,
+                            code=f"{student_class.department.code}-DEFAULT",
+                            defaults={
+                                'name': f"Cursus {student_class.department.name}",
+                                'level': current_level,
+                                'total_credits': 180,
+                                'description': f"Cursus par défaut pour {student_class.department.name}",
+                                'academic_year': '2024-2025'
+                            }
+                        )
+                        # Assigner ce curriculum à la classe pour éviter les problèmes futurs
+                        student_class.curriculum = curriculum
+                        student_class.save()
+                    else:
+                        # Curriculum générique si pas de département
+                        default_dept, _ = Department.objects.get_or_create(
+                            code='DEFAULT',
+                            defaults={
+                                'name': 'Département par défaut',
+                                'description': 'Département par défaut'
+                            }
+                        )
+                        curriculum, created = Curriculum.objects.get_or_create(
+                            code='DEFAULT',
+                            defaults={
+                                'name': 'Cursus Général',
+                                'department': default_dept,
+                                'level': current_level,
+                                'total_credits': 180,
+                                'description': 'Cursus par défaut',
+                                'academic_year': '2024-2025'
+                            }
+                        )
+                        # Assigner ce curriculum à la classe
+                        student_class.curriculum = curriculum
+                        student_class.save()
 
                 # Créer le profil étudiant
                 student = Student.objects.create(
@@ -274,26 +318,31 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 )
 
                 # Incrémenter le nombre d'étudiants dans la classe
-                student_class.current_students += 1
+                student_class.student_count += 1
                 student_class.save()
 
-                # Inscrire automatiquement l'étudiant aux cours du niveau et du curriculum
-                courses = Course.objects.filter(
-                    curriculum_courses__curriculum=curriculum,
-                    level=current_level,
+                # Inscrire automatiquement l'étudiant aux cours de sa classe
+                from courses.models_class import ClassCourse
+
+                class_courses = ClassCourse.objects.filter(
+                    student_class=student_class,
                     is_active=True
-                ).distinct()
+                ).select_related('course')
 
-                for course in courses:
-                    CourseEnrollment.objects.create(
+                enrolled_count = 0
+                for class_course in class_courses:
+                    CourseEnrollment.objects.get_or_create(
                         student=student,
-                        course=course,
-                        academic_year='2024-2025',
-                        semester='S1',
-                        is_active=True
+                        course=class_course.course,
+                        defaults={
+                            'academic_year': student_class.academic_year or '2024-2025',
+                            'semester': 'S1',
+                            'is_active': True
+                        }
                     )
+                    enrolled_count += 1
 
-            except (StudentClass.DoesNotExist, Curriculum.DoesNotExist, KeyError, ValueError) as e:
+            except (StudentClass.DoesNotExist, KeyError, ValueError) as e:
                 # Si la création de l'étudiant échoue, supprimer l'utilisateur créé
                 user.delete()
                 raise serializers.ValidationError(
