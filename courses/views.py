@@ -918,18 +918,86 @@ class StudentViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
     export_fields = ['id', 'student_id', 'curriculum', 'current_level', 'entry_year', 'is_active']
     import_fields = ['student_id', 'curriculum', 'current_level', 'entry_year']
-    
+
     def get_serializer_class(self):
         if self.action == 'create':
             return StudentCreateSerializer
         return StudentSerializer
-    
+
     def get_queryset(self):
         queryset = super().get_queryset()
         curriculum_id = self.request.query_params.get('curriculum')
         if curriculum_id:
             queryset = queryset.filter(curriculum_id=curriculum_id)
         return queryset.filter(is_active=True)
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        """Récupérer le profil de l'étudiant connecté"""
+        try:
+            student = Student.objects.select_related(
+                'user', 'curriculum', 'curriculum__department'
+            ).get(user=request.user, is_active=True)
+            serializer = self.get_serializer(student)
+            return Response(serializer.data)
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Aucun profil étudiant trouvé pour cet utilisateur'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['patch'])
+    def update_me(self, request):
+        """Mettre à jour le profil de l'étudiant connecté"""
+        try:
+            student = Student.objects.get(user=request.user, is_active=True)
+            # Seuls certains champs peuvent être mis à jour par l'étudiant
+            allowed_fields = ['phone', 'address', 'emergency_contact', 'emergency_phone']
+            update_data = {k: v for k, v in request.data.items() if k in allowed_fields}
+
+            for field, value in update_data.items():
+                setattr(student, field, value)
+            student.save()
+
+            serializer = self.get_serializer(student)
+            return Response(serializer.data)
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Aucun profil étudiant trouvé pour cet utilisateur'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['get'])
+    def my_stats(self, request):
+        """Statistiques de l'étudiant connecté"""
+        try:
+            student = Student.objects.get(user=request.user, is_active=True)
+            enrollments = CourseEnrollment.objects.filter(
+                student=student,
+                is_active=True
+            ).select_related('course')
+
+            total_courses = enrollments.count()
+            total_credits = sum(e.course.credits for e in enrollments)
+            total_hours = sum(e.course.hours_per_week for e in enrollments)
+
+            # Cours par type
+            courses_by_type = {}
+            for enrollment in enrollments:
+                course_type = enrollment.course.course_type
+                courses_by_type[course_type] = courses_by_type.get(course_type, 0) + 1
+
+            return Response({
+                'total_courses': total_courses,
+                'total_credits': total_credits,
+                'total_hours_per_week': total_hours,
+                'courses_by_type': courses_by_type,
+            })
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Aucun profil étudiant trouvé pour cet utilisateur'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class CourseEnrollmentViewSet(ImportExportMixin, viewsets.ModelViewSet):
@@ -940,19 +1008,37 @@ class CourseEnrollmentViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
     export_fields = ['id', 'student', 'course', 'semester', 'academic_year', 'enrollment_date']
     import_fields = ['student', 'course', 'semester', 'academic_year']
-    
+
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
         student_id = self.request.query_params.get('student')
         if student_id:
             queryset = queryset.filter(student_id=student_id)
-        
+
         course_id = self.request.query_params.get('course')
         if course_id:
             queryset = queryset.filter(course_id=course_id)
-        
+
         return queryset.filter(is_active=True)
+
+    @action(detail=False, methods=['get'])
+    def my_enrollments(self, request):
+        """Récupérer les inscriptions de l'étudiant connecté"""
+        try:
+            student = Student.objects.get(user=request.user, is_active=True)
+            enrollments = CourseEnrollment.objects.filter(
+                student=student,
+                is_active=True
+            ).select_related('course', 'course__department').order_by('course__name')
+
+            serializer = self.get_serializer(enrollments, many=True)
+            return Response({'results': serializer.data})
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Aucun profil étudiant trouvé pour cet utilisateur'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class CoursePrerequisiteViewSet(ImportExportMixin, viewsets.ModelViewSet):

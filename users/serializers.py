@@ -119,15 +119,18 @@ class UserCreateSerializer(serializers.ModelSerializer):
     office = serializers.CharField(required=False, allow_blank=True, write_only=True)
     max_hours_per_week = serializers.IntegerField(required=False, allow_null=True, write_only=True)
 
+    # Champs pour les étudiants
+    student_data = serializers.DictField(required=False, write_only=True)
+
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'password', 'is_active', 'role', 'department_id', 'employee_id',
-            'phone', 'office', 'max_hours_per_week'
+            'phone', 'office', 'max_hours_per_week', 'student_data'
         ]
         read_only_fields = ['id']
-        
+
     def validate_employee_id(self, value):
         """Valider que l'employee_id est unique s'il est fourni"""
         if value:
@@ -137,8 +140,21 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 )
         return value
 
+    def validate_student_data(self, value):
+        """Valider les données de l'étudiant"""
+        if value:
+            from courses.models import Student
+            # Vérifier si le student_id est unique
+            student_id = value.get('student_id')
+            if student_id and Student.objects.filter(student_id=student_id).exists():
+                raise serializers.ValidationError(
+                    {'student_id': "Un étudiant avec ce matricule existe déjà."}
+                )
+        return value
+
     def create(self, validated_data):
-        from courses.models import Department, Teacher
+        from courses.models import Department, Teacher, Student, Curriculum, Course, CourseEnrollment
+        from courses.models_class import StudentClass
 
         # Extraire les données du profil
         role = validated_data.pop('role', 'student')
@@ -149,6 +165,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         phone = validated_data.pop('phone', '')
         office = validated_data.pop('office', '')
         max_hours_per_week = validated_data.pop('max_hours_per_week', 20)
+
+        # Extraire les données de l'étudiant
+        student_data = validated_data.pop('student_data', None)
 
         # Créer l'utilisateur
         user = User.objects.create_user(**validated_data)
@@ -166,7 +185,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             # Générer un ID unique basé sur le rôle et l'ID utilisateur
             base_id = f"{role.upper()[:3]}-{user.id}"
             employee_id = base_id
-            
+
             # Vérifier si cet ID existe déjà et ajouter un suffixe si nécessaire
             counter = 1
             while UserProfile.objects.filter(employee_id=employee_id).exists():
@@ -191,7 +210,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if role in ['teacher', 'professor']:
             # Vérifier si un Teacher existe déjà pour cet utilisateur
             teacher_exists = Teacher.objects.filter(user=user).exists()
-            
+
             # Ne créer le Teacher que s'il n'existe pas déjà
             if not teacher_exists:
                 # Récupérer ou créer le département par défaut si nécessaire
@@ -220,6 +239,65 @@ class UserCreateSerializer(serializers.ModelSerializer):
                     office=office,
                     max_hours_per_week=max_hours_per_week,
                     is_active=user.is_active
+                )
+
+        # Si le rôle est 'student', créer automatiquement le Student
+        elif role == 'student' and student_data:
+            try:
+                # Récupérer la classe
+                student_class_id = student_data.get('student_class_id')
+                if not student_class_id:
+                    raise ValueError("La classe est requise pour créer un étudiant")
+
+                student_class = StudentClass.objects.select_related('curriculum').get(id=student_class_id)
+
+                # Extraire le curriculum et le niveau de la classe
+                curriculum = student_class.curriculum
+                current_level = student_class.level
+
+                # Si pas de curriculum dans la classe, on ne peut pas créer l'étudiant
+                if not curriculum:
+                    raise ValueError("La classe sélectionnée n'a pas de filière associée")
+
+                # Créer le profil étudiant
+                student = Student.objects.create(
+                    user=user,
+                    student_id=student_data.get('student_id'),
+                    curriculum=curriculum,
+                    current_level=current_level,
+                    entry_year=student_data.get('entry_year', 2025),
+                    phone=student_data.get('phone', ''),
+                    address=student_data.get('address', ''),
+                    emergency_contact=student_data.get('emergency_contact', ''),
+                    emergency_phone=student_data.get('emergency_phone', ''),
+                    is_active=user.is_active
+                )
+
+                # Incrémenter le nombre d'étudiants dans la classe
+                student_class.current_students += 1
+                student_class.save()
+
+                # Inscrire automatiquement l'étudiant aux cours du niveau et du curriculum
+                courses = Course.objects.filter(
+                    curriculum_courses__curriculum=curriculum,
+                    level=current_level,
+                    is_active=True
+                ).distinct()
+
+                for course in courses:
+                    CourseEnrollment.objects.create(
+                        student=student,
+                        course=course,
+                        academic_year='2024-2025',
+                        semester='S1',
+                        is_active=True
+                    )
+
+            except (StudentClass.DoesNotExist, Curriculum.DoesNotExist, KeyError, ValueError) as e:
+                # Si la création de l'étudiant échoue, supprimer l'utilisateur créé
+                user.delete()
+                raise serializers.ValidationError(
+                    f"Erreur lors de la création de l'étudiant: {str(e)}"
                 )
 
         return user

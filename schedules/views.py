@@ -1483,6 +1483,152 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
                 'constraints_updated': len(serializer.validated_data)
             }, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'])
+    def my_schedule(self, request):
+        """Récupérer l'emploi du temps de l'étudiant connecté pour une date donnée"""
+        from courses.models import Student
+        from datetime import datetime, timedelta
+
+        try:
+            student = Student.objects.select_related('curriculum').get(
+                user=request.user,
+                is_active=True
+            )
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Aucun profil étudiant trouvé pour cet utilisateur'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Récupérer la date depuis les paramètres (par défaut aujourd'hui)
+        date_str = request.query_params.get('date')
+        if date_str:
+            try:
+                target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return Response(
+                    {'error': 'Format de date invalide. Utilisez YYYY-MM-DD'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            target_date = datetime.now().date()
+
+        # Trouver le schedule de l'étudiant
+        schedule = Schedule.objects.filter(
+            student_class__curriculum=student.curriculum,
+            is_published=True
+        ).order_by('-created_at').first()
+
+        if not schedule:
+            return Response({
+                'date': target_date.isoformat(),
+                'day_of_week': target_date.strftime('%A'),
+                'sessions': [],
+                'message': 'Aucun emploi du temps trouvé'
+            })
+
+        # Récupérer les sessions pour cette date
+        sessions = ScheduleSession.objects.filter(
+            schedule=schedule,
+            specific_date=target_date
+        ).select_related(
+            'course', 'teacher', 'room', 'time_slot'
+        ).order_by('time_slot__start_time')
+
+        from .serializers import ScheduleSessionSerializer
+        serializer = ScheduleSessionSerializer(sessions, many=True)
+
+        return Response({
+            'date': target_date.isoformat(),
+            'day_of_week': target_date.strftime('%A'),
+            'day_of_week_fr': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][target_date.weekday()],
+            'sessions': serializer.data,
+            'total_sessions': len(serializer.data)
+        })
+
+    @action(detail=False, methods=['get'])
+    def my_weekly_schedule(self, request):
+        """Récupérer l'emploi du temps hebdomadaire de l'étudiant connecté"""
+        from courses.models import Student
+        from datetime import datetime, timedelta
+
+        try:
+            student = Student.objects.select_related('curriculum').get(
+                user=request.user,
+                is_active=True
+            )
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Aucun profil étudiant trouvé pour cet utilisateur'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Récupérer le début de semaine depuis les paramètres
+        week_start_str = request.query_params.get('week_start')
+        if week_start_str:
+            try:
+                week_start = datetime.strptime(week_start_str, '%Y-%m-%d').date()
+            except ValueError:
+                return Response(
+                    {'error': 'Format de date invalide. Utilisez YYYY-MM-DD'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            # Par défaut, lundi de la semaine courante
+            today = datetime.now().date()
+            week_start = today - timedelta(days=today.weekday())
+
+        week_end = week_start + timedelta(days=7)
+
+        # Trouver le schedule de l'étudiant
+        schedule = Schedule.objects.filter(
+            student_class__curriculum=student.curriculum,
+            is_published=True
+        ).order_by('-created_at').first()
+
+        if not schedule:
+            return Response({
+                'week_start': week_start.isoformat(),
+                'week_end': week_end.isoformat(),
+                'sessions_by_day': {
+                    'monday': [], 'tuesday': [], 'wednesday': [],
+                    'thursday': [], 'friday': [], 'saturday': [], 'sunday': []
+                },
+                'total_sessions': 0,
+                'message': 'Aucun emploi du temps trouvé'
+            })
+
+        # Récupérer toutes les sessions de la semaine
+        sessions = ScheduleSession.objects.filter(
+            schedule=schedule,
+            specific_date__gte=week_start,
+            specific_date__lt=week_end
+        ).select_related(
+            'course', 'teacher', 'room', 'time_slot'
+        ).order_by('specific_date', 'time_slot__start_time')
+
+        # Organiser les sessions par jour
+        sessions_by_day = {
+            'monday': [], 'tuesday': [], 'wednesday': [],
+            'thursday': [], 'friday': [], 'saturday': [], 'sunday': []
+        }
+
+        day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+
+        from .serializers import ScheduleSessionSerializer
+        for session in sessions:
+            day_index = session.specific_date.weekday()
+            day_name = day_names[day_index]
+            serializer = ScheduleSessionSerializer(session)
+            sessions_by_day[day_name].append(serializer.data)
+
+        return Response({
+            'week_start': week_start.isoformat(),
+            'week_end': week_end.isoformat(),
+            'sessions_by_day': sessions_by_day,
+            'total_sessions': sessions.count()
+        })
+
 
 class ScheduleSessionViewSet(ImportExportMixin, viewsets.ModelViewSet):
     """ViewSet pour la gestion des sessions d'emploi du temps"""

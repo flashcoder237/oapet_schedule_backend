@@ -126,10 +126,17 @@ from django.dispatch import receiver
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
+    """Créer un UserProfile automatiquement lors de la création d'un User"""
     if created:
-        UserProfile.objects.create(user=instance)
+        # Utiliser get_or_create pour éviter les doublons
+        UserProfile.objects.get_or_create(user=instance)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
+    """Sauvegarder le UserProfile quand le User est sauvegardé"""
+    # Vérifier que le profil existe avant de le sauvegarder
     if hasattr(instance, 'profile'):
         instance.profile.save()
+    else:
+        # Si le profil n'existe pas, le créer
+        UserProfile.objects.get_or_create(user=instance)
