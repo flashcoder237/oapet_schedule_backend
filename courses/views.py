@@ -373,6 +373,189 @@ class TeacherViewSet(ImportExportMixin, viewsets.ModelViewSet):
         return Response(dashboard_data)
 
     @action(detail=True, methods=['get'])
+    def today_sessions(self, request, pk=None):
+        """
+        Récupère les sessions d'aujourd'hui pour un enseignant
+        Utilise les SessionOccurrence pour refléter les modifications admin
+        """
+        from schedules.models import ScheduleSession, SessionOccurrence
+        from django.utils import timezone
+        from django.db.models import Q
+
+        teacher = self.get_object()
+        today = timezone.now().date()
+
+        # Chercher les occurrences pour aujourd'hui
+        occurrences = SessionOccurrence.objects.filter(
+            Q(teacher=teacher) |
+            Q(session_template__teacher=teacher) |
+            Q(session_template__course__teacher=teacher),
+            actual_date=today,
+            is_cancelled=False
+        ).select_related(
+            'session_template__course',
+            'room',
+            'teacher'
+        ).order_by('start_time').distinct()
+
+        sessions_data = []
+
+        if occurrences.exists():
+            for occ in occurrences:
+                sessions_data.append({
+                    'id': occ.id,
+                    'course_details': {
+                        'id': occ.session_template.course.id if occ.session_template and occ.session_template.course else None,
+                        'name': occ.session_template.course.name if occ.session_template and occ.session_template.course else 'N/A',
+                        'code': occ.session_template.course.code if occ.session_template and occ.session_template.course else 'N/A',
+                        'course_type': occ.session_template.course.course_type if occ.session_template and occ.session_template.course else 'CM'
+                    },
+                    'room_details': {
+                        'id': occ.room.id if occ.room else None,
+                        'name': occ.room.name if occ.room else 'N/A',
+                        'code': occ.room.code if occ.room else 'N/A'
+                    },
+                    'specific_date': today.isoformat(),
+                    'specific_start_time': str(occ.start_time),
+                    'specific_end_time': str(occ.end_time),
+                    'session_type': occ.session_template.session_type if occ.session_template else 'CM',
+                    'is_modified': occ.is_room_modified or occ.is_time_modified or occ.is_teacher_modified
+                })
+        else:
+            # Fallback sur ScheduleSession
+            sessions = ScheduleSession.objects.filter(
+                Q(teacher=teacher) | Q(course__teacher=teacher),
+                specific_date=today,
+                is_cancelled=False
+            ).select_related('course', 'room').order_by('specific_start_time').distinct()
+
+            for session in sessions:
+                sessions_data.append({
+                    'id': session.id,
+                    'course_details': {
+                        'id': session.course.id if session.course else None,
+                        'name': session.course.name if session.course else 'N/A',
+                        'code': session.course.code if session.course else 'N/A',
+                        'course_type': session.course.course_type if session.course else 'CM'
+                    },
+                    'room_details': {
+                        'id': session.room.id if session.room else None,
+                        'name': session.room.name if session.room else 'N/A',
+                        'code': session.room.code if session.room else 'N/A'
+                    },
+                    'specific_date': session.specific_date.isoformat() if session.specific_date else today.isoformat(),
+                    'specific_start_time': str(session.specific_start_time) if session.specific_start_time else None,
+                    'specific_end_time': str(session.specific_end_time) if session.specific_end_time else None,
+                    'session_type': session.session_type,
+                    'is_modified': False
+                })
+
+        return Response(sessions_data)
+
+    @action(detail=True, methods=['get'])
+    def weekly_sessions(self, request, pk=None):
+        """
+        Récupère les sessions de la semaine pour un enseignant
+        Utilise les SessionOccurrence pour refléter les modifications admin
+        """
+        from schedules.models import ScheduleSession, SessionOccurrence
+        from django.utils import timezone
+        from django.db.models import Q
+        from datetime import timedelta, datetime
+
+        teacher = self.get_object()
+
+        # Récupérer le début de semaine depuis les paramètres
+        week_start_str = request.query_params.get('week_start')
+        if week_start_str:
+            try:
+                week_start = datetime.strptime(week_start_str, '%Y-%m-%d').date()
+            except ValueError:
+                return Response(
+                    {'error': 'Format de date invalide. Utilisez YYYY-MM-DD'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            today = timezone.now().date()
+            week_start = today - timedelta(days=today.weekday())
+
+        week_end = week_start + timedelta(days=7)
+
+        # Chercher les occurrences pour la semaine
+        occurrences = SessionOccurrence.objects.filter(
+            Q(teacher=teacher) |
+            Q(session_template__teacher=teacher) |
+            Q(session_template__course__teacher=teacher),
+            actual_date__gte=week_start,
+            actual_date__lt=week_end,
+            is_cancelled=False
+        ).select_related(
+            'session_template__course',
+            'room',
+            'teacher'
+        ).order_by('actual_date', 'start_time').distinct()
+
+        sessions_data = []
+
+        if occurrences.exists():
+            for occ in occurrences:
+                sessions_data.append({
+                    'id': occ.id,
+                    'course_details': {
+                        'id': occ.session_template.course.id if occ.session_template and occ.session_template.course else None,
+                        'name': occ.session_template.course.name if occ.session_template and occ.session_template.course else 'N/A',
+                        'code': occ.session_template.course.code if occ.session_template and occ.session_template.course else 'N/A',
+                        'course_type': occ.session_template.course.course_type if occ.session_template and occ.session_template.course else 'CM'
+                    },
+                    'room_details': {
+                        'id': occ.room.id if occ.room else None,
+                        'name': occ.room.name if occ.room else 'N/A',
+                        'code': occ.room.code if occ.room else 'N/A'
+                    },
+                    'specific_date': occ.actual_date.isoformat(),
+                    'specific_start_time': str(occ.start_time),
+                    'specific_end_time': str(occ.end_time),
+                    'session_type': occ.session_template.session_type if occ.session_template else 'CM',
+                    'is_modified': occ.is_room_modified or occ.is_time_modified or occ.is_teacher_modified
+                })
+        else:
+            # Fallback sur ScheduleSession
+            sessions = ScheduleSession.objects.filter(
+                Q(teacher=teacher) | Q(course__teacher=teacher),
+                specific_date__gte=week_start,
+                specific_date__lt=week_end,
+                is_cancelled=False
+            ).select_related('course', 'room').order_by('specific_date', 'specific_start_time').distinct()
+
+            for session in sessions:
+                sessions_data.append({
+                    'id': session.id,
+                    'course_details': {
+                        'id': session.course.id if session.course else None,
+                        'name': session.course.name if session.course else 'N/A',
+                        'code': session.course.code if session.course else 'N/A',
+                        'course_type': session.course.course_type if session.course else 'CM'
+                    },
+                    'room_details': {
+                        'id': session.room.id if session.room else None,
+                        'name': session.room.name if session.room else 'N/A',
+                        'code': session.room.code if session.room else 'N/A'
+                    },
+                    'specific_date': session.specific_date.isoformat() if session.specific_date else None,
+                    'specific_start_time': str(session.specific_start_time) if session.specific_start_time else None,
+                    'specific_end_time': str(session.specific_end_time) if session.specific_end_time else None,
+                    'session_type': session.session_type,
+                    'is_modified': False
+                })
+
+        return Response({
+            'week_start': week_start.isoformat(),
+            'week_end': week_end.isoformat(),
+            'sessions': sessions_data,
+            'total_sessions': len(sessions_data)
+        })
+
+    @action(detail=True, methods=['get'])
     def ml_insights(self, request, pk=None):
         """
         🤖 INSIGHTS ML pour l'enseignant
