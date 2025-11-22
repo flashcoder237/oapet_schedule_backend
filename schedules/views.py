@@ -20,7 +20,8 @@ from .pedagogical_sequencing import PedagogicalSequencer
 from core.mixins import ImportExportMixin
 from .models import (
     AcademicPeriod, TimeSlot, Schedule, ScheduleSession, Conflict,
-    ScheduleOptimization, ScheduleTemplate, ScheduleConstraint, ScheduleExport
+    ScheduleOptimization, ScheduleTemplate, ScheduleConstraint, ScheduleExport,
+    SessionOccurrence
 )
 from .serializers import (
     AcademicPeriodSerializer, TimeSlotSerializer, ScheduleSerializer, ScheduleSessionSerializer,
@@ -1485,7 +1486,11 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def my_schedule(self, request):
-        """Récupérer l'emploi du temps de l'étudiant connecté pour une date donnée"""
+        """Récupérer l'emploi du temps de l'étudiant connecté pour une date donnée
+
+        Utilise les SessionOccurrence (occurrences réelles) pour afficher
+        les modifications faites par l'admin (déplacements, changements de salle, etc.)
+        """
         from courses.models import Student
         from datetime import datetime, timedelta
 
@@ -1513,6 +1518,8 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         else:
             target_date = datetime.now().date()
 
+        day_of_week_fr = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][target_date.weekday()]
+
         # Trouver la classe de l'étudiant (par curriculum et niveau)
         from courses.models_class import StudentClass
         student_class = StudentClass.objects.filter(
@@ -1520,13 +1527,17 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
             level=student.current_level
         ).first()
 
+        empty_response = {
+            'date': target_date.isoformat(),
+            'day_of_week': target_date.strftime('%A'),
+            'day_of_week_fr': day_of_week_fr,
+            'sessions': [],
+            'total_sessions': 0
+        }
+
         if not student_class:
-            return Response({
-                'date': target_date.isoformat(),
-                'day_of_week': target_date.strftime('%A'),
-                'sessions': [],
-                'message': 'Aucune classe trouvée pour cet étudiant'
-            })
+            empty_response['message'] = 'Aucune classe trouvée pour cet étudiant'
+            return Response(empty_response)
 
         # Trouver le schedule pour cette classe
         schedule = Schedule.objects.filter(
@@ -1535,14 +1546,61 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         ).order_by('-created_at').first()
 
         if not schedule:
+            empty_response['message'] = 'Aucun emploi du temps publié trouvé pour votre classe'
+            return Response(empty_response)
+
+        # D'abord, essayer de récupérer les occurrences (données avec modifications admin)
+        occurrences = SessionOccurrence.objects.filter(
+            session_template__schedule=schedule,
+            actual_date=target_date,
+            is_cancelled=False
+        ).select_related(
+            'session_template__course',
+            'teacher__user',
+            'room'
+        ).order_by('start_time')
+
+        if occurrences.exists():
+            from .serializers import SessionOccurrenceListSerializer
+            sessions_data = []
+            for occurrence in occurrences:
+                serializer = SessionOccurrenceListSerializer(occurrence)
+                occ_data = serializer.data
+                # Ajouter des champs compatibles avec l'ancien format
+                occ_data['course_details'] = {
+                    'code': occ_data.get('course_code'),
+                    'name': occ_data.get('course_name'),
+                    'course_type': occurrence.session_template.course.course_type if occurrence.session_template.course else None
+                }
+                occ_data['teacher_details'] = {
+                    'id': occ_data.get('teacher_id'),
+                    'user_details': {
+                        'first_name': occurrence.teacher.user.first_name if occurrence.teacher and occurrence.teacher.user else '',
+                        'last_name': occurrence.teacher.user.last_name if occurrence.teacher and occurrence.teacher.user else ''
+                    }
+                }
+                occ_data['room_details'] = {
+                    'id': occ_data.get('room_id'),
+                    'name': occurrence.room.name if occurrence.room else '',
+                    'code': occ_data.get('room_code')
+                }
+                occ_data['time_slot_details'] = {
+                    'start_time': str(occurrence.start_time),
+                    'end_time': str(occurrence.end_time)
+                }
+                occ_data['session_type'] = occurrence.session_template.session_type if occurrence.session_template else 'CM'
+                sessions_data.append(occ_data)
+
             return Response({
                 'date': target_date.isoformat(),
                 'day_of_week': target_date.strftime('%A'),
-                'sessions': [],
-                'message': 'Aucun emploi du temps publié trouvé pour votre classe'
+                'day_of_week_fr': day_of_week_fr,
+                'sessions': sessions_data,
+                'total_sessions': len(sessions_data),
+                'data_source': 'occurrences'
             })
 
-        # Récupérer les sessions pour cette date
+        # Fallback: si pas d'occurrences, utiliser les sessions templates
         sessions = ScheduleSession.objects.filter(
             schedule=schedule,
             specific_date=target_date
@@ -1556,14 +1614,19 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         return Response({
             'date': target_date.isoformat(),
             'day_of_week': target_date.strftime('%A'),
-            'day_of_week_fr': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][target_date.weekday()],
+            'day_of_week_fr': day_of_week_fr,
             'sessions': serializer.data,
-            'total_sessions': len(serializer.data)
+            'total_sessions': len(serializer.data),
+            'data_source': 'sessions'
         })
 
     @action(detail=False, methods=['get'])
     def my_weekly_schedule(self, request):
-        """Récupérer l'emploi du temps hebdomadaire de l'étudiant connecté"""
+        """Récupérer l'emploi du temps hebdomadaire de l'étudiant connecté
+
+        Utilise les SessionOccurrence (occurrences réelles) pour afficher
+        les modifications faites par l'admin (déplacements, changements de salle, etc.)
+        """
         from courses.models import Student
         from datetime import datetime, timedelta
 
@@ -1602,17 +1665,19 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
             level=student.current_level
         ).first()
 
+        empty_response = {
+            'week_start': week_start.isoformat(),
+            'week_end': week_end.isoformat(),
+            'sessions_by_day': {
+                'monday': [], 'tuesday': [], 'wednesday': [],
+                'thursday': [], 'friday': [], 'saturday': [], 'sunday': []
+            },
+            'total_sessions': 0
+        }
+
         if not student_class:
-            return Response({
-                'week_start': week_start.isoformat(),
-                'week_end': week_end.isoformat(),
-                'sessions_by_day': {
-                    'monday': [], 'tuesday': [], 'wednesday': [],
-                    'thursday': [], 'friday': [], 'saturday': [], 'sunday': []
-                },
-                'total_sessions': 0,
-                'message': 'Aucune classe trouvée pour cet étudiant'
-            })
+            empty_response['message'] = 'Aucune classe trouvée pour cet étudiant'
+            return Response(empty_response)
 
         # Trouver le schedule pour cette classe
         schedule = Schedule.objects.filter(
@@ -1621,18 +1686,68 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         ).order_by('-created_at').first()
 
         if not schedule:
+            empty_response['message'] = 'Aucun emploi du temps publié trouvé pour votre classe'
+            return Response(empty_response)
+
+        # D'abord, essayer de récupérer les occurrences (données avec modifications admin)
+        occurrences = SessionOccurrence.objects.filter(
+            session_template__schedule=schedule,
+            actual_date__gte=week_start,
+            actual_date__lt=week_end,
+            is_cancelled=False  # Exclure les sessions annulées
+        ).select_related(
+            'session_template__course',
+            'session_template__schedule',
+            'teacher__user',
+            'room'
+        ).order_by('actual_date', 'start_time')
+
+        day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        sessions_by_day = {day: [] for day in day_names}
+
+        # Si des occurrences existent, les utiliser (données modifiées par l'admin)
+        if occurrences.exists():
+            from .serializers import SessionOccurrenceListSerializer
+            for occurrence in occurrences:
+                day_index = occurrence.actual_date.weekday()
+                day_name = day_names[day_index]
+                serializer = SessionOccurrenceListSerializer(occurrence)
+                # Convertir le format pour compatibilité avec le frontend étudiant
+                occ_data = serializer.data
+                # Ajouter des champs compatibles avec l'ancien format
+                occ_data['course_details'] = {
+                    'code': occ_data.get('course_code'),
+                    'name': occ_data.get('course_name'),
+                    'course_type': occurrence.session_template.course.course_type if occurrence.session_template.course else None
+                }
+                occ_data['teacher_details'] = {
+                    'id': occ_data.get('teacher_id'),
+                    'user_details': {
+                        'first_name': occurrence.teacher.user.first_name if occurrence.teacher and occurrence.teacher.user else '',
+                        'last_name': occurrence.teacher.user.last_name if occurrence.teacher and occurrence.teacher.user else ''
+                    }
+                }
+                occ_data['room_details'] = {
+                    'id': occ_data.get('room_id'),
+                    'name': occurrence.room.name if occurrence.room else '',
+                    'code': occ_data.get('room_code')
+                }
+                occ_data['time_slot_details'] = {
+                    'start_time': str(occurrence.start_time),
+                    'end_time': str(occurrence.end_time)
+                }
+                occ_data['session_type'] = occurrence.session_template.session_type if occurrence.session_template else 'CM'
+                sessions_by_day[day_name].append(occ_data)
+
             return Response({
                 'week_start': week_start.isoformat(),
                 'week_end': week_end.isoformat(),
-                'sessions_by_day': {
-                    'monday': [], 'tuesday': [], 'wednesday': [],
-                    'thursday': [], 'friday': [], 'saturday': [], 'sunday': []
-                },
-                'total_sessions': 0,
-                'message': 'Aucun emploi du temps publié trouvé pour votre classe'
+                'sessions_by_day': sessions_by_day,
+                'total_sessions': occurrences.count(),
+                'data_source': 'occurrences'  # Indicateur pour debug
             })
 
-        # Récupérer toutes les sessions de la semaine
+        # Fallback: si pas d'occurrences, utiliser les sessions templates
         sessions = ScheduleSession.objects.filter(
             schedule=schedule,
             specific_date__gte=week_start,
@@ -1640,14 +1755,6 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
         ).select_related(
             'course', 'teacher', 'room', 'time_slot'
         ).order_by('specific_date', 'time_slot__start_time')
-
-        # Organiser les sessions par jour
-        sessions_by_day = {
-            'monday': [], 'tuesday': [], 'wednesday': [],
-            'thursday': [], 'friday': [], 'saturday': [], 'sunday': []
-        }
-
-        day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
         from .serializers import ScheduleSessionSerializer
         for session in sessions:
@@ -1660,7 +1767,8 @@ class ScheduleViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'week_start': week_start.isoformat(),
             'week_end': week_end.isoformat(),
             'sessions_by_day': sessions_by_day,
-            'total_sessions': sessions.count()
+            'total_sessions': sessions.count(),
+            'data_source': 'sessions'  # Indicateur pour debug
         })
 
 

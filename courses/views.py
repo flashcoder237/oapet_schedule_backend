@@ -133,34 +133,196 @@ class TeacherViewSet(ImportExportMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def dashboard(self, request, pk=None):
-        """Dashboard complet pour un enseignant"""
-        from schedules.models import ScheduleSession, Conflict
+        """Dashboard complet pour un enseignant
+
+        Utilise SessionOccurrence pour refléter les modifications admin
+        (déplacements de sessions, changements de salle, etc.)
+        """
+        from schedules.models import ScheduleSession, SessionOccurrence, Conflict
         from django.utils import timezone
-        from datetime import timedelta
+        from django.db.models import Q
+        from datetime import timedelta, datetime
 
         teacher = self.get_object()
+        now = timezone.now()
+        today = now.date()
+        current_time = now.time()
 
-        # Statistiques générales
+        # Statistiques générales (basées sur les templates)
         total_courses = teacher.courses.filter(is_active=True).count()
-        sessions = ScheduleSession.objects.filter(teacher=teacher, is_cancelled=False)
-        total_sessions = sessions.count()
-        total_hours_per_week = sum(session.get_duration_hours() for session in sessions)
+        # Sessions où l'enseignant est assigné directement OU via le cours
+        session_templates = ScheduleSession.objects.filter(
+            Q(teacher=teacher) | Q(course__teacher=teacher),
+            is_cancelled=False
+        ).select_related('course', 'room', 'time_slot').distinct()
 
-        # Sessions à venir (cette semaine)
-        today = timezone.now().date()
+        # Utiliser les occurrences pour les données réelles
+        # Chercher les occurrences où:
+        # 1. teacher est directement sur l'occurrence (si modifié)
+        # 2. OU teacher est sur le session_template
+        # 3. OU teacher est sur le cours (Course.teacher)
+        teacher_occurrences = SessionOccurrence.objects.filter(
+            Q(teacher=teacher) |
+            Q(session_template__teacher=teacher) |
+            Q(session_template__course__teacher=teacher),
+            is_cancelled=False
+        ).select_related(
+            'session_template__course',
+            'session_template__course__teacher',
+            'session_template__teacher',
+            'room',
+            'teacher'
+        ).distinct()
+
+        # Statistiques basées sur les occurrences si disponibles, sinon sur les templates
+        if teacher_occurrences.exists():
+            total_sessions = teacher_occurrences.count()
+            total_hours_per_week = sum(occ.get_duration_hours() for occ in teacher_occurrences[:100])
+        else:
+            total_sessions = session_templates.count()
+            total_hours_per_week = sum(session.get_duration_hours() for session in session_templates)
+
+        # ===== COURS EN COURS (current_session) =====
+        current_session = None
+
+        # D'abord chercher dans les occurrences
+        current_occurrence = teacher_occurrences.filter(
+            actual_date=today,
+            start_time__lte=current_time,
+            end_time__gte=current_time
+        ).first()
+
+        if current_occurrence:
+            current_session = {
+                'id': current_occurrence.id,
+                'course_name': current_occurrence.session_template.course.name if current_occurrence.session_template else 'N/A',
+                'course_code': current_occurrence.session_template.course.code if current_occurrence.session_template else 'N/A',
+                'room': current_occurrence.room.name if current_occurrence.room else 'N/A',
+                'room_code': current_occurrence.room.code if current_occurrence.room else 'N/A',
+                'date': today.isoformat(),
+                'start_time': current_occurrence.start_time.strftime('%H:%M'),
+                'end_time': current_occurrence.end_time.strftime('%H:%M'),
+                'session_type': current_occurrence.session_template.session_type if current_occurrence.session_template else 'CM',
+                'is_modified': current_occurrence.is_room_modified or current_occurrence.is_time_modified
+            }
+        else:
+            # Fallback: chercher dans les ScheduleSession (templates)
+            current_template = session_templates.filter(
+                specific_date=today,
+                specific_start_time__lte=current_time,
+                specific_end_time__gte=current_time
+            ).select_related('course', 'room').first()
+
+            if current_template:
+                current_session = {
+                    'id': current_template.id,
+                    'course_name': current_template.course.name if current_template.course else 'N/A',
+                    'course_code': current_template.course.code if current_template.course else 'N/A',
+                    'room': current_template.room.name if current_template.room else 'N/A',
+                    'room_code': current_template.room.code if current_template.room else 'N/A',
+                    'date': today.isoformat(),
+                    'start_time': current_template.specific_start_time.strftime('%H:%M') if current_template.specific_start_time else 'N/A',
+                    'end_time': current_template.specific_end_time.strftime('%H:%M') if current_template.specific_end_time else 'N/A',
+                    'session_type': current_template.session_type,
+                    'is_modified': False
+                }
+
+        # ===== PROCHAIN COURS (next_session) =====
+        next_session = None
+
+        # D'abord chercher dans les occurrences
+        next_occurrence = teacher_occurrences.filter(
+            actual_date=today,
+            start_time__gt=current_time
+        ).order_by('start_time').first()
+
+        # Si pas de cours aujourd'hui, chercher demain ou après
+        if not next_occurrence:
+            next_occurrence = teacher_occurrences.filter(
+                actual_date__gt=today
+            ).order_by('actual_date', 'start_time').first()
+
+        if next_occurrence:
+            next_session = {
+                'id': next_occurrence.id,
+                'course_name': next_occurrence.session_template.course.name if next_occurrence.session_template else 'N/A',
+                'course_code': next_occurrence.session_template.course.code if next_occurrence.session_template else 'N/A',
+                'room': next_occurrence.room.name if next_occurrence.room else 'N/A',
+                'room_code': next_occurrence.room.code if next_occurrence.room else 'N/A',
+                'date': next_occurrence.actual_date.isoformat(),
+                'day_of_week': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][next_occurrence.actual_date.weekday()],
+                'start_time': next_occurrence.start_time.strftime('%H:%M'),
+                'end_time': next_occurrence.end_time.strftime('%H:%M'),
+                'session_type': next_occurrence.session_template.session_type if next_occurrence.session_template else 'CM',
+                'is_modified': next_occurrence.is_room_modified or next_occurrence.is_time_modified
+            }
+        else:
+            # Fallback: chercher dans les ScheduleSession (templates)
+            # D'abord aujourd'hui après l'heure actuelle
+            next_template = session_templates.filter(
+                specific_date=today,
+                specific_start_time__gt=current_time
+            ).select_related('course', 'room').order_by('specific_start_time').first()
+
+            # Sinon chercher les jours suivants
+            if not next_template:
+                next_template = session_templates.filter(
+                    specific_date__gt=today
+                ).select_related('course', 'room').order_by('specific_date', 'specific_start_time').first()
+
+            if next_template:
+                next_session = {
+                    'id': next_template.id,
+                    'course_name': next_template.course.name if next_template.course else 'N/A',
+                    'course_code': next_template.course.code if next_template.course else 'N/A',
+                    'room': next_template.room.name if next_template.room else 'N/A',
+                    'room_code': next_template.room.code if next_template.room else 'N/A',
+                    'date': next_template.specific_date.isoformat() if next_template.specific_date else 'N/A',
+                    'day_of_week': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][next_template.specific_date.weekday()] if next_template.specific_date else 'N/A',
+                    'start_time': next_template.specific_start_time.strftime('%H:%M') if next_template.specific_start_time else 'N/A',
+                    'end_time': next_template.specific_end_time.strftime('%H:%M') if next_template.specific_end_time else 'N/A',
+                    'session_type': next_template.session_type,
+                    'is_modified': False
+                }
+
+        # ===== SESSIONS À VENIR (cette semaine) =====
         week_end = today + timedelta(days=7)
         upcoming_sessions = []
-        for session in sessions.select_related('course', 'room', 'time_slot')[:10]:
-            upcoming_sessions.append({
-                'id': session.id,
-                'course_name': session.course.name,
-                'course_code': session.course.code,
-                'room': session.room.code,
-                'day': session.time_slot.get_day_of_week_display(),
-                'start_time': session.time_slot.start_time.strftime('%H:%M'),
-                'end_time': session.time_slot.end_time.strftime('%H:%M'),
-                'session_type': session.get_session_type_display()
-            })
+
+        # Utiliser les occurrences si disponibles
+        upcoming_occurrences = teacher_occurrences.filter(
+            actual_date__gte=today,
+            actual_date__lte=week_end
+        ).order_by('actual_date', 'start_time')[:10]
+
+        if upcoming_occurrences.exists():
+            for occ in upcoming_occurrences:
+                upcoming_sessions.append({
+                    'id': occ.id,
+                    'course_name': occ.session_template.course.name if occ.session_template else 'N/A',
+                    'course_code': occ.session_template.course.code if occ.session_template else 'N/A',
+                    'room': occ.room.code if occ.room else 'N/A',
+                    'date': occ.actual_date.isoformat(),
+                    'day': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][occ.actual_date.weekday()],
+                    'start_time': occ.start_time.strftime('%H:%M'),
+                    'end_time': occ.end_time.strftime('%H:%M'),
+                    'session_type': occ.session_template.get_session_type_display() if occ.session_template else 'CM',
+                    'is_modified': occ.is_room_modified or occ.is_time_modified or occ.is_teacher_modified
+                })
+        else:
+            # Fallback sur les templates si pas d'occurrences
+            for session in session_templates.select_related('course', 'room', 'time_slot')[:10]:
+                upcoming_sessions.append({
+                    'id': session.id,
+                    'course_name': session.course.name,
+                    'course_code': session.course.code,
+                    'room': session.room.code if session.room else 'N/A',
+                    'day': session.time_slot.get_day_of_week_display() if session.time_slot else 'N/A',
+                    'start_time': session.time_slot.start_time.strftime('%H:%M') if session.time_slot else 'N/A',
+                    'end_time': session.time_slot.end_time.strftime('%H:%M') if session.time_slot else 'N/A',
+                    'session_type': session.get_session_type_display(),
+                    'is_modified': False
+                })
 
         # Préférences et indisponibilités
         active_preferences_count = teacher.preferences.filter(is_active=True).count()
@@ -173,14 +335,14 @@ class TeacherViewSet(ImportExportMixin, viewsets.ModelViewSet):
         # Retours récents
         recent_feedbacks = teacher.session_feedbacks.all()[:5]
 
-        # Conflits
+        # Conflits (basés sur les templates pour l'instant)
         conflicts = []
         conflicts_count = 0
-        for session in sessions:
+        for session in session_templates[:20]:  # Limiter pour performance
             session_conflicts = session.get_conflicts()
             if session_conflicts.exists():
                 conflicts_count += session_conflicts.count()
-                for conflict in session_conflicts[:3]:  # Limiter à 3 conflits par session
+                for conflict in session_conflicts[:3]:
                     conflicts.append({
                         'id': conflict.id,
                         'type': conflict.get_conflict_type_display(),
@@ -196,6 +358,8 @@ class TeacherViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'total_courses': total_courses,
             'total_sessions': total_sessions,
             'total_hours_per_week': round(total_hours_per_week, 2),
+            'current_session': current_session,  # NOUVEAU: cours en cours
+            'next_session': next_session,  # NOUVEAU: prochain cours
             'upcoming_sessions': upcoming_sessions,
             'active_preferences_count': active_preferences_count,
             'pending_unavailabilities_count': pending_unavailabilities_count,
@@ -203,7 +367,7 @@ class TeacherViewSet(ImportExportMixin, viewsets.ModelViewSet):
             'recent_requests': TeacherScheduleRequestSerializer(recent_requests, many=True).data,
             'recent_feedbacks': SessionFeedbackSerializer(recent_feedbacks, many=True).data,
             'conflicts_count': conflicts_count,
-            'conflicts': conflicts[:10]  # Limiter à 10 conflits
+            'conflicts': conflicts[:10]
         }
 
         return Response(dashboard_data)
@@ -304,20 +468,25 @@ class CourseViewSet(ImportExportMixin, viewsets.ModelViewSet):
     
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
         # Filtres
         department_id = self.request.query_params.get('department')
         if department_id:
             queryset = queryset.filter(department_id=department_id)
-        
+
+        # Filtre par enseignant
+        teacher_id = self.request.query_params.get('teacher')
+        if teacher_id:
+            queryset = queryset.filter(teacher_id=teacher_id)
+
         level = self.request.query_params.get('level')
         if level:
             queryset = queryset.filter(level=level)
-        
+
         course_type = self.request.query_params.get('type')
         if course_type:
             queryset = queryset.filter(course_type=course_type)
-        
+
         # Filtre de recherche
         search = self.request.query_params.get('search')
         if search:

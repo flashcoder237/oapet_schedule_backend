@@ -52,7 +52,7 @@ def enhanced_login(request):
         timestamp__gte=timezone.now() - timedelta(minutes=15)
     ).count()
     
-    if recent_failures >= 5:
+    if recent_failures >= 10:
         LoginAttempt.objects.create(
             username=username,
             ip_address=ip_address,

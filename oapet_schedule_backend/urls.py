@@ -10,6 +10,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken.views import obtain_auth_token
 from django.http import JsonResponse
 from .dashboard_views import dashboard_stats, system_health
+from .search_views import global_search, search_suggestions
 
 def api_root(request):
     """Point d'entrée de l'API avec informations générales"""
@@ -49,6 +50,10 @@ urlpatterns = [
     # Endpoints dashboard
     path('api/dashboard/stats/', dashboard_stats, name='dashboard-stats'),
     path('api/dashboard/health/', system_health, name='system-health'),
+
+    # Endpoints recherche
+    path('api/search/', global_search, name='global-search'),
+    path('api/search/suggestions/', search_suggestions, name='search-suggestions'),
     
     # APIs des applications
     path('api/users/', include('users.urls')),
